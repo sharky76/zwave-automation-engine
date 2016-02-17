@@ -1,0 +1,369 @@
+<!DOCTYPE Project SYSTEM "http://www.slickedit.com/dtd/vse/10.0/vpj.dtd">
+<Project
+	Version="10.0"
+	VendorName="SlickEdit"
+	WorkingDir="."
+	BuildSystem="automakefile"
+	BuildMakeFile="Makefile">
+	<Config
+		Name="Debug"
+		Type="gnuc"
+		DebugCallbackName="gdb"
+		Version="1"
+		OutputFile="%bdzwave-automation-engine"
+		CompilerConfigName="Default Compiler"
+		Defines='"/D_GNU_SOURCE"'>
+		<Menu>
+			<Target
+				Name="Compile"
+				MenuCaption="&amp;Compile"
+				Dialog="_gnuc_options_form Compile"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				OutputExts="*.o"
+				SaveOption="SaveCurrent"
+				RunFromDir="%rw">
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -g %~other -o "%bd%n%oe" %i %f'
+					OtherOptions="-std=c99"/>
+			</Target>
+			<Target
+				Name="Link"
+				MenuCaption="&amp;Link"
+				ShowOnMenu="Never"
+				Dialog="_gnuc_options_form Link"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveCurrent"
+				RunFromDir="%rw">
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g %~other -o "%o" %objs'
+					OtherOptions="-LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl"/>
+			</Target>
+			<Target
+				Name="Build"
+				MenuCaption="&amp;Build"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw"
+				DependsRef="Debug">
+				<Exec CmdLine='make -f"Makefile" CFG=%b'/>
+			</Target>
+			<Target
+				Name="Rebuild"
+				MenuCaption="&amp;Rebuild"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw"
+				DependsRef="Debug">
+				<Exec CmdLine='make -f "Makefile" rebuild CFG=%b'/>
+			</Target>
+			<Target
+				Name="Debug"
+				MenuCaption="&amp;Debug"
+				Dialog="_gnuc_options_form Run/Debug"
+				BuildFirst="1"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveNone"
+				RunFromDir="%rw">
+				<Exec CmdLine='vsdebugio -prog "%o"'/>
+			</Target>
+			<Target
+				Name="Execute"
+				MenuCaption="E&amp;xecute"
+				Dialog="_gnuc_options_form Run/Debug"
+				BuildFirst="1"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw">
+				<Exec CmdLine='"%o"'/>
+			</Target>
+			<Target
+				Name="dash"
+				MenuCaption="-"
+				Deletable="0">
+				<Exec/>
+			</Target>
+			<Target
+				Name="GNU C Options"
+				MenuCaption="GNU C &amp;Options..."
+				ShowOnMenu="HideIfNoCmdLine"
+				Deletable="0"
+				SaveOption="SaveNone">
+				<Exec
+					CmdLine="gnucoptions"
+					Type="Slick-C"/>
+			</Target>
+			<Target
+				Name="Remote Debug Start"
+				MenuCaption="&amp;Remote Debug Start"
+				CaptureOutputWith="ProcessBuffer"
+				RunFromDir="%rw">
+				<Exec CmdLine="ssh osmc@osmc gdbserver *:1234 /home/osmc/Projects/zwave-automation-engine/zwave-automation-engine"/>
+			</Target>
+		</Menu>
+		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/z-way-devel/include/"/>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeService/"/>
+		</Includes>
+		<Libs PreObjects="0">
+			<Lib File="-l:libreadline.a"/>
+			<Lib File="-l:libncurses.a"/>
+			<Lib File="-lrt"/>
+		</Libs>
+		<PostBuildCommands>
+			<Exec CmdLine="scp %bdzwave-automation-engine osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
+		</PostBuildCommands>
+		<Dependencies Name="Debug">
+			<Dependency Project="libZaeUtil/libZaeUtil.vpj"/>
+		</Dependencies>
+	</Config>
+	<Config
+		Name="Release"
+		Type="gnuc"
+		DebugCallbackName="gdb"
+		Version="1"
+		OutputFile="%bdzwave-automation-engine"
+		CompilerConfigName="Default Compiler"
+		Defines='"/D_GNU_SOURCE"'>
+		<Menu>
+			<Target
+				Name="Compile"
+				MenuCaption="&amp;Compile"
+				Dialog="_gnuc_options_form Compile"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				OutputExts="*.o"
+				SaveOption="SaveCurrent"
+				RunFromDir="%rw">
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd %~other -o "%bd%n%oe" %i %f'
+					OtherOptions="-std=c99"/>
+			</Target>
+			<Target
+				Name="Link"
+				MenuCaption="&amp;Link"
+				ShowOnMenu="Never"
+				Dialog="_gnuc_options_form Link"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveCurrent"
+				RunFromDir="%rw">
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup %~other -o "%o" %objs'
+					OtherOptions="-LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl"/>
+			</Target>
+			<Target
+				Name="Build"
+				MenuCaption="&amp;Build"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw"
+				DependsRef="Release">
+				<Exec CmdLine='make -f"Makefile" CFG=%b'/>
+			</Target>
+			<Target
+				Name="Rebuild"
+				MenuCaption="&amp;Rebuild"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw"
+				DependsRef="Release">
+				<Exec CmdLine='make -f "Makefile" rebuild CFG=%b'/>
+			</Target>
+			<Target
+				Name="Debug"
+				MenuCaption="&amp;Debug"
+				Dialog="_gnuc_options_form Run/Debug"
+				BuildFirst="1"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveNone"
+				RunFromDir="%rw">
+				<Exec CmdLine='vsdebugio -prog "%o"'/>
+			</Target>
+			<Target
+				Name="Execute"
+				MenuCaption="E&amp;xecute"
+				Dialog="_gnuc_options_form Run/Debug"
+				BuildFirst="1"
+				CaptureOutputWith="ProcessBuffer"
+				Deletable="0"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw">
+				<Exec CmdLine='"%o"'/>
+			</Target>
+			<Target
+				Name="dash"
+				MenuCaption="-"
+				Deletable="0">
+				<Exec/>
+			</Target>
+			<Target
+				Name="GNU C Options"
+				MenuCaption="GNU C &amp;Options..."
+				ShowOnMenu="HideIfNoCmdLine"
+				Deletable="0"
+				SaveOption="SaveNone">
+				<Exec
+					CmdLine="gnucoptions"
+					Type="Slick-C"/>
+			</Target>
+			<Target
+				Name="Remote Debug Start"
+				MenuCaption="&amp;Remote Debug Start"
+				CaptureOutputWith="ProcessBuffer"
+				RunFromDir="%rw">
+				<Exec CmdLine="ssh osmc@osmc gdbserver *:1234 /home/osmc/Projects/zwave-automation-engine/zwave-automation-engine"/>
+			</Target>
+		</Menu>
+		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/z-way-devel/include/"/>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeService/"/>
+		</Includes>
+		<Libs PreObjects="0">
+			<Lib File="-l:libreadline.a"/>
+			<Lib File="-l:libncurses.a"/>
+			<Lib File="-lrt"/>
+		</Libs>
+		<PostBuildCommands>
+			<Exec CmdLine="scp %bdzwave-automation-engine osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
+		</PostBuildCommands>
+		<Dependencies Name="Release">
+			<Dependency Project="libZaeUtil/libZaeUtil.vpj"/>
+		</Dependencies>
+	</Config>
+	<CustomFolders>
+		<Folder
+			Name="Source Files"
+			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
+		</Folder>
+		<Folder
+			Name="Header Files"
+			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
+		</Folder>
+		<Folder
+			Name="Resource Files"
+			Filters="*.ico;*.cur;*.dlg"/>
+		<Folder
+			Name="Bitmaps"
+			Filters="*.bmp"/>
+		<Folder
+			Name="Other Files"
+			Filters="">
+		</Folder>
+	</CustomFolders>
+	<Files AutoFolders="DirectoryView">
+		<Folder Name="../../../pidev">
+			<Folder Name="pitools">
+				<Folder Name="arm-bcm2708">
+					<Folder Name="gcc-linaro-arm-linux-gnueabihf-raspbian-x64">
+						<Folder Name="arm-linux-gnueabihf">
+							<Folder Name="include">
+								<Folder Name="json-c">
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/arraylist.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/bits.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/debug.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_c_version.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_config.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_inttypes.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_object.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_object_iterator.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_object_private.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_tokener.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/json_util.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/linkhash.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/printbuf.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/json-c/random_seed.h"/>
+								</Folder>
+								<Folder Name="readline">
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/readline/history.h"/>
+									<F N="../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/readline/readline.h"/>
+								</Folder>
+							</Folder>
+						</Folder>
+					</Folder>
+				</Folder>
+			</Folder>
+		</Folder>
+		<Folder Name="../z-way-devel">
+			<Folder Name="include">
+				<F N="../z-way-devel/include/CommandClassesPublic.h"/>
+				<F N="../z-way-devel/include/FunctionClassesPublic.h"/>
+				<F N="../z-way-devel/include/ZByteOperations.h"/>
+				<F N="../z-way-devel/include/ZData.h"/>
+				<F N="../z-way-devel/include/ZDataCallbackList.h"/>
+				<F N="../z-way-devel/include/ZDataDefs.h"/>
+				<F N="../z-way-devel/include/ZDataExt.h"/>
+				<F N="../z-way-devel/include/ZDataList.h"/>
+				<F N="../z-way-devel/include/ZDefsPublic.h"/>
+				<F N="../z-way-devel/include/ZErrors.h"/>
+				<F N="../z-way-devel/include/ZLog.h"/>
+				<F N="../z-way-devel/include/ZLogging.h"/>
+				<F N="../z-way-devel/include/ZMalloc.h"/>
+				<F N="../z-way-devel/include/ZMutex.h"/>
+				<F N="../z-way-devel/include/ZPlatform.h"/>
+				<F N="../z-way-devel/include/ZRelease.h"/>
+				<F N="../z-way-devel/include/ZSerialIO.h"/>
+				<F N="../z-way-devel/include/ZWayLib.h"/>
+				<F N="../z-way-devel/include/ZXmlLookup.h"/>
+			</Folder>
+		</Folder>
+		<F N="callback_descriptor.json"/>
+		<F N="cli_commands.c"/>
+		<F N="cli_commands.h"/>
+		<F N="cli_resolver.c"/>
+		<F N="cli_resolver.h"/>
+		<F N="cli_scene.c"/>
+		<F N="cli_scene.h"/>
+		<F N="cli_sensor.c"/>
+		<F N="cli_sensor.h"/>
+		<F N="cli_service.c"/>
+		<F N="cli_service.h"/>
+		<F N="command_class.c"/>
+		<F N="command_class.h"/>
+		<F N="command_parser.c"/>
+		<F N="command_parser.h"/>
+		<F N="data_cache.c"/>
+		<F N="data_cache.h"/>
+		<F N="data_callbacks.c"/>
+		<F N="data_callbacks.h"/>
+		<F N="device_callbacks.c"/>
+		<F N="device_callbacks.h"/>
+		<F N="event_manager.c"/>
+		<F N="event_manager.h"/>
+		<F
+			N="Makefile"
+			Type="Makefile"/>
+		<F N="operator.c"/>
+		<F N="operator.h"/>
+		<F N="parser_dfa.c"/>
+		<F N="parser_dfa.h"/>
+		<F N="resolver.c"/>
+		<F N="resolver.h"/>
+		<F N="resolver.json"/>
+		<F N="scene.c"/>
+		<F N="scene.h"/>
+		<F N="scene_action.c"/>
+		<F N="scene_action.h"/>
+		<F N="scene_manager.c"/>
+		<F N="scene_manager.h"/>
+		<F N="script_action_handler.c"/>
+		<F N="script_action_handler.h"/>
+		<F N="service_manager.c"/>
+		<F N="service_manager.h"/>
+		<F N="variant_types.h"/>
+		<F N="vty.c"/>
+		<F N="vty.h"/>
+		<F N="zwave-automation-engine.c"/>
+	</Files>
+</Project>
