@@ -3,11 +3,13 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <logger.h>
 #include "timer_cli.h"
 #include "timer_config.h"
 
 // Config variables
 bool timer_enabled;
+variant_stack_t* timer_list;
 
 // Service methods
 variant_t*  timer_start(service_method_t* method, va_list args);
@@ -17,31 +19,20 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args);
 void alarm_expire_handler(int sig);
 void timer_delete(void* arg);
 
-static int DT_TIMER = DT_USER+1;
-
-static variant_stack_t*    timer_list;
-
-typedef struct timer_info_t
-{
-    char*       name;
-    bool        singleshot;
-    uint32_t    timeout;
-    uint32_t    ticks_left;
-} timer_info_t;
+static int DT_TIMER;
 
 void service_create(service_t** service, int service_id)
 {
-    SERVICE_INIT(service, Timer, "Provides timer services with Start and Stop methods");
-    SERVICE_ADD_METHOD(service, Start, timer_start, 2, "Name (string), Timeout in seconds (int)"); // Timer.Start(<Name>, <Secs>)
-    SERVICE_ADD_METHOD(service, Stop, timer_stop, 1, "Name (string)");   // Timer.Stop(<Name>)
-
-    SERVICE_ADD_METHOD(service, StartInterval, timer_start_interval, 2, "Name (string), Timeout in seconds (int)"); // Timer.StartInterval(<Name>, <Secs>)
-    SERVICE_ADD_METHOD(service, StopInterval, timer_stop, 1, "Name (string)");   // Timer.StopInterval(<Name>)
-
-
-    (*service)->get_config_callback = timer_cli_get_config;
+    SERVICE_INIT(Timer, "Provides timer services with Start and Stop methods");
+    SERVICE_ADD_METHOD(Start, timer_start, 2, "Timer name (string), Timeout in seconds (int)"); // Timer.Start(<Name>, <Secs>)
+    SERVICE_ADD_METHOD(Stop, timer_stop, 1, "Timer name (string)");   // Timer.Stop(<Name>)
+    SERVICE_ADD_METHOD(StartInterval, timer_start_interval, 2, "Timer name (string), Interval period in seconds (int)"); // Timer.StartInterval(<Name>, <Secs>)
+    SERVICE_ADD_METHOD(StopInterval, timer_stop, 1, "Timer name (string)");   // Timer.StopInterval(<Name>)
 
     timer_list = stack_create();
+    self = *service;
+    DT_TIMER = service_id;
+    (*service)->get_config_callback = timer_cli_get_config;
 
     // Default config values
     timer_enabled = true;
@@ -75,13 +66,22 @@ variant_t*  timer_start(service_method_t* method, va_list args)
         variant_t* name_variant = va_arg(args, variant_t*);
         variant_t* timeout_variant = va_arg(args, variant_t*);
     
-        timer->name = strdup(variant_get_string(name_variant));
-        timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
-        timer->singleshot = true;
-    
-        stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete));
-    
-        return variant_create_bool(true);
+        if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
+        {
+            timer->name = strdup(variant_get_string(name_variant));
+            timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
+            timer->singleshot = true;
+        
+            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete));
+        
+            return variant_create_bool(true);
+        }
+        else
+        {
+            LOG_ERROR("Failed to create timer");
+            free(timer);
+            return variant_create_bool(false);
+        }
     }
     else
     {
@@ -116,13 +116,22 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
         variant_t* name_variant = va_arg(args, variant_t*);
         variant_t* timeout_variant = va_arg(args, variant_t*);
     
-        timer->name = strdup(variant_get_string(name_variant));
-        timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
-        timer->singleshot = false;
-    
-        stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete));
-    
-        return variant_create_bool(true);
+        if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
+        {
+            timer->name = strdup(variant_get_string(name_variant));
+            timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
+            timer->singleshot = false;
+        
+            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete));
+        
+            return variant_create_bool(true);
+        }
+        else
+        {
+            LOG_ERROR("Failed to create interval");
+            free(timer);
+            return variant_create_bool(false);
+        }
     }
     else
     {

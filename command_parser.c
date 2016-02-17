@@ -587,6 +587,10 @@ variant_t*      command_parser_execute_expression(variant_stack_t* compiled_expr
     {
         result = stack_pop_front(work_stack);
     }
+    else
+    {
+        LOG_ERROR("Error executing expression");
+    }
 
     stack_free(work_stack);
     return result;

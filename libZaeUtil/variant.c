@@ -39,7 +39,7 @@ bool variant_compare_int(const variant_t* v, const variant_t* other)
 
 variant_t*  variant_create(VariantDataType type, void* data)
 {
-    variant_t* new_variant = (variant_t*)malloc(sizeof(variant_t));
+    variant_t* new_variant = (variant_t*)calloc(1, sizeof(variant_t));
     new_variant->type = type;
     new_variant->delete_cb = NULL;
     new_variant->compare_cb = NULL;

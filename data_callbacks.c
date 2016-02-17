@@ -130,8 +130,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
         if(time_msec >  event_data->last_update_time + 100)
         {
             event_data->last_update_time = time_msec;
-            variant_t* event_source = variant_create_ptr(DT_DEV_EVENT_DATA, event_data, variant_delete_none);
-            event_t* event = event_create(event_source);
+            event_t* event = event_create(DT_DEV_EVENT, variant_create_ptr(DT_DEV_EVENT_DATA, event_data, variant_delete_none));
             event_post(event);
         }
     }

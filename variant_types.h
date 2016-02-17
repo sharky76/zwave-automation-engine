@@ -5,6 +5,7 @@
 typedef enum 
 {
     DT_DEV_EVENT_DATA = DT_USER+1,
+    DT_DEV_EVENT,
     DT_DEV_RECORD,
     DT_SERVICE,
     DT_DATA_ENTRY_TYPE,

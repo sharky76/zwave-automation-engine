@@ -158,7 +158,11 @@ void scene_action_exec_command(action_t* action)
 {
     bool isOk;
     variant_stack_t* compiled = command_parser_compile_expression(action->path, &isOk);
-    command_parser_execute_expression(compiled);
+
+    if(isOk)
+    {
+        command_parser_execute_expression(compiled);
+    }
 }
 
 // Fork and exec provided script

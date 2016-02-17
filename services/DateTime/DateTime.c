@@ -10,9 +10,9 @@ variant_t*  datetime_get_timestamp(service_method_t* method, va_list args);
 
 void    service_create(service_t** service, int service_id)
 {
-    SERVICE_INIT(service, DateTime, "Provides date/time display")
-    SERVICE_ADD_METHOD(service, GetTimeString, datetime_get_time_string, 0, "Returns date formatted as string")
-    SERVICE_ADD_METHOD(service, GetTimeStamp, datetime_get_timestamp, 0, "Returns date as UNIX timestamp")
+    SERVICE_INIT(DateTime, "Provides date/time display")
+    SERVICE_ADD_METHOD(GetTimeString, datetime_get_time_string, 0, "Returns date formatted as string")
+    SERVICE_ADD_METHOD(GetTimeStamp, datetime_get_timestamp, 0, "Returns date as UNIX timestamp")
 
     (*service)->get_config_callback = datetime_cli_get_config;
 
