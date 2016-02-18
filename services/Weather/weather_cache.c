@@ -111,62 +111,6 @@ void    weather_cache_refresh()
     curl_global_cleanup();
 }
 
-
-/*
-{
-   "coord": {
-     "lon": -87.96,
-     "lat": 42.15
-   },
-   "weather": [
-     {
-       "id": 500,
-       "main": "Rain",
-       "description": "light rain",
-       "icon": "10d"
-     },
-     {
-       "id": 721,
-       "main": "Haze",
-       "description": "haze",
-       "icon": "50d"
-     }
-   ],
-   "base": "stations",
-   "main": {
-     "temp": 35.29,
-     "pressure": 1025,
-     "humidity": 74,
-     "temp_min": 32,
-     "temp_max": 37.4
-   },
-   "visibility": 11265,
-   "wind": {
-     "speed": 24.16,
-     "deg": 160,
-     "gust": 12.9
-   },
-   "rain": {
-     "1h": 0.25
-   },
-   "clouds": {
-     "all": 1
-   },
-   "dt": 1455821414,
-   "sys": {
-     "type": 1,
-     "id": 1007,
-     "message": 0.0359,
-     "country": "US",
-     "sunrise": 1455799398,
-     "sunset": 1455838124
-   },
-   "id": 4885955,
-   "name": "Buffalo Grove",
-   "cod": 200
- }
-
-*/
 void    weather_cache_parse_response(struct json_object* weather_response_obj)
 {
     //printf("jobj from str:\n---\n%s\n---\n", json_object_to_json_string_ext(weather_response_obj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
