@@ -10,6 +10,7 @@
 // Config variables
 bool timer_enabled;
 variant_stack_t* timer_list;
+int DT_TIMER;
 
 // Service methods
 variant_t*  timer_start(service_method_t* method, va_list args);
@@ -17,9 +18,6 @@ variant_t*  timer_stop(service_method_t* method, va_list args);
 variant_t*  timer_start_interval(service_method_t* method, va_list args);
 
 void alarm_expire_handler(int sig);
-void timer_delete(void* arg);
-
-static int DT_TIMER;
 
 void service_create(service_t** service, int service_id)
 {

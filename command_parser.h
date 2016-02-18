@@ -36,7 +36,9 @@
 #include "variant.h"
 #include "variant_types.h"
 
+
 #define MAX_COMMAND_ARGUMENTS   3
+#define MAX_METHOD_LEN          32
 
 typedef enum OperandType_e
 {
@@ -44,24 +46,15 @@ typedef enum OperandType_e
     RESERVED_WORD
 } OperandType;
 
-/*typedef enum OperatorType_e
-{
-    FUNCTION,
-    LEFT_PARETHESIS,
-    RIGHT_PARETHESIS,
-    LESS,
-    MORE,
-    EQUAL,
-    AND,
-    OR,
-} OperatorType;*/
+
+
 
 typedef struct function_operator_data_st
 {
-    const device_record_t*  device_record;
-    ZWBYTE            instance_id;
+    device_record_t*  device_record;
+    //ZWBYTE            instance_id;
     command_class_t*  command_class;
-    CommandMethod     command_method;
+    char              command_method[MAX_METHOD_LEN];
 } function_operator_data_t;
 
 typedef struct service_method_operator_data_t

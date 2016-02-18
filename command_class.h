@@ -4,36 +4,32 @@
 // This is the command class table 
 #include <ZWayLib.h>
 #include "variant.h"
+#include "resolver.h"
 
 #define MAX_COMMAND_CLASSES     256
 #define MAX_COMMAND_NAME_LEN    32
 
-typedef enum CommandMethod
+typedef struct command_method_t
 {
-    M_GET,
-    M_SET,
-} CommandMethod;
+    char* name;
+    int   nargs;
+    char* help;
+} command_method_t;
 
 typedef struct command_class_st
 {
     ZWBYTE  command_id;
-    const char command_name[MAX_COMMAND_NAME_LEN];
+    const char* command_name;
 
-    CommandMethod  supported_method_list[2];
+    command_method_t  supported_method_list[10];
 
-    int  get_args;
-    int  set_args;
-
-    variant_t*   (*command_impl)(CommandMethod method, ZWBYTE node_id, ZWBYTE instance_id, va_list);
+    variant_t*   (*command_impl)(const char*, device_record_t*, va_list);
 
 } command_class_t;
 
 void                init_command_classes();
 command_class_t*    get_command_class_by_id(ZWBYTE command_id);
 command_class_t*    get_command_class_by_name(const char* command_name);
-int                 is_command_valid(const char* command);
-
-variant_t*   command_class_eval_basic(CommandMethod method, ZWBYTE node_id, ZWBYTE instance_id, va_list args);
-variant_t*   command_class_eval_binarysensor(CommandMethod method, ZWBYTE node_id, ZWBYTE instance_id, va_list args);
+void                command_class_for_each(void (*visitor)(command_class_t*, void* arg), void* arg);
 
 #endif // COMMAND_CLASS_H

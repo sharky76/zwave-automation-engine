@@ -12,6 +12,7 @@
 #include "variant_types.h"
 #include "resolver.h"
 #include "data_cache.h"
+#include "command_class.h"
 //#include "scene_manager.h"
 #include "cli_resolver.h"
 #include "cli_scene.h"
@@ -29,7 +30,7 @@ bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params);
 bool    cmd_scene_enable(vty_t* vty, variant_stack_t* params);
 bool    cmd_scene_disable(vty_t* vty, variant_stack_t* params);
 bool    cmd_scene_execute(vty_t* vty, variant_stack_t* params);
-
+bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
 
 
 bool    cmd_help(vty_t* vty, variant_stack_t* params);
@@ -40,6 +41,8 @@ bool    cmd_close_session(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params);
 
+void    show_command_class_helper(command_class_t* command_class, void* arg);
+
 cli_command_t root_command_list[] = {
     {"controller inclusion start", cmd_controller_inclusion_mode, "Start inclusion mode"},
     {"controller inclusion stop", cmd_controller_inclusion_mode, "Stop inclusion mode"},
@@ -49,6 +52,7 @@ cli_command_t root_command_list[] = {
     {"controller factory-reset",     cmd_controller_factory_reset,          "Reset zwave controller to factory defaults"},
     {"controller remove-failed node-id INT", cmd_controller_remove_failed_node, "Remove failed node from the controller"},
     {"show controller queue",       cmd_show_controller_queue,   "Display the contents of controller job queue"},
+    {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
     {"scene execute WORD",        cmd_scene_execute,             "Execute scene"}, 
     {"help",                 cmd_help,                      "(module) Display help for module"},
     {"prompt LINE",          cmd_set_prompt,                "Set new prompt"},
@@ -752,6 +756,12 @@ bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)
     zway_queue_inspect(zway, vty->data->desc.io_pair[1]);
 }
 
+bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params)
+{
+    vty_write(vty, "%-15s%-15s%s\n", "Command Id", "Name", "Methods(Args)");
+    command_class_for_each(show_command_class_helper, vty);
+}
+
 bool    cmd_scene_enable(vty_t* vty, variant_stack_t* params)
 {
 }
@@ -879,4 +889,20 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
     vty_free(file_vty);
 }
 
+void    show_command_class_helper(command_class_t* command_class, void* arg)
+{
+    vty_t* vty = (vty_t*)arg;
 
+
+    vty_write(vty, "%d (0x%x)%-5s %-15s ", command_class->command_id, command_class->command_id, "", command_class->command_name);
+
+    command_method_t* supported_methods = command_class->supported_method_list;
+
+    while(supported_methods->name)
+    {
+        vty_write(vty, "%s(%d) [%s] ", supported_methods->name, supported_methods->nargs, supported_methods->help);
+        supported_methods++;
+    }
+
+    vty_write(vty, "\n");
+}

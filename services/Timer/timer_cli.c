@@ -13,6 +13,7 @@ bool    cmd_timer_del_interval(vty_t* vty, variant_stack_t* params);
 
 char** config_list = NULL;
 
+variant_stack_t* timer_list_static;
 cli_node_t* timer_node;
 
 cli_command_t    timer_command_list[] = {
@@ -28,6 +29,7 @@ cli_command_t    timer_command_list[] = {
 void    timer_cli_init(cli_node_t* parent_node)
 {
     cli_install_node(&timer_node, parent_node, timer_command_list, "Timer", "service-timer");
+    timer_list_static = stack_create();
 }
 
 char**  timer_cli_get_config()
@@ -56,11 +58,11 @@ char**  timer_cli_get_config()
     }
 
     int i = 1;
-    stack_for_each(timer_list, timer_variant)
+    stack_for_each(timer_list_static, timer_variant)
     {
         timer_info_t* timer_info = (timer_info_t*)variant_get_ptr(timer_variant);
         char timer_config_buf[512] = {0};
-        sprintf(timer_config_buf, "%s %d scene %s\n", 
+        sprintf(timer_config_buf, "%s %d scene %s", 
                 (timer_info->singleshot)? "timeout" : "interval",
                 timer_info->timeout,
                 timer_info->name);
@@ -83,6 +85,13 @@ bool    cmd_timer_set_timeout(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
     cli_assemble_line(params, 3, scene_name);
+
+    timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
+    timer->timeout = variant_get_int(stack_peek_at(params, 1));
+    timer->name = strdup(scene_name);
+    timer->singleshot = true;
+    stack_push_back(timer_list_static, variant_create_ptr(DT_TIMER, timer, &timer_delete));
+    
     service_call_method(self, "Start", variant_create_string(scene_name), stack_peek_at(params, 1));
 }
 
@@ -90,6 +99,13 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
     cli_assemble_line(params, 3, scene_name);
+
+    timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
+    timer->timeout = variant_get_int(stack_peek_at(params, 1));
+    timer->name = strdup(scene_name);
+    timer->singleshot = false;
+    stack_push_back(timer_list_static, variant_create_ptr(DT_TIMER, timer, &timer_delete));
+
     service_call_method(self, "StartInterval", variant_create_string(scene_name), stack_peek_at(params, 1));
 }
 
@@ -97,6 +113,18 @@ bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
     cli_assemble_line(params, 3, scene_name);
+
+    stack_for_each(timer_list_static, timer_variant)
+    {
+        timer_info_t* timer = (timer_info_t*)variant_get_ptr(timer_variant);
+        if(strcmp(timer->name, scene_name) == 0 && timer->singleshot == true)
+        {
+            stack_remove(timer_list_static, timer_variant);
+            variant_free(timer_variant);
+            break;
+        }
+    }
+
     service_call_method(self, "Stop", variant_create_string(scene_name));
 }
 
@@ -104,6 +132,18 @@ bool    cmd_timer_del_interval(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
     cli_assemble_line(params, 3, scene_name);
+
+    stack_for_each(timer_list_static, timer_variant)
+    {
+        timer_info_t* timer = (timer_info_t*)variant_get_ptr(timer_variant);
+        if(strcmp(timer->name, scene_name) == 0 && timer->singleshot == false)
+        {
+            stack_remove(timer_list_static, timer_variant);
+            variant_free(timer_variant);
+            break;
+        }
+    }
+
     service_call_method(self, "Stop", variant_create_string(scene_name));
 }
 

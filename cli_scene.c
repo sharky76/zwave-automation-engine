@@ -30,6 +30,9 @@ bool cmd_delete_scene_action_scene(vty_t* vty, variant_stack_t* params);
 bool cmd_delete_scene_action_command(vty_t* vty, variant_stack_t* params);
 bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params);
 
+bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params);
+bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params);
+
 void    show_scene_helper(scene_t* scene, void* arg);
 void    show_scene_action_helper(action_t* action, void* arg);
 void    show_scene_action_env_helper(env_t* env, void* arg);
@@ -51,6 +54,8 @@ cli_command_t   scene_command_list[] = {
     {"no action scene LINE",    cmd_delete_scene_action_scene,    "Delete scene action scene"},
     {"action command LINE",     cmd_config_scene_action_command,    "Configure scene action command"},
     {"no action command LINE",  cmd_delete_scene_action_command,    "Delete scene action command"},
+    {"show action",             cmd_scene_show_action,              "Show scene actions"},
+    {"show condition",          cmd_scene_show_condition,           "Show scene condition"},
     //{"end",                     cmd_exit_scene_node,             "Exit scene configuration"},
     {NULL,                          NULL,                   NULL}
 };
@@ -231,6 +236,18 @@ bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params)
 {
     action_t* action = (action_t*)scene_action_node->context;
     scene_action_del_environment(action, variant_get_string(stack_peek_at(params, 2)));
+}
+
+bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params)
+{
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    scene_manager_for_each_action(scene, show_scene_action_helper, vty);
+}
+
+bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params)
+{
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    vty_write(vty, "condition %s\n", scene->condition);
 }
 
 void    show_scene_helper(scene_t* scene, void* arg)

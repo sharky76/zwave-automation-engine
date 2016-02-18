@@ -457,7 +457,7 @@ void process_string_operand(const char* ch, variant_stack_t* operand_queue)
 
 void process_device_function_operator(const char* ch, variant_stack_t* operator_stack)
 {
-    function_operator_data_t* op_data = (function_operator_data_t*)malloc(sizeof(function_operator_data_t));
+    function_operator_data_t* op_data = (function_operator_data_t*)calloc(1, sizeof(function_operator_data_t));
     operator_t* function_operator = operator_create(OP_DEVICE_FUNCTION, op_data);
 
     char* function_string = (char*)ch;
@@ -473,26 +473,28 @@ void process_device_function_operator(const char* ch, variant_stack_t* operator_
                 device_record_t*    record = resolver_get_device_record(tok);
                 if(NULL != record)
                 {
-                    ZWBYTE node_id = record->nodeId;
+                    //ZWBYTE node_id = record->nodeId;
                     op_data->device_record = record;
-                    op_data->instance_id = record->instanceId;
+                    //op_data->instance_id = record->instanceId;
                     op_data->command_class = get_command_class_by_id(record->commandId);
                 }
                 else 
                 {
                     // Error!
+                    LOG_ERROR("Unresolved device %s", tok);
                 }
             }
             break;
         case 1: // Command and arguments
-            if(strstr(tok, "Get") == tok)
+            strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
+            /*if(strstr(tok, "Get") == tok)
             {
                 op_data->command_method = M_GET;
             }
             else if(strstr(tok, "Set") == tok)
             {
                 op_data->command_method = M_SET;
-            }
+            }*/
             break;
         }
 
@@ -598,13 +600,18 @@ variant_t*      command_parser_execute_expression(variant_stack_t* compiled_expr
 
 bool eval(variant_stack_t* work_stack, variant_t* op)
 {
-    bool retVal = false;
+    bool retVal = true;
     operator_t* operator = (operator_t*)variant_get_ptr(op);
 
     int arg_count = operator->argument_count(operator->operator_data);
-    variant_t* result;
+    variant_t* result = NULL;
 
-    if(arg_count == 0)
+    if(arg_count > work_stack->count)
+    {
+        LOG_ERROR("Parameter mismatch: required %d, given %d", arg_count, work_stack->count);
+        retVal = false;
+    }
+    else if(arg_count == 0)
     {
         result = operator->eval_callback(operator);
     }
@@ -635,11 +642,14 @@ bool eval(variant_stack_t* work_stack, variant_t* op)
         variant_free(arg2);
         variant_free(arg3);
     }
+    else
+    {
+        retVal = false;
+    }
 
     if(NULL != result)
     {
         stack_push_front(work_stack, result);
-        retVal = true;
     }
 
     return retVal;

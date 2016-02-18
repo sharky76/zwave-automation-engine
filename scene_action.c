@@ -49,6 +49,16 @@ action_t*  scene_action_create(ActionType type, const char* record)
 
 void       scene_action_add_environment(action_t* action, const char* name, const char* value)
 {
+    stack_for_each(action->environment, env_variant)
+    {
+        env_t* env = (env_t*)variant_get_ptr(env_variant);
+        if(strcmp(env->name, name) == 0)
+        {
+            stack_remove(action->environment, env_variant);
+            break;
+        }
+    }
+
     env_t* new_env = (env_t*)malloc(sizeof(env_t));
     new_env->name = strdup(name);
     new_env->value = strdup(value);

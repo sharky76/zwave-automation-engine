@@ -4,6 +4,7 @@
 #include "stdarg.h"
 #include <service.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 variant_t*   op_equal(operator_t* op, ...);
 variant_t*   op_less(operator_t* op, ...);
@@ -78,7 +79,7 @@ variant_t*   op_less(operator_t* op, ...)
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
 
-    return variant_create_bool(variant_compare(arg2, arg1) == -1);
+    return variant_create_bool((variant_compare(arg1, arg2) < 0));
 }
 
 variant_t*   op_more(operator_t* op, ...)
@@ -89,7 +90,7 @@ variant_t*   op_more(operator_t* op, ...)
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
 
-    return variant_create_bool(variant_compare(arg2, arg1) == 1);
+    return variant_create_bool(variant_compare(arg1, arg2) > 0);
 }
 
 variant_t*   op_and(operator_t* op, ...)
@@ -125,7 +126,7 @@ variant_t*   op_device_function(operator_t* op, ...)
     va_start(args, op);
 
     //return FUNC_CALL(op_data, args);
-    return op_data->command_class->command_impl(op_data->command_method, op_data->device_record->nodeId, op_data->instance_id, args);
+    return op_data->command_class->command_impl((const char*)op_data->command_method, op_data->device_record, args);
 }
 
 variant_t*   op_service_method(operator_t* op, ...)
@@ -152,15 +153,17 @@ int function_argument_count(void* operator_data)
 {
     function_operator_data_t* op_data = (function_operator_data_t*)operator_data;
 
-    switch(op_data->command_method)
+    command_method_t* supported_methods = op_data->command_class->supported_method_list;
+
+    while(supported_methods->name)
     {
-    case M_GET:
-        return op_data->command_class->get_args;
-    case M_SET:
-        return op_data->command_class->set_args;
-    default:
-        return 0;
+        if(strcmp(supported_methods->name, op_data->command_method) == 0)
+        {
+            return supported_methods->nargs;
+        }
+        supported_methods++;
     }
+    return 0;
 }
 
 int service_method_argument_count(void* operator_data)

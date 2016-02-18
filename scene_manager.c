@@ -80,7 +80,7 @@ void scene_manager_free()
     stack_free(scene_list);
 }
 
-#define scene_manager_foreach_scene(_source, _scene)    \
+#define scene_manager_foreach_source(_source, _scene)    \
 scene_t* _scene;                                        \
 stack_item_t* head_item = scene_list->head;             \
 for(int i = 0; i < scene_list->count; i++)              \
@@ -89,17 +89,41 @@ for(int i = 0; i < scene_list->count; i++)              \
     head_item = head_item->next;                        \
     if(strcmp(_scene->source, _source) == 0)               
 
+#define scene_manager_foreach_scene(_scene_name, _scene)    \
+scene_t* _scene;                                        \
+stack_item_t* head_item = scene_list->head;             \
+for(int i = 0; i < scene_list->count; i++)              \
+{                                                       \
+    _scene = variant_get_ptr(head_item->data);          \
+    head_item = head_item->next;                        \
+    if(strcmp(_scene->name, _scene_name) == 0)               
+
+
 void scene_manager_on_event(event_t* event)
 {
-    const char* scene_name = NULL;
     switch(event->source->type)
     {
     case DT_SERVICE_EVENT_DATA:
-        scene_name = variant_get_string(event->source);
-        LOG_ADVANCED("Scene event from service: %s", scene_name);
+        {
+            const char* scene_name = variant_get_string(event->source);
+            LOG_ADVANCED("Scene event from service: %s", scene_name);
+            if(NULL != scene_name)
+            {
+                scene_manager_foreach_scene(scene_name, scene)
+                {
+                    LOG_DEBUG("Matching scene found: %s", scene->name);
+                    scene_exec(scene);
+                }}
+            }
+            else
+            {
+                LOG_DEBUG("Scene not registered");
+            }
+        }
         break;
     case DT_DEV_EVENT_DATA:
         {
+            const char* scene_source = NULL;
             device_event_data_t* event_data = (device_event_data_t*)variant_get_ptr(event->source);
             LOG_DEBUG("Scene event from device: %s with command: 0x%x", event_data->device_name, event_data->command_id);
     
@@ -108,21 +132,21 @@ void scene_manager_on_event(event_t* event)
             {
                 LOG_ADVANCED("Scene event from %s", event_data->device_name);
             }
-            scene_name = event_data->device_name;
-        }
-    }
+            scene_source = event_data->device_name;
 
-    if(NULL != scene_name)
-    {
-        scene_manager_foreach_scene(scene_name, scene)
-        {
-            LOG_DEBUG("Matching scene found: %s", scene->name);
-            scene_exec(scene);
-        }}
-    }
-    else
-    {
-        LOG_DEBUG("Scene not registered");
+            if(NULL != scene_source)
+            {
+                scene_manager_foreach_source(scene_source, scene)
+                {
+                    LOG_DEBUG("Matching scene found: %s", scene->name);
+                    scene_exec(scene);
+                }}
+            }
+            else
+            {
+                LOG_DEBUG("Scene not registered");
+            }
+        }
     }
 }
 

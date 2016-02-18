@@ -22,9 +22,9 @@ void cli_print_data_holder(vty_t* vty, ZDataHolder dh);
 cli_command_t   sensor_root_list[] = {
     {"show sensor",                             cmd_sensor_show_nodes,     "List sensors"},
     {"show sensor brief",                       cmd_sensor_show_node_info, "Show sensor nodes information"},
-    {"show sensor data name WORD",              cmd_sensor_info,           "Display sensor data"},
-    {"show sensor data node-id INT",            cmd_sensor_info_noname,           "Display sensor data"},
-    {"show sensor data node-id INT instance INT command-class INT",          cmd_sensor_info_noname,           "Display sensor data"},
+    {"show sensor name WORD",              cmd_sensor_info,           "Display sensor data"},
+    {"show sensor node-id INT",            cmd_sensor_info_noname,           "Display sensor data"},
+    {"show sensor node-id INT instance INT command-class INT",          cmd_sensor_info_noname,           "Display sensor data"},
     {"show sensor guessed-info node-id INT",    cmd_sensor_guessed_info,   "Display guessed sensor information"},
     {"sensor interview node-id INT",            cmd_sensor_force_interview, "Force interview for a sensor"},
     {"sensor interview node-id INT instance INT command-class INT", cmd_sensor_command_interview, "Run a command interview"},
@@ -37,7 +37,7 @@ void    cli_sensor_init(cli_node_t* parent_node)
 
 bool    cmd_sensor_info(vty_t* vty, variant_stack_t* params)
 {
-    const char* device_name = variant_get_string(stack_peek_at(params, 4));
+    const char* device_name = variant_get_string(stack_peek_at(params, 3));
 
     device_record_t* record = resolver_get_device_record(device_name);
 
@@ -69,17 +69,17 @@ bool    cmd_sensor_info_noname(vty_t* vty, variant_stack_t* params)
 {
     vty_write(vty, "%-65s%-25s\n", "Path", "Value");
     //ZWBYTE   node_id = resolver_nodeId_from_name(vty->resolver, device_name);
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 3));
     zdata_acquire_lock(ZDataRoot(zway));
     ZDataHolder dh = zway_find_device_data(zway, node_id, ".");
     cli_print_data_holder(vty, dh);
 
-    if(params->count > 5)
+    if(params->count > 4)
     {
-        dh = zway_find_device_instance_data(zway,node_id, variant_get_int(stack_peek_at(params, 6)), ".");
+        dh = zway_find_device_instance_data(zway,node_id, variant_get_int(stack_peek_at(params, 5)), ".");
         cli_print_data_holder(vty, dh);
     
-        dh = zway_find_device_instance_cc_data(zway,node_id,variant_get_int(stack_peek_at(params, 6)), variant_get_int(stack_peek_at(params, 8)), ".");
+        dh = zway_find_device_instance_cc_data(zway,node_id,variant_get_int(stack_peek_at(params, 5)), variant_get_int(stack_peek_at(params, 7)), ".");
         cli_print_data_holder(vty, dh);
     }
 

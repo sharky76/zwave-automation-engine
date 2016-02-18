@@ -1,16 +1,26 @@
 #include "command_class.h"
 #include "data_callbacks.h"
+#include <logger.h>
 
 extern ZWay zway;
 
+variant_t*   command_class_eval_basic(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_binarysensor(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_battery(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_alarm(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t* record, va_list args);
+
 static command_class_t command_class_table[] = {
-    {0x20, "Basic",        {M_GET, M_SET}, 1,   1,  &command_class_eval_basic},
-    {0x30, "SensorBinary", {M_GET},        1,   0,  &command_class_eval_binarysensor}
+    {0x20, "Basic",        {"Get", 0, "level", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
+    {0x30, "SensorBinary", {"Get", 1, "1.level", NULL, 0, NULL},                 &command_class_eval_binarysensor},
+    {0x80, "Battery",      {"Get", 1, "last", NULL, 0, NULL},                 &command_class_eval_battery},
+    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>"},                &command_class_eval_alarm},
+    {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False"},                &command_class_eval_binaryswitch},
+
 
     /* other standard command classes */
+    {0, NULL,   {NULL, 0, NULL},   NULL}
 };
-
-static char* command_list[5] = {"Set", "Get", 0};
 
 command_class_t*    get_command_class_by_id(ZWBYTE command_id)
 {
@@ -48,66 +58,155 @@ command_class_t*    get_command_class_by_name(const char* command_name)
     }
 }
 
-int is_command_valid(const char* command)
+void    command_class_for_each(void (*visitor)(command_class_t*, void*), void* arg)
 {
     int i = 0;
-    int retVal = FALSE;
+    command_class_t* command_class = &command_class_table[i++];
 
-    for(i = 0; i < sizeof(command_list) / sizeof(char*); i++)
+    while(command_class->command_id != 0)
     {
-        if(strcmp(command_list[i], command) == 0)
-        {
-            retVal = TRUE;
-        }
+        visitor(command_class, arg);
+        command_class = &command_class_table[i++];
     }
-
-    return retVal;
 }
 
-variant_t*   command_class_eval_basic(CommandMethod method, ZWBYTE node_id, ZWBYTE instance_id, va_list args)
+variant_t*  command_class_read_data(device_record_t* record, const char* path)
 {
+    variant_t* ret_val = NULL;
+    zdata_acquire_lock(ZDataRoot(zway));
+    ZDataHolder dh = zway_find_device_instance_cc_data(zway, record->nodeId, record->instanceId, record->commandId, path);
 
-    variant_t* arg1 = va_arg(args, variant_t*);
+    ZWDataType type;
+    zdata_get_type(dh, &type);
 
-    printf("Arg: %s\n", variant_get_string(arg1));
-
-    switch(method)
+    switch(type)
     {
-    case M_GET:
-        zway_cc_basic_get(zway, node_id, instance_id, NULL, NULL, NULL);
+    case Integer:
+        {
+            int int_val;
+            zdata_get_integer(dh, &int_val);
+            ret_val = variant_create_int32(DT_INT32, int_val);
+        }
         break;
-    case M_SET:
+    case String:
+        {
+            const char* string_val;
+            zdata_get_string(dh, &string_val);
+            ret_val = variant_create_string(strdup(string_val));
+        }
+        break;
+    case Boolean:
+        {
+            ZWBOOL bool_val;
+            zdata_get_boolean(dh, &bool_val);
+            ret_val = variant_create_bool((bool)bool_val);
+        }
         break;
     default:
         break;
-    }
 
-    return variant_create(DT_BOOL, (void*)0);
+    }
+    zdata_release_lock(ZDataRoot(zway));
+    return ret_val;
 }
 
-variant_t*   command_class_eval_binarysensor(CommandMethod method, ZWBYTE node_id, ZWBYTE instance_id, va_list args)
+variant_t*   command_class_eval_basic(const char* method, device_record_t* record, va_list args)
 {
-    variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* ret_val = NULL;
 
-    switch(method)
+    if(strcmp(method, "Get") == 0)
     {
-    case M_GET:
-    {
+        zway_cc_basic_get(zway, record->nodeId, record->instanceId, NULL, NULL, NULL);
         zdata_acquire_lock(ZDataRoot(zway));
-        ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, 0x30, variant_get_string(arg1));
-        ZWBOOL bool_val;
-        zdata_get_boolean(dh, &bool_val);
-        ret_val = variant_create_bool((bool)bool_val);
-        //printf("Found data for device %s: %d\n", event_data->device_name, bool_val);
+        ZDataHolder dh = zway_find_device_instance_data(zway, record->nodeId, record->instanceId, "level");
+        int int_val;
+        zdata_get_integer(dh, &int_val);
+        ret_val = variant_create_int32(DT_INT32, int_val);
         zdata_release_lock(ZDataRoot(zway));
     }
-        break;
-    case M_SET:
-        break;
-    default:
-        break;
+    else if(strcmp(method, "Set") == 0)
+    {
+        variant_t* arg1 = va_arg(args, variant_t*);
+        zway_cc_basic_set(zway, record->nodeId, record->instanceId, variant_get_byte(arg1), NULL, NULL, NULL);
     }
 
     return ret_val;
 }
+
+variant_t*   command_class_eval_binarysensor(const char* method, device_record_t* record, va_list args)
+{
+    
+    variant_t* ret_val = NULL;
+
+    if(strcmp(method, "Get") == 0)
+    {
+        variant_t* arg1 = va_arg(args, variant_t*);
+        /*zdata_acquire_lock(ZDataRoot(zway));
+        ZDataHolder dh = zway_find_device_instance_cc_data(zway, record->nodeId, record->instanceId, record->commandId, variant_get_string(arg1));
+        ZWBOOL bool_val;
+        zdata_get_boolean(dh, &bool_val);
+        ret_val = variant_create_bool((bool)bool_val);
+        zdata_release_lock(ZDataRoot(zway));
+        */
+        ret_val = command_class_read_data(record, variant_get_string(arg1));
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_battery(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    if(strcmp(method, "Get") == 0)
+    {
+        variant_t* arg1 = va_arg(args, variant_t*);
+        /*zdata_acquire_lock(ZDataRoot(zway));
+        ZDataHolder dh = zway_find_device_instance_cc_data(zway, record->nodeId, record->instanceId, record->commandId, "last");
+        int int_val;
+        zdata_get_integer(dh, &int_val);
+        ret_val = variant_create_int32(DT_INT32, int_val);
+        zdata_release_lock(ZDataRoot(zway));
+        */
+        ret_val = command_class_read_data(record, variant_get_string(arg1));
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_alarm(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    if(strcmp(method, "Get") == 0)
+    {
+        variant_t* arg1 = va_arg(args, variant_t*);
+        ret_val - command_class_read_data(record, variant_get_string(arg1));
+    }
+    else if(strcmp(method, "Set") == 0)
+    {
+        variant_t* alarm_type = va_arg(args, variant_t*);
+        variant_t* level = va_arg(args, variant_t*);
+        zway_cc_alarm_set(zway,record->nodeId, record->instanceId, variant_get_int(alarm_type), variant_get_int(level), NULL, NULL, NULL);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+    variant_t* arg1 = va_arg(args, variant_t*);
+
+    if(strcmp(method, "Get") == 0)
+    {
+        ret_val - command_class_read_data(record, variant_get_string(arg1));
+    }
+    else if(strcmp(method, "Set") == 0)
+    {
+        zway_cc_switch_binary_set(zway,record->nodeId, record->instanceId, variant_get_bool(arg1), NULL, NULL, NULL);
+    }
+
+    return ret_val;
+}
+

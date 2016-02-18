@@ -31,13 +31,15 @@ typedef struct variant_t
 
     union {
         void*           ptr_data;
+        char*           string_data;
         bool            bool_data;
+        int8_t          byte_data;
         int32_t         int_data;
         double          double_data;
     } storage;
 
     void    (*delete_cb)(void*);
-    bool    (*compare_cb)(const struct variant_t* v, const struct variant_t* other);
+    int     (*compare_cb)(const struct variant_t* v, const struct variant_t* other);
 } variant_t;
 
 variant_t*  variant_create(VariantDataType type, void* data);
@@ -45,6 +47,7 @@ void        variant_delete_default(void* ptr);
 void        variant_delete_variant(void* ptr);
 void        variant_delete_none(void* ptr);
 variant_t*  variant_create_int32(int type, int32_t data);
+variant_t*  variant_create_byte(int type, int8_t data);
 variant_t*  variant_create_bool(bool data);
 variant_t*  variant_create_ptr(int type, void* ptr, void (*delete_cb)(void* arg));
 variant_t*  variant_create_variant(int type, variant_t* variant);
@@ -54,8 +57,9 @@ void        variant_free(variant_t* variant);
 
 bool        variant_get_bool(variant_t* variant);
 int         variant_get_int(variant_t* variant);
+int8_t      variant_get_byte(variant_t* variant);
 float       variant_get_float(variant_t* variant);
-const char* variant_get_string(variant_t* variant);
+const char* variant_get_string(const variant_t* variant);
 void*       variant_get_ptr(variant_t* variant);
 variant_t*  variant_get_variant(variant_t* variant);
 bool        variant_is_null(variant_t* variant);

@@ -13,8 +13,8 @@ void    show_resolver_helper(device_record_t* record, void* arg);
 
 cli_command_t   resolver_root_list[] = {
     {"show resolver",          cmd_list_resolver,              "Show resolver configuration"},
-    {"resolver name WORD node-id INT instance INT command-class INT",      cmd_add_resolver_entry, "Add resolver entry"},
-    {"no resolver name WORD",   cmd_del_resolver_entry, "Delete resolver entry"},
+    {"resolver WORD node-id INT instance INT command-class INT",      cmd_add_resolver_entry, "Add resolver entry"},
+    {"no resolver WORD",   cmd_del_resolver_entry, "Delete resolver entry"},
     {NULL,                     NULL,                            NULL}
 };
 
@@ -33,19 +33,19 @@ void    cli_resolver_init(cli_node_t* parent_node)
 
 bool    cmd_add_resolver_entry(vty_t* vty, variant_stack_t* params)
 {
-    const char* device_name = variant_get_string(stack_peek_at(params, 2));
+    const char* device_name = variant_get_string(stack_peek_at(params, 1));
 
-    resolver_add_entry(variant_get_string(stack_peek_at(params, 2)),
-                       variant_get_int(stack_peek_at(params, 4)),
-                       variant_get_int(stack_peek_at(params, 6)),
-                       variant_get_int(stack_peek_at(params, 8)));
+    resolver_add_entry(variant_get_string(stack_peek_at(params, 1)),
+                       variant_get_int(stack_peek_at(params, 3)),
+                       variant_get_int(stack_peek_at(params, 5)),
+                       variant_get_int(stack_peek_at(params, 7)));
 
     return true;
 }
 
 bool    cmd_del_resolver_entry(vty_t* vty, variant_stack_t* params)
 {
-    resolver_remove_entry(variant_get_string(stack_peek_at(params, 3)));
+    resolver_remove_entry(variant_get_string(stack_peek_at(params, 2)));
 }
 
 bool    cmd_list_resolver(vty_t* vty, variant_stack_t* params)
@@ -56,5 +56,5 @@ bool    cmd_list_resolver(vty_t* vty, variant_stack_t* params)
 void    show_resolver_helper(device_record_t* record, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "resolver name %s node-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
+    vty_write(vty, "resolver %s node-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
 }

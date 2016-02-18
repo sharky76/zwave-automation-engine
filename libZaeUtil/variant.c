@@ -22,19 +22,39 @@ void    variant_delete_variant(void* ptr)
     variant_free(v);
 }
 
-bool variant_compare_bool(const variant_t* v, const variant_t* other)
+int variant_compare_bool(const variant_t* v, const variant_t* other)
 {
-    return v->storage.bool_data == other->storage.bool_data;
+    return !(v->storage.bool_data == other->storage.bool_data);
 }
 
-bool variant_compare_float(const variant_t* v, const variant_t* other)
+int variant_compare_float(const variant_t* v, const variant_t* other)
 {
-    return v->storage.double_data == other->storage.double_data;
+    return (v->storage.double_data < other->storage.double_data) ? -1 : 
+        (v->storage.double_data > other->storage.double_data);
 }
 
-bool variant_compare_int(const variant_t* v, const variant_t* other)
+int variant_compare_int(const variant_t* v, const variant_t* other)
 {
-    return v->storage.int_data == other->storage.int_data;
+    return (v->storage.int_data < other->storage.int_data)? -1 : 
+        (v->storage.int_data > other->storage.int_data);
+}
+
+int variant_compare_byte(const variant_t* v, const variant_t* other)
+{
+    return (v->storage.byte_data < other->storage.byte_data)? -1 :
+        (v->storage.byte_data > other->storage.byte_data);
+}
+
+int variant_compare_string(const variant_t* v, const variant_t* other)
+{
+    printf("variant_compare_string: compare %s with %s\n", variant_get_string(v), variant_get_string(other));
+    return strcmp(variant_get_string(v), variant_get_string(other));
+}
+
+int variant_compare_ptr(const variant_t* v, const variant_t* other)
+{
+    return (v->storage.ptr_data < other->storage.ptr_data)? -1 :
+        (v->storage.ptr_data > other->storage.ptr_data);
 }
 
 variant_t*  variant_create(VariantDataType type, void* data)
@@ -56,13 +76,20 @@ variant_t*  variant_create(VariantDataType type, void* data)
         new_variant->compare_cb = &variant_compare_float;
         break;
     case DT_INT32:
+        new_variant->compare_cb = &variant_compare_int;
         new_variant->storage.int_data = (int32_t)data;
         break;
-    case DT_PTR:
     case DT_STRING:
-    default:
+        new_variant->compare_cb = &variant_compare_string;
+        new_variant->storage.string_data = (char*)data;
+        new_variant->delete_cb = &variant_delete_default;
+        break;
+    case DT_PTR:
+        new_variant->compare_cb = &variant_compare_ptr;
         new_variant->storage.ptr_data = data;
         new_variant->delete_cb = &variant_delete_default;
+        break;
+    default:
         break;
     }
 
@@ -74,6 +101,19 @@ variant_t*  variant_create_int32(int type, int data)
     variant_t* ret = variant_create(DT_INT32, (void*)data);
     ret->type = type;
     return ret;
+}
+
+variant_t*  variant_create_byte(int type, int8_t data)
+{
+    variant_t* new_variant = (variant_t*)calloc(1, sizeof(variant_t));
+    new_variant->type = type;
+    new_variant->delete_cb = NULL;
+    new_variant->ref_count = 1;
+
+    new_variant->storage.byte_data = data;
+    new_variant->compare_cb = &variant_compare_byte;
+
+    return new_variant;
 }
 
 variant_t*  variant_create_bool(bool data)
@@ -142,14 +182,19 @@ int         variant_get_int(variant_t* variant)
     return (int)variant->storage.int_data;
 }
 
+int8_t      variant_get_byte(variant_t* variant)
+{
+    return variant->storage.byte_data;
+}
+
 float       variant_get_float(variant_t* variant)
 {
     return variant->storage.double_data;
 }
 
-const char* variant_get_string(variant_t* variant)
+const char* variant_get_string(const variant_t* variant)
 {
-    return (const char*)variant->storage.ptr_data;
+    return (const char*)variant->storage.string_data;
 }
 
 void*       variant_get_ptr(variant_t* variant)
@@ -180,36 +225,25 @@ int         variant_equal(variant_t* v1, variant_t* v2)
     return (v1->storage.ptr_data == v2->storage.ptr_data);
 }
 
-bool         variant_less_than(variant_t* v1, variant_t* v2)
-{
-    if(v1->type != v2->type)
-    {
-        return v1->type < v2->type;
-    }
-
-    if(v1->type == DT_STRING && v2->type == DT_STRING)
-    {
-        return (strcmp(variant_get_string(v1), variant_get_string(v2)) < 0)? true : false;
-    }
-
-    return v1->storage.double_data < v2->storage.double_data;
-}
-
-int         variant_more_than(variant_t* v1, variant_t* v2)
-{
-    return !variant_less_than(v1, v2);
-}
-
+/**
+ * 
+ * 
+ * @author alex (2/18/2016)
+ *  
+ * Return -1 if v1 is less than v2, 0 if they are equal, 1 if v1 
+ * more than v2 
+ *  
+ *  
+ * @param v1 
+ * @param v2 
+ * 
+ * @return int 
+ */
 int         variant_compare(variant_t* v1, variant_t* v2)
 {
-    if(!variant_equal(v1,v2))
+    if(NULL != v1->compare_cb)
     {
-        if(!variant_less_than(v1,v2))
-        {
-            return 1;
-        }
-
-        return -1;
+        return v1->compare_cb(v1, v2);
     }
 
     return 0;
