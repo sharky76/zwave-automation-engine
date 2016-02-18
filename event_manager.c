@@ -8,10 +8,22 @@
 extern variant_stack_t* event_list;
 void event_manager_handle_event(int sig);
 
+int DT_SENSOR;
+int DT_DEV_RECORD;
+int DT_SERVICE;
+int DT_DATA_ENTRY_TYPE;
+int DT_USER_LOCAL_TYPE;
+
 void event_manager_init()
 {
     LOG_ADVANCED("Initializing event manager");
     event_list = stack_create();
+
+    DT_SENSOR = variant_get_next_user_type();
+    DT_DEV_RECORD = variant_get_next_user_type();
+    DT_SERVICE = variant_get_next_user_type();
+    DT_DATA_ENTRY_TYPE = variant_get_next_user_type();
+    DT_USER_LOCAL_TYPE= variant_get_next_user_type();
 
     // Setup SIGALARM handler
     struct sigaction sa;
@@ -32,6 +44,6 @@ void event_manager_handle_event(int sig)
     LOG_DEBUG("Event received");
     event_t* event = event_receive();
     scene_manager_on_event(event);
-    service_manager_on_event(event);
+    //service_manager_on_event(event);
     event_delete(event);
 }

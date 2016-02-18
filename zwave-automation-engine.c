@@ -112,7 +112,7 @@ int main (int argc, char *argv[])
         //data_cache_init();
 
         cli_load_config();
-
+        
         zway_device_add_callback(zway, DeviceAdded, device_added_callback, NULL);
         zway_device_add_callback(zway, CommandAdded, command_added_callback, NULL);
         zway_device_add_callback(zway, DeviceRemoved, command_removed_callback, NULL);

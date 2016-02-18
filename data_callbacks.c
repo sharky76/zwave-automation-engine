@@ -135,7 +135,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
         if(time_msec >  event_data->last_update_time + 100)
         {
             event_data->last_update_time = time_msec;
-            event_t* event = event_create(DT_DEV_EVENT, variant_create_ptr(DT_DEV_EVENT_DATA, event_data, variant_delete_none));
+            event_t* event = event_create(DT_SENSOR, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, variant_delete_none));
             event_post(event);
         }
     }

@@ -10,10 +10,10 @@ Each event triggers a particular scene
 typedef struct event_t
 {
     int source_id;
-    variant_t*  source;
+    variant_t*  data;
 } event_t;
 
-event_t*    event_create(int source_id, variant_t* source);
+event_t*    event_create(int source_id, variant_t* data);
 void        event_delete(event_t* event);
 void        event_post(event_t* event);
 event_t*    event_receive();

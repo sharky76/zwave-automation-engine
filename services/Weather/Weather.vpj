@@ -10,8 +10,8 @@
 		Type="gnuc"
 		DebugCallbackName="gdb"
 		Version="1"
-		OutputFile="%bdlibZaeUtil.so"
-		CompilerConfigName="Raspberry Pi Cross Compiler"
+		OutputFile="%bdWeather.so"
+		CompilerConfigName="Latest Version"
 		Defines='"/D_GNU_SOURCE"'>
 		<Menu>
 			<Target
@@ -36,7 +36,9 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g -shared -fPIC -o "%o" %objs'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g -shared -fPIC %~other -o "%o" %objs'
+					OtherOptions="-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -45,7 +47,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" CFG=%b'/>
 			</Target>
 			<Target
 				Name="Rebuild"
@@ -54,7 +56,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make rebuild CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" rebuild CFG=%b'/>
 			</Target>
 			<Target
 				Name="Debug"
@@ -96,25 +98,24 @@
 			</Target>
 		</Menu>
 		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
 		</Includes>
 		<Libs PreObjects="0">
+			<Lib File="-L../../libZaeUtil/Debug"/>
+			<Lib File="-lZaeUtil"/>
 			<Lib File="-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf"/>
-			<Lib File="-lpthread"/>
 		</Libs>
 		<PostBuildCommands>
-			<Exec CmdLine="scp %bdlibZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
+			<Exec CmdLine="scp %bdWeather.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/services/"/>
 		</PostBuildCommands>
-		<Dependencies Name="Debug">
-			<Dependency Project="../services/Weather/Weather.vpj"/>
-		</Dependencies>
 	</Config>
 	<Config
 		Name="Release"
 		Type="gnuc"
 		DebugCallbackName="gdb"
 		Version="1"
-		OutputFile="%bdlibZaeUtil.so"
-		CompilerConfigName="Raspberry Pi Cross Compiler"
+		OutputFile="%bdWeather.so"
+		CompilerConfigName="Latest Version"
 		Defines='"/D_GNU_SOURCE"'>
 		<Menu>
 			<Target
@@ -139,7 +140,9 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -shared -fPIC -o "%o" %objs'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -shared -fPIC %~other -o "%o" %objs'
+					OtherOptions="-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -148,7 +151,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" CFG=%b'/>
 			</Target>
 			<Target
 				Name="Rebuild"
@@ -157,7 +160,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make rebuild CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" rebuild CFG=%b'/>
 			</Target>
 			<Target
 				Name="Debug"
@@ -199,45 +202,26 @@
 			</Target>
 		</Menu>
 		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
 		</Includes>
 		<Libs PreObjects="0">
+			<Lib File="-L../../libZaeUtil/Debug"/>
+			<Lib File="-lZaeUtil"/>
 			<Lib File="-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf"/>
-			<Lib File="-lpthread"/>
 		</Libs>
 		<PostBuildCommands>
-			<Exec CmdLine="scp %bdlibZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
+			<Exec CmdLine="scp %bdWeather.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/services/"/>
 		</PostBuildCommands>
-		<Dependencies Name="Release">
-			<Dependency Project="../services/Weather/Weather.vpj"/>
-		</Dependencies>
 	</Config>
 	<Files>
 		<Folder
-			Name="Source Files"
-			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
-			<F N="cli.c"/>
-			<F N="event.c"/>
-			<F N="logger.c"/>
-			<F N="service.c"/>
-			<F N="stack.c"/>
-			<F N="variant.c"/>
-		</Folder>
+			Name="Bitmaps"
+			Filters="*.bmp"/>
 		<Folder
 			Name="Header Files"
 			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
-			<F N="cli.h"/>
-			<F N="event.h"/>
-			<F N="logger.h"/>
-			<F N="service.h"/>
-			<F N="stack.h"/>
-			<F N="variant.h"/>
+			<F N="weather_methods.h"/>
 		</Folder>
-		<Folder
-			Name="Resource Files"
-			Filters="*.ico;*.cur;*.dlg"/>
-		<Folder
-			Name="Bitmaps"
-			Filters="*.bmp"/>
 		<Folder
 			Name="Other Files"
 			Filters="">
@@ -245,5 +229,18 @@
 				N="Makefile"
 				Type="Makefile"/>
 		</Folder>
+		<Folder
+			Name="Resource Files"
+			Filters="*.ico;*.cur;*.dlg"/>
+		<Folder
+			Name="Source Files"
+			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d"/>
+		<F N="Weather.c"/>
+		<F N="weather_cache.c"/>
+		<F N="weather_cache.h"/>
+		<F N="weather_cli.c"/>
+		<F N="weather_cli.h"/>
+		<F N="weather_config.h"/>
+		<F N="weather_methods.c"/>
 	</Files>
 </Project>

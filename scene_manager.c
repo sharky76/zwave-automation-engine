@@ -7,6 +7,7 @@
 #include "command_parser.h"
 #include "logger.h"
 #include "variant_types.h"
+#include "service_manager.h"
 
 static variant_stack_t* scene_list = NULL;
 
@@ -101,30 +102,39 @@ for(int i = 0; i < scene_list->count; i++)              \
 
 void scene_manager_on_event(event_t* event)
 {
-    switch(event->source->type)
+    switch(event->data->type)
     {
     case DT_SERVICE_EVENT_DATA:
         {
-            const char* scene_name = variant_get_string(event->source);
-            LOG_ADVANCED("Scene event from service: %s", scene_name);
-            if(NULL != scene_name)
+            const char* scene_name = variant_get_string(event->data);
+            service_t* calling_service = service_manager_get_class_by_id(event->source_id);
+
+            if(NULL != calling_service)
             {
-                scene_manager_foreach_scene(scene_name, scene)
+                LOG_ADVANCED("Scene event from service: %s", calling_service->service_name);
+                if(NULL != scene_name)
                 {
-                    LOG_DEBUG("Matching scene found: %s", scene->name);
-                    scene_exec(scene);
-                }}
+                    scene_manager_foreach_scene(scene_name, scene)
+                    {
+                        LOG_DEBUG("Matching scene found: %s", scene->name);
+                        scene_exec(scene);
+                    }}
+                }
+                else
+                {
+                    LOG_ERROR("Scene not registered");
+                }
             }
             else
             {
-                LOG_DEBUG("Scene not registered");
+                LOG_ERROR("Event from unknown service: %d", event->source_id);
             }
         }
         break;
-    case DT_DEV_EVENT_DATA:
+    case DT_SENSOR_EVENT_DATA:
         {
             const char* scene_source = NULL;
-            device_event_data_t* event_data = (device_event_data_t*)variant_get_ptr(event->source);
+            device_event_data_t* event_data = (device_event_data_t*)variant_get_ptr(event->data);
             LOG_DEBUG("Scene event from device: %s with command: 0x%x", event_data->device_name, event_data->command_id);
     
             command_class_t* command_class = get_command_class_by_id(event_data->command_id);

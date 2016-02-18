@@ -20,6 +20,7 @@ void                service_manager_init(const char* service_dir);
 variant_t*          service_manager_eval_method(service_method_t* service, ...);
 service_method_t*   service_manager_get_method(const char* service_class, const char* name);
 service_t*          service_manager_get_class(const char* service_class);
+service_t*          service_manager_get_class_by_id(int service_id);
 bool                service_manager_is_class_exists(const char* service_class);
 void                service_manager_for_each_class(void (*visitor)(service_t*, void*), void* arg);
 void                service_manager_for_each_method(const char* service_class, void (*visitor)(service_method_t*, void*), void* arg);

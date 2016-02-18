@@ -117,6 +117,20 @@ service_t*  service_manager_get_class(const char* service_class)
     return NULL;
 }
 
+service_t*  service_manager_get_class_by_id(int service_id)
+{
+    stack_for_each(service_list, service_variant)
+    {
+        service_t* service = (service_t*)variant_get_ptr(service_variant);
+        if(service->service_id == service_id)
+        {
+            return service;
+        }
+    }
+
+    return NULL;
+}
+
 bool    service_manager_is_class_exists(const char* service_class)
 {
     stack_for_each(service_list, service_variant)
@@ -154,6 +168,14 @@ void    service_manager_for_each_method(const char* service_class, void (*visito
     }
 }
 
+/**
+ * Still dont know if this method is needed.... 
+ * Is that a good idea to forward events to services???? 
+ * 
+ * @author alex (2/18/2016)
+ * 
+ * @param event 
+ */
 void    service_manager_on_event(event_t* event)
 {
     stack_for_each(service_list, service_variant)

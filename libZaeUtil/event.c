@@ -6,17 +6,17 @@ variant_stack_t* event_list;
 
 void    event_destroy(void* arg);
 
-event_t*    event_create(int source_id, variant_t* source)
+event_t*    event_create(int source_id, variant_t* data)
 {
     event_t* new_event = (event_t*)malloc(sizeof(event_t));
-    new_event->source = source;
+    new_event->data = data;
     new_event->source_id = source_id;
     return new_event;
 }
 
 void        event_delete(event_t* event)
 {
-    variant_free(event->source);
+    variant_free(event->data);
     free(event);
 }
 
