@@ -7,3 +7,6 @@ Scene contains multiple actions including calling external script with custom en
 calling different scene, or run a service command.
 Service is an external plugin which provides extended commands to the scene actions. Look in services/ for some examples
 Provides easy to use CLI for creation of scenes and managing Z-WAVE network and devices
+
+Look at Makefile to find out how to build this. 
+Requires JSON-C and some others more well known libraries
