@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #include <stack.h>
 //#include <cli.h>
 #include <ZWayLib.h>
@@ -18,6 +19,10 @@
 #include "cli_scene.h"
 #include "cli_sensor.h"
 #include "cli_service.h"
+#include <setjmp.h>
+
+extern jmp_buf  exit_jmpbuf;
+extern int keep_running;
 
 // Forward declaration of commands
 bool    cmd_controller_reset(vty_t* vty, variant_stack_t* params);
@@ -40,6 +45,8 @@ bool    cmd_exit_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_close_session(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params);
+bool    cmd_show_history(vty_t* vty, variant_stack_t* params);
+bool    cmd_quit(vty_t* vty, variant_stack_t* params);
 
 void    show_command_class_helper(command_class_t* command_class, void* arg);
 
@@ -59,7 +66,9 @@ cli_command_t root_command_list[] = {
     {"show running-config",  cmd_show_running_config,       "Show running configuration"},
     {"copy running-config startup-config", cmd_save_running_config, "Save running config into startup config"},
     {"copy running-config file WORD", cmd_show_running_config, "Save running config into custom location"},
+    {"show history",                       cmd_show_history,    "Show command history"},
     {"end",                  cmd_exit_node,             "End configuration session"},
+    {"exit",                 cmd_quit,                  "Exit the application"},
     {NULL,                   NULL,                          NULL}
 };
 
@@ -615,6 +624,7 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
                 }
 
                 match_status = CMD_PARTIAL_MATCH;
+                
                 //break;
             }
         }
@@ -641,15 +651,21 @@ int     cli_command_describe()
     }
     else
     {
-        rl_complete(0, '\t');
+        rl_possible_completions(0, '\t');
     }
+}
+
+int     cli_command_quit(int count, int key)
+{
+    keep_running = 0;
+    longjmp(exit_jmpbuf, 1);
 }
 
 bool    cli_command_exec(vty_t* vty, const char* line)
 {
     cmd_tree_node_t* cmd_node;
 
-    if(*line == 0)
+    if(line == 0 || *line == 0)
     {
         return false;
     }
@@ -887,6 +903,22 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
     cmd_show_running_config(file_vty, NULL);
 
     vty_free(file_vty);
+}
+
+bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
+{
+    HIST_ENTRY** history_entry = history_list();
+
+    while(*history_entry)
+    {
+        vty_write(vty, "%s\n", (*history_entry)->line);
+        history_entry++;
+    }
+}
+
+bool    cmd_quit(vty_t* vty, variant_stack_t* params)
+{
+    cli_command_quit(0, 0);
 }
 
 void    show_command_class_helper(command_class_t* command_class, void* arg)

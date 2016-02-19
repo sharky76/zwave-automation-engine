@@ -31,6 +31,7 @@ bool    cli_command_exec(vty_t* vty, const char* line);
 bool    cli_command_exec_default(const char* line);
 char**  cli_command_completer(const char* text, int start, int stop);
 int     cli_command_describe();
+int     cli_command_quit(int count, int key);
 //void    cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt);
 //void    cli_append_to_node(cli_node_t* node, cli_command_t command_list[]);
 //void    cli_assemble_line(variant_stack_t* params, int start, char* out_line);

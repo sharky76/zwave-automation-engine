@@ -24,6 +24,9 @@ static sigjmp_buf jmpbuf;
 /* Flag for avoid recursive siglongjmp() call. */
 static int jmpflag = 0;
 
+jmp_buf  exit_jmpbuf;
+int keep_running = 1;
+
 /* SIGTSTP handler.  This function care user's ^Z input. */
 void sigtstp (int sig)
 {
@@ -75,7 +78,7 @@ main_signal_set (int signo, void (*func)(int))
 /* Initialization of signal handles. */
 void signal_init()
 {
-  //vty_signal_set (SIGINT, sigint);
+  main_signal_set (SIGINT, sigint);
   main_signal_set (SIGTSTP, sigtstp);
   main_signal_set (SIGPIPE, SIG_IGN);
 }
@@ -141,9 +144,10 @@ int main (int argc, char *argv[])
             rl_attempted_completion_function = &cli_command_completer;
             rl_completion_entry_function = &null_function;
             rl_bind_key ('?', (rl_command_func_t *) cli_command_describe);
+            rl_bind_keyseq("\\C-q", (rl_command_func_t *) cli_command_quit);
 
             signal_init();
-            int keep_running = 1;
+            
             vty_data_t data = {
                 .desc.io_pair[0] = stdin,
                 .desc.io_pair[1] = stdout
@@ -156,6 +160,7 @@ int main (int argc, char *argv[])
             /* Preparation for longjmp() in sigtstp(). */
             sigsetjmp (jmpbuf, 1);
             jmpflag = 1;
+            setjmp(exit_jmpbuf);
 
             while(keep_running)
             {
@@ -163,8 +168,8 @@ int main (int argc, char *argv[])
                 cli_command_exec(vty_console, str);
                 free(str);
             }
-
-
+            
+            vty_free(vty_console);
             //rl_ding();
             /*fd_set fds;
             while (running)

@@ -14,6 +14,7 @@ char*   socket_read_cb(vty_t* vty);
 
 vty_t*  vty_create(vty_type type, vty_data_t* data)
 {
+    read_history(NULL);
     vty_t* vty = (vty_t*)calloc(1, sizeof(vty_t));
     vty->type = type;
     vty->data = data;
@@ -39,6 +40,7 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
 
 void    vty_free(vty_t* vty)
 {
+    write_history(NULL);
     if(vty->type == VTY_FILE)
     {
         fclose(vty->data->desc.file);
