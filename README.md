@@ -9,4 +9,4 @@ Service is an external plugin which provides extended commands to the scene acti
 Provides easy to use CLI for creation of scenes and managing Z-WAVE network and devices
 
 Look at Makefile to find out how to build this. 
-Requires JSON-C and some others more well known libraries
+Requires JSON-C and some other more well known libraries
