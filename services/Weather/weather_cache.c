@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <logger.h>
 
 weather_cache_t  weather_cache;
 void    weather_cache_parse_response(struct json_object* weather_response_obj);
@@ -50,7 +51,7 @@ void    weather_cache_refresh()
 
     if(query_time - weather_cache.cache_age < 600)
     {
-        printf("Weather cache is current\n");
+        LOG_DEBUG("Weather cache is current");
         return;
     }
 
@@ -72,7 +73,7 @@ void    weather_cache_refresh()
     char urlbuf[512] = {0};
     snprintf(urlbuf, 511, "http://api.openweathermap.org/data/2.5/weather?zip=%d,%s&units=%s&APPID=%s", weather_zip, weather_country_code, weather_temp_units, "337b07da05ad8ebf391e2252f02196cf");
 
-    printf("Calling URL %s\n", urlbuf);
+    LOG_DEBUG("Weather URL %s", urlbuf);
 
     curl_easy_setopt(curl_handle, CURLOPT_URL, urlbuf);
     
@@ -97,7 +98,7 @@ void    weather_cache_refresh()
     }
     else 
     {
-        printf("%lu bytes retrieved\n", (long)chunk.size);
+        LOG_DEBUG("%lu bytes retrieved", (long)chunk.size);
         struct json_object* weather_response_obj = json_tokener_parse(chunk.memory);
         weather_cache_parse_response(weather_response_obj);
     }
@@ -171,7 +172,7 @@ void    weather_cache_parse_response(struct json_object* weather_response_obj)
         }
     }
 
-    printf("Extracted: precipitation: %s, temp: %f, humidity: %d, wind: %f\n", 
+    LOG_DEBUG("Updated weather values - precipitation: %s, temp: %f, humidity: %d, wind: %f", 
            weather_cache.precipitation,
            weather_cache.temp,
            weather_cache.humidity,

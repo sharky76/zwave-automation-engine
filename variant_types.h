@@ -10,7 +10,7 @@ extern int DT_USER_LOCAL_TYPE;
 
 typedef enum 
 {
-    T_PARETHESIS = DT_USER+1,
+    T_PARETHESIS = 5000,
     T_OPERATOR,
     T_OPERAND,
     T_FUNCTION,

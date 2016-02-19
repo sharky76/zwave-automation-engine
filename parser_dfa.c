@@ -324,8 +324,10 @@ bool           parser_dfa_run(State start_state, State end_state, State error_st
         retVal = false;
         break;
     case STATE_END:
-        end_descriptor->state_callback(&state_context, priv);
-        retVal = true;
+        {
+            State final_state = end_descriptor->state_callback(&state_context, priv);
+            retVal = (final_state != STATE_ERROR);
+        }
         break;
     }
 

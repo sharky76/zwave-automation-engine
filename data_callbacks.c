@@ -120,7 +120,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
 {
     device_event_data_t* event_data = (device_event_data_t*)arg;
 
-    if(NULL == event_data->device_name)
+    //if(NULL == event_data->device_name)
     {
         event_data->device_name = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
     }

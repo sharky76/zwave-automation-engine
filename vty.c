@@ -27,6 +27,8 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
         vty->read_cb = file_read_cb;
         break;
     case VTY_STD:
+        rl_instream = vty->data->desc.io_pair[0];
+        rl_outstream = vty->data->desc.io_pair[1];
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
         break;

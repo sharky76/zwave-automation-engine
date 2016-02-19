@@ -42,14 +42,15 @@ static reserved_word_t  reserved_words[] = {
     {0, 0}
 };
 
-void process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
+bool process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 void process_string_operand(const char* ch, variant_stack_t* operand_queue);
-void process_service_method_operator(const char* ch, variant_stack_t* operator_stack);
-void process_device_function_operator(const char* ch, variant_stack_t* operator_stack);
+bool process_service_method_operator(const char* ch, variant_stack_t* operator_stack);
+bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack);
 void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
 void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
-int process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
+bool process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
+bool process_comma_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
 bool eval(variant_stack_t* work_stack, variant_t* op);
 
@@ -94,7 +95,7 @@ typedef struct parser_data_t
     variant_stack_t* operand_queue;
 } parser_data_t;
 
-void    process_state(State current_state, state_context_t* state_context, void* priv);
+bool    process_state(State current_state, state_context_t* state_context, void* priv);
 
 static state_descriptor_t state_map[] = {
     {STATE_START,   &state_start},
@@ -114,9 +115,10 @@ static state_descriptor_t state_map[] = {
     {STATE_INVALID, &state_invalid}
 };
 
-void process_state(State current_state, state_context_t* state_context, void* priv)
+bool process_state(State current_state, state_context_t* state_context, void* priv)
 {
     parser_data_t* parser_data = (parser_data_t*)priv;
+    bool retVal = true;
     if(state_context->current_state != current_state)
     {
         // Ok, we arrived here from another state, meaning we have some data from 
@@ -129,7 +131,7 @@ void process_state(State current_state, state_context_t* state_context, void* pr
             *state_context->current_data_buf = 0;
             break;
         case STATE_ALPHA:
-            process_string_token(state_context->current_data_buf, parser_data->operator_stack, parser_data->operand_queue);
+            retVal = process_string_token(state_context->current_data_buf, parser_data->operator_stack, parser_data->operand_queue);
             *state_context->current_data_buf = 0;
             break;
         case STATE_DIGIT:
@@ -137,13 +139,13 @@ void process_state(State current_state, state_context_t* state_context, void* pr
             *state_context->current_data_buf = 0;
             break;
         case STATE_RIGHT_PAREN:
-            process_parenthesis_token(parser_data->operator_stack, parser_data->operand_queue, OP_RIGHT_PARETHESIS);
+            retVal = process_parenthesis_token(parser_data->operator_stack, parser_data->operand_queue, OP_RIGHT_PARETHESIS);
             break;
         case STATE_LEFT_PAREN:
-            process_parenthesis_token(parser_data->operator_stack, parser_data->operand_queue, OP_LEFT_PARETHESIS);
+            retVal = process_parenthesis_token(parser_data->operator_stack, parser_data->operand_queue, OP_LEFT_PARETHESIS);
             break;
         case STATE_COMMA:
-            // No support for comma right now
+            retVal = process_comma_token(parser_data->operator_stack, parser_data->operand_queue);
             break;
         case STATE_AND:
             process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_AND);
@@ -169,91 +171,95 @@ void process_state(State current_state, state_context_t* state_context, void* pr
         default:
             printf("Error, invalid transition\n");
         }
+
+        state_context->current_state = current_state;
     }
+
+    return retVal;
 }
 
 State    state_start(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_START, state_context, priv);
-    state_context->current_state = STATE_START;
-    return parser_dfa_next_state(STATE_START, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_START, state_context, priv)) ? 
+                parser_dfa_next_state(STATE_START, parser_dfa_read_next_token(state_context)) :
+                STATE_ERROR;
 }
 
 State    state_alpha(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_ALPHA, state_context, priv);
-    state_context->current_state = STATE_ALPHA;
-    return parser_dfa_next_state(STATE_ALPHA, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_ALPHA, state_context, priv))?
+                parser_dfa_next_state(STATE_ALPHA, parser_dfa_read_next_token(state_context)) :
+                STATE_ERROR;
 }
 
 State    state_digit(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_DIGIT, state_context, priv);
-    state_context->current_state = STATE_DIGIT;
-    return parser_dfa_next_state(STATE_DIGIT, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_DIGIT, state_context, priv))? 
+            parser_dfa_next_state(STATE_DIGIT, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_right_paren(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_RIGHT_PAREN, state_context, priv);
-    state_context->current_state = STATE_RIGHT_PAREN;
-    return parser_dfa_next_state(STATE_RIGHT_PAREN, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_RIGHT_PAREN, state_context, priv))? 
+            parser_dfa_next_state(STATE_RIGHT_PAREN, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_left_paren(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_LEFT_PAREN, state_context, priv);
-    state_context->current_state = STATE_LEFT_PAREN;
-    return parser_dfa_next_state(STATE_LEFT_PAREN, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_LEFT_PAREN, state_context, priv))?
+            parser_dfa_next_state(STATE_LEFT_PAREN, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_comma(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_COMMA, state_context, priv);
-    state_context->current_state = STATE_COMMA;
-    return parser_dfa_next_state(STATE_COMMA, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_COMMA, state_context, priv))?
+            parser_dfa_next_state(STATE_COMMA, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_and(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_AND, state_context, priv);
-    state_context->current_state = STATE_AND;
-    return parser_dfa_next_state(STATE_AND, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_AND, state_context, priv))?
+            parser_dfa_next_state(STATE_AND, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_or(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_OR, state_context, priv);
-    state_context->current_state = STATE_OR;
-    return parser_dfa_next_state(STATE_OR, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_OR, state_context, priv))?
+            parser_dfa_next_state(STATE_OR, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_cmp(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_CMP, state_context, priv);
-    state_context->current_state = STATE_CMP;
-    return parser_dfa_next_state(STATE_CMP, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_CMP, state_context, priv))?
+            parser_dfa_next_state(STATE_CMP, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_less(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_LESS, state_context, priv);
-    state_context->current_state = STATE_LESS;
-    return parser_dfa_next_state(STATE_LESS, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_LESS, state_context, priv))?
+            parser_dfa_next_state(STATE_LESS, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_more(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_MORE, state_context, priv);
-    state_context->current_state = STATE_MORE;
-    return parser_dfa_next_state(STATE_MORE, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_MORE, state_context, priv))?
+            parser_dfa_next_state(STATE_MORE, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_capture_string(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_CAPTURE_STRING, state_context, priv);
-    state_context->current_state = STATE_CAPTURE_STRING;
-    return parser_dfa_next_state(STATE_CAPTURE_STRING, parser_dfa_read_next_token(state_context));
+    return (process_state(STATE_CAPTURE_STRING, state_context, priv))?
+            parser_dfa_next_state(STATE_CAPTURE_STRING, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
 }
 
 State    state_error(state_context_t* state_context, void* priv)
@@ -265,7 +271,7 @@ State    state_error(state_context_t* state_context, void* priv)
 
 State    state_end(state_context_t* state_context, void* priv)
 {
-    process_state(STATE_END, state_context, priv);
+    bool retVal = process_state(STATE_END, state_context, priv);
 
     parser_data_t* parser_data = (parser_data_t*)priv;
     while(parser_data->operator_stack->count > 0)
@@ -274,9 +280,7 @@ State    state_end(state_context_t* state_context, void* priv)
         stack_push_back(parser_data->operand_queue, data);
     }
 
-    state_context->current_state = STATE_END;
-
-    return STATE_END;
+    return (retVal)? STATE_END : STATE_ERROR;
 }
 
 State    state_invalid(state_context_t* state_context, void* priv)
@@ -319,7 +323,7 @@ void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* op
     while(NULL != stack_front)
     {
         operator_t* stacked_operator = (operator_t*)variant_get_ptr(stack_front);
-        if(op_token >= stacked_operator->type)
+        if(op_token >= stacked_operator->type && stack_front->type != T_PARETHESIS)
         {
             stack_front = stack_pop_front(operator_stack);
             stack_push_back(operand_queue, stack_front);
@@ -335,6 +339,34 @@ void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* op
     stack_push_front(operator_stack, variant_create_ptr(T_OPERATOR, op, NULL));
 }
 
+/* 
+If the token is a function argument separator (e.g., a comma):
+Until the token at the top of the stack is a left parenthesis, pop operators off the stack onto the output queue. 
+If no left parentheses are encountered, either the separator was misplaced or parentheses were mismatched. 
+*/ 
+bool process_comma_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue)
+{
+    variant_t* stack_front = stack_peek_front(operator_stack);
+    bool    left_parethesis_found = false;
+    while(NULL != stack_front)
+    {
+        operator_t* stacked_operator = (operator_t*)variant_get_ptr(stack_front);
+        if(stacked_operator->type != OP_LEFT_PARETHESIS)
+        {
+            stack_push_back(operand_queue, stack_pop_front(operator_stack));
+        }
+        else
+        {
+            left_parethesis_found = true;
+            break;
+        }
+
+        stack_front = stack_peek_front(operator_stack);
+    }
+
+    return left_parethesis_found;
+}
+
 /*
 If the token is a left parenthesis (i.e. "("), then push it onto the stack.
 If the token is a right parenthesis (i.e. ")"):
@@ -343,48 +375,54 @@ Pop the left parenthesis from the stack, but not onto the output queue.
 If the token at the top of the stack is a function token, pop it onto the output queue.
 If the stack runs out without finding a left parenthesis, then there are mismatched parentheses.
 */
-int process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token)
+bool process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token)
 {
-    int left_parethesis_found = FALSE;
+    bool left_parethesis_found = false;
 
     if(op_token == OP_LEFT_PARETHESIS)
     {
         operator_t* op = operator_create(op_token, NULL);
         stack_push_front(operator_stack, variant_create_ptr(T_PARETHESIS, (void*)op, NULL));
-        left_parethesis_found = TRUE;
+        left_parethesis_found = true;
     }
     else if(op_token == OP_RIGHT_PARETHESIS)
     {
         variant_t* front_data = stack_peek_front(operator_stack);
         
-        while(NULL != front_data && left_parethesis_found == FALSE)
+        while(NULL != front_data && left_parethesis_found == false)
         {
             if(front_data->type == T_PARETHESIS && ((operator_t*)variant_get_ptr(front_data))->type == OP_LEFT_PARETHESIS)
             {
-                left_parethesis_found = TRUE;
+                left_parethesis_found = true;
                 front_data = stack_pop_front(operator_stack);
                 variant_free(front_data);
 
                 front_data = stack_peek_front(operator_stack);
 
-                if(NULL == front_data)
+                /*if(NULL == front_data)
                 {
                     LOG_ERROR("Parenthesis mismatch");
                 }
-                else if(front_data->type == T_FUNCTION)
+                else*/ if(NULL != front_data && front_data->type == T_FUNCTION)
                 {
                     front_data = stack_pop_front(operator_stack);
                     stack_push_back(operand_queue, front_data);
                 }
+
+                //break;
             }
             else
             {   
                 front_data = stack_pop_front(operator_stack);
                 stack_push_back(operand_queue, front_data);
+                front_data = stack_peek_front(operator_stack);   
             }
-
-            
         }
+    }
+
+    if(!left_parethesis_found)
+    {
+        LOG_ERROR("Parenthesis mismatch");
     }
 
     return left_parethesis_found;
@@ -400,10 +438,11 @@ to be a delimiter.
 Strings that do not have "." delimiters are considered reserved words and are matched against 
 reserved word list. 
 */
-void process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue)
+bool process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue)
 {
-    int isReservedWord = FALSE;
+    bool isReservedWord = false;
     reserved_word_t* reserved_word = reserved_words;
+    bool retVal = true;
 
     while(*reserved_word->word != '\0' && !isReservedWord)
     {
@@ -411,7 +450,7 @@ void process_string_token(const char* ch, variant_stack_t* operator_stack, varia
         {
             variant_t* operand_token = variant_create_bool(reserved_word->value);
             stack_push_back(operand_queue, variant_create_variant(T_OPERAND, operand_token));
-            isReservedWord = TRUE;
+            isReservedWord = true;
         }
 
         *reserved_word++;
@@ -425,17 +464,17 @@ void process_string_token(const char* ch, variant_stack_t* operator_stack, varia
 
         if(NULL == tok)
         {
-            // Error!
+            retVal = false;
         }
         else
         {
             if(resolver_has_name(tok))
             {
-                process_device_function_operator(function_string, operator_stack);
+                retVal = process_device_function_operator(function_string, operator_stack);
             }
             else if(service_manager_is_class_exists(tok))
             {
-                process_service_method_operator(function_string, operator_stack);
+                retVal = process_service_method_operator(function_string, operator_stack);
             }
             else
             {
@@ -446,6 +485,8 @@ void process_string_token(const char* ch, variant_stack_t* operator_stack, varia
 
         free(function_string);
     }
+
+    return retVal;
 }
 
 void process_string_operand(const char* ch, variant_stack_t* operand_queue)
@@ -455,10 +496,11 @@ void process_string_operand(const char* ch, variant_stack_t* operand_queue)
     stack_push_back(operand_queue, variant_create_variant(T_OPERAND, operand_token));
 }
 
-void process_device_function_operator(const char* ch, variant_stack_t* operator_stack)
+bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack)
 {
     function_operator_data_t* op_data = (function_operator_data_t*)calloc(1, sizeof(function_operator_data_t));
     operator_t* function_operator = operator_create(OP_DEVICE_FUNCTION, op_data);
+    bool    retVal = true;
 
     char* function_string = (char*)ch;
     char* tok = strtok(function_string, ".");
@@ -473,28 +515,19 @@ void process_device_function_operator(const char* ch, variant_stack_t* operator_
                 device_record_t*    record = resolver_get_device_record(tok);
                 if(NULL != record)
                 {
-                    //ZWBYTE node_id = record->nodeId;
                     op_data->device_record = record;
-                    //op_data->instance_id = record->instanceId;
                     op_data->command_class = get_command_class_by_id(record->commandId);
                 }
                 else 
                 {
                     // Error!
                     LOG_ERROR("Unresolved device %s", tok);
+                    retVal = false;
                 }
             }
             break;
         case 1: // Command and arguments
             strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
-            /*if(strstr(tok, "Get") == tok)
-            {
-                op_data->command_method = M_GET;
-            }
-            else if(strstr(tok, "Set") == tok)
-            {
-                op_data->command_method = M_SET;
-            }*/
             break;
         }
 
@@ -502,13 +535,15 @@ void process_device_function_operator(const char* ch, variant_stack_t* operator_
     }
 
     stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
+    return retVal;
 }
 
-void  process_service_method_operator(const char* ch, variant_stack_t* operator_stack)
+bool  process_service_method_operator(const char* ch, variant_stack_t* operator_stack)
 {
     char* function_string = (char*)ch;
     char* tok = strtok(function_string, ".");
     int tok_count = 0;
+    bool    retVal = true;
 
     char* service_class;
     char* name;
@@ -535,6 +570,13 @@ void  process_service_method_operator(const char* ch, variant_stack_t* operator_
         operator_t* service_method_operator = operator_create(OP_SERVICE_METHOD, service_method);
         stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, service_method_operator, &operator_delete_service_method_operator));
     }
+    else
+    {
+        LOG_ERROR("Method not defined: %s.%s", service_class, name);
+        retVal = false;
+    }
+
+    return retVal;
 }
 
 void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue)

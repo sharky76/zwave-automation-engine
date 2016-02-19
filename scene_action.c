@@ -198,18 +198,21 @@ void scene_action_exec_script(action_t* action)
         {
             variant_t* env_value = command_parser_execute_expression(compiled_value);
             
-            char* value_str;
-            if(variant_to_string(env_value, &value_str))
+            if(NULL != env_value)
             {
-                *envp = (char*)calloc(strlen(env->name)+strlen(value_str)+2, sizeof(char));
-                strcat(*envp, env->name);
-                strcat(*envp, "=");
-                strcat(*envp, value_str);
-                free(value_str);
+                char* value_str;
+                if(variant_to_string(env_value, &value_str))
+                {
+                    *envp = (char*)calloc(strlen(env->name)+strlen(value_str)+2, sizeof(char));
+                    strcat(*envp, env->name);
+                    strcat(*envp, "=");
+                    strcat(*envp, value_str);
+                    free(value_str);
+                }
+        
+                variant_free(env_value);
+                envp++;
             }
-    
-            variant_free(env_value);
-            envp++;
         }
     }
 
