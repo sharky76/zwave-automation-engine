@@ -1,6 +1,7 @@
 #include "parser_dfa.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 
 static dfa_transition_t    dfa_transitions[] = {
     // From start
@@ -263,11 +264,11 @@ AlphabetToken   parser_dfa_read_next_token(state_context_t* state_context)
         state_context->token_parsing_state = PS_COMPLETED;
         state_context->current_token = token;
 
-        if(token == A_ALPHA || token == A_DIGIT || token == A_DOT)
+        /*if(token == A_ALPHA || token == A_DIGIT || token == A_DOT)
         {
             strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
-        }
-        *state_context->parsed_token = '\0';
+        }*/
+        //*state_context->parsed_token = '\0';
     }
 
     return state_context->current_token;

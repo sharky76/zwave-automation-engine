@@ -694,9 +694,9 @@ bool    cli_command_exec(vty_t* vty, const char* line)
     rl_on_new_line();
 }
 
-bool    cli_command_exec_default(const char* line)
+void    cli_command_exec_default(char* line)
 {
-    return cli_command_exec(vty, line);
+    cli_command_exec(vty, line);
 }
 
 /*void    cli_assemble_line(variant_stack_t* params, int start, char* out_line)

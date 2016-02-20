@@ -95,7 +95,7 @@ typedef struct parser_data_t
     variant_stack_t* operand_queue;
 } parser_data_t;
 
-bool    process_state(State current_state, state_context_t* state_context, void* priv);
+bool    process_state_transition(State current_state, state_context_t* state_context, void* priv);
 
 static state_descriptor_t state_map[] = {
     {STATE_START,   &state_start},
@@ -115,11 +115,13 @@ static state_descriptor_t state_map[] = {
     {STATE_INVALID, &state_invalid}
 };
 
-bool process_state(State current_state, state_context_t* state_context, void* priv)
+bool process_state_transition(State current_state, state_context_t* state_context, void* priv)
 {
     parser_data_t* parser_data = (parser_data_t*)priv;
     bool retVal = true;
-    if(state_context->current_state != current_state)
+
+    // Here is the problem!!! Perenthesis could come in numbers!!!
+    //if(state_context->current_state != current_state)
     {
         // Ok, we arrived here from another state, meaning we have some data from 
         // previous state to process
@@ -174,92 +176,132 @@ bool process_state(State current_state, state_context_t* state_context, void* pr
 
         state_context->current_state = current_state;
     }
-
+    
     return retVal;
 }
 
 State    state_start(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_START, state_context, priv)) ? 
-                parser_dfa_next_state(STATE_START, parser_dfa_read_next_token(state_context)) :
-                STATE_ERROR;
+    bool ret_val = true;
+
+    if(state_context->current_state != STATE_START)
+    {
+        ret_val = process_state_transition(STATE_START, state_context, priv);
+    }
+
+    return (ret_val)? parser_dfa_next_state(STATE_START, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
 
 State    state_alpha(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_ALPHA, state_context, priv))?
-                parser_dfa_next_state(STATE_ALPHA, parser_dfa_read_next_token(state_context)) :
-                STATE_ERROR;
+    bool ret_val = true;
+
+    if(state_context->current_state != STATE_ALPHA)
+    {
+        ret_val = process_state_transition(STATE_ALPHA, state_context, priv);
+    }
+
+    if(state_context->current_token != A_SPACE)
+    {
+        strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
+    }
+    *state_context->parsed_token = '\0';
+
+    return (ret_val)? parser_dfa_next_state(STATE_ALPHA, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
 
 State    state_digit(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_DIGIT, state_context, priv))? 
-            parser_dfa_next_state(STATE_DIGIT, parser_dfa_read_next_token(state_context)) :
-            STATE_ERROR;
+    bool ret_val = true;
+
+    if(state_context->current_state != STATE_DIGIT)
+    {
+        process_state_transition(STATE_DIGIT, state_context, priv);
+    }
+
+    if(state_context->current_token != A_SPACE)
+    {
+        strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
+    }
+
+    *state_context->parsed_token = '\0';
+
+    return (ret_val)? parser_dfa_next_state(STATE_DIGIT, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
 
 State    state_right_paren(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_RIGHT_PAREN, state_context, priv))? 
+    return (process_state_transition(STATE_RIGHT_PAREN, state_context, priv))? 
             parser_dfa_next_state(STATE_RIGHT_PAREN, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_left_paren(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_LEFT_PAREN, state_context, priv))?
+    return (process_state_transition(STATE_LEFT_PAREN, state_context, priv))?
             parser_dfa_next_state(STATE_LEFT_PAREN, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_comma(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_COMMA, state_context, priv))?
+    return (process_state_transition(STATE_COMMA, state_context, priv))?
             parser_dfa_next_state(STATE_COMMA, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_and(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_AND, state_context, priv))?
+    return (process_state_transition(STATE_AND, state_context, priv))?
             parser_dfa_next_state(STATE_AND, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_or(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_OR, state_context, priv))?
+    return (process_state_transition(STATE_OR, state_context, priv))?
             parser_dfa_next_state(STATE_OR, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_cmp(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_CMP, state_context, priv))?
+    return (process_state_transition(STATE_CMP, state_context, priv))?
             parser_dfa_next_state(STATE_CMP, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_less(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_LESS, state_context, priv))?
+    return (process_state_transition(STATE_LESS, state_context, priv))?
             parser_dfa_next_state(STATE_LESS, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_more(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_MORE, state_context, priv))?
+    return (process_state_transition(STATE_MORE, state_context, priv))?
             parser_dfa_next_state(STATE_MORE, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
 }
 
 State    state_capture_string(state_context_t* state_context, void* priv)
 {
-    return (process_state(STATE_CAPTURE_STRING, state_context, priv))?
-            parser_dfa_next_state(STATE_CAPTURE_STRING, parser_dfa_read_next_token(state_context)) :
-            STATE_ERROR;
+    bool ret_val = true;
+
+    if(state_context->current_state != STATE_CAPTURE_STRING)
+    {
+        ret_val = process_state_transition(STATE_CAPTURE_STRING, state_context, priv);
+    }
+    else
+    {
+        strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
+        
+    }
+
+    *state_context->parsed_token = '\0';
+
+    return (ret_val)? parser_dfa_next_state(STATE_CAPTURE_STRING, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
 
 State    state_error(state_context_t* state_context, void* priv)
@@ -271,13 +313,21 @@ State    state_error(state_context_t* state_context, void* priv)
 
 State    state_end(state_context_t* state_context, void* priv)
 {
-    bool retVal = process_state(STATE_END, state_context, priv);
+    bool retVal = process_state_transition(STATE_END, state_context, priv);
 
     parser_data_t* parser_data = (parser_data_t*)priv;
     while(parser_data->operator_stack->count > 0)
     {
         variant_t* data = stack_pop_front(parser_data->operator_stack);
-        stack_push_back(parser_data->operand_queue, data);
+        if(data->type == T_PARETHESIS)
+        {
+            LOG_ERROR("Mismatched parenthesis");
+            variant_free(data);
+        }
+        else
+        {
+            stack_push_back(parser_data->operand_queue, data);
+        }
     }
 
     return (retVal)? STATE_END : STATE_ERROR;
@@ -399,11 +449,7 @@ bool process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t*
 
                 front_data = stack_peek_front(operator_stack);
 
-                /*if(NULL == front_data)
-                {
-                    LOG_ERROR("Parenthesis mismatch");
-                }
-                else*/ if(NULL != front_data && front_data->type == T_FUNCTION)
+                if(NULL != front_data && front_data->type == T_FUNCTION)
                 {
                     front_data = stack_pop_front(operator_stack);
                     stack_push_back(operand_queue, front_data);

@@ -28,7 +28,7 @@ void    cli_init();
 void    cli_load_config();
 void    cli_set_vty(vty_t* vty);
 bool    cli_command_exec(vty_t* vty, const char* line);
-bool    cli_command_exec_default(const char* line);
+void    cli_command_exec_default(char* line);
 char**  cli_command_completer(const char* text, int start, int stop);
 int     cli_command_describe();
 int     cli_command_quit(int count, int key);

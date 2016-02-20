@@ -15,6 +15,10 @@
 #include <setjmp.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 ZWay zway;
 
@@ -135,16 +139,10 @@ int main (int argc, char *argv[])
 
             LOG_INFO("Engine ready");
 
-                    // TEST
-            printf("Wiggle the sensor! and press enter\n");
-            //char* ch = getchar();
-            //rl_callback_handler_install ("# ", cb_linehandler);
-            
             rl_editing_mode = 1;
             rl_attempted_completion_function = &cli_command_completer;
             rl_completion_entry_function = &null_function;
             rl_bind_key ('?', (rl_command_func_t *) cli_command_describe);
-            rl_bind_keyseq("\\C-q", (rl_command_func_t *) cli_command_quit);
 
             signal_init();
             
@@ -155,8 +153,6 @@ int main (int argc, char *argv[])
             vty_t* vty_console = vty_create(VTY_STD, &data);
             cli_set_vty(vty_console);
             
-            //cli_load_config();
-
             /* Preparation for longjmp() in sigtstp(). */
             sigsetjmp (jmpbuf, 1);
             jmpflag = 1;
@@ -169,15 +165,28 @@ int main (int argc, char *argv[])
                 free(str);
             }
             
-            vty_free(vty_console);
             //rl_ding();
-            /*fd_set fds;
-            while (running)
+            /*rl_callback_handler_install ("# ", cli_command_exec_default);
+
+            // Create TCP socket for listening
+            int cli_sock = socket(AF_INET, SOCK_STREAM, 0);
+            struct sockaddr_in addr;
+            memset(&addr, 0, sizeof(struct sockaddr_in));
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons(3333);
+            addr.sin_addr.s_addr = INADDR_ANY;
+            bind(cli_sock, &addr, sizeof(struct sockaddr_in));
+            listen(cli_sock, 1);
+
+            int client_sock = -1;
+            fd_set fds;
+            while (keep_running)
             {
               FD_ZERO (&fds);
-              FD_SET (fileno (rl_instream), &fds);    
-        
-              r = select (FD_SETSIZE, &fds, NULL, NULL, NULL);
+              FD_SET(fileno (rl_instream), &fds);    
+              FD_SET(cli_sock, &fds);
+
+              r = select (cli_sock+1, &fds, NULL, NULL, NULL);
               if (r < 0)
                 {
                   //perror ("rltest: select");
@@ -186,9 +195,22 @@ int main (int argc, char *argv[])
                 }
         
               else if (FD_ISSET (fileno (rl_instream), &fds))
-                rl_callback_read_char ();
+              {
+                    rl_callback_read_char ();
+              }
+              else if(FD_ISSET(cli_sock, &fds))
+              {
+                  client_sock = accept(cli_sock, NULL, NULL);
+                  close(STDOUT_FILENO);
+                  dup2(client_sock, STDOUT_FILENO);
+                  close(STDIN_FILENO);
+                  dup2(client_sock, STDIN_FILENO);
+                  close(STDERR_FILENO);
+                  dup2(client_sock, STDERR_FILENO);
+              }
             }*/
 
+            vty_free(vty_console);
         }
         else
         {

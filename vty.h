@@ -25,8 +25,8 @@ typedef struct vty_data_t
     } desc;
 } vty_data_t;
 
-typedef struct cli_command_t cli_command_t;
-typedef struct cli_node_t    cli_node_t;
+//typedef struct cli_command_t cli_command_t;
+//typedef struct cli_node_t    cli_node_t;
 
 typedef struct vty_t
 {
@@ -35,8 +35,6 @@ typedef struct vty_t
     char*   (*read_cb)(struct vty_t*);
     vty_data_t* data;
     char*   prompt;
-    cli_command_t*      command;
-    cli_node_t*         node;
 } vty_t;
 
 void    vty_signal_init();
