@@ -321,6 +321,8 @@
 		<F N="callback_descriptor.json"/>
 		<F N="cli_commands.c"/>
 		<F N="cli_commands.h"/>
+		<F N="cli_logger.c"/>
+		<F N="cli_logger.h"/>
 		<F N="cli_resolver.c"/>
 		<F N="cli_resolver.h"/>
 		<F N="cli_scene.c"/>

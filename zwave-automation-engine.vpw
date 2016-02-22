@@ -5,6 +5,7 @@
 		<Project File="libZaeUtil/libZaeUtil.vpj" />
 		<Project File="services/Timer/Timer.vpj" />
 		<Project File="services/Weather/Weather.vpj" />
+		<Project File="zae-client/zae-client.vpj" />
 		<Project File="zwave-automation-engine.vpj" />
 	</Projects>
 </Workspace>

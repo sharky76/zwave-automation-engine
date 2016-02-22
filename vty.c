@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void    file_write_cb(vty_t* vty, const char* format, va_list args);
 char*   file_read_cb(vty_t* vty);
@@ -17,7 +18,7 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
     vty_t* vty = (vty_t*)calloc(1, sizeof(vty_t));
     vty->type = type;
     vty->data = data;
-
+    
     switch(vty->type)
     {
     case VTY_FILE:
@@ -32,6 +33,11 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
         break;
+    /*case VTY_SOCKET:
+        rl_instream = vty->data->desc.socket;
+        rl_outstream = vty->data->desc.socket;
+        vty->write_cb = std_write_cb;
+        vty->read_cb = std_read_cb;*/
     }
 
     return vty;
@@ -109,7 +115,10 @@ char*   file_read_cb(vty_t* vty)
 
 void    std_write_cb(vty_t* vty, const char* format, va_list args)
 {
-    vfprintf(stdout, format, args);
+    char buf[1024] = {0};
+    vsnprintf(buf, 1023, format, args);
+    //vfprintf(rl_outstream, format, args);
+    write(fileno(rl_outstream), buf, sizeof(buf));
 }
 
 char*   std_read_cb(vty_t* vty)

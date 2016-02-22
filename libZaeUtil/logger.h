@@ -3,14 +3,15 @@ This is logger utility header
 */
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef enum LogLevel_e
 {
-    LOG_LEVEL_NONE,
-    LOG_LEVEL_ERROR,
-    LOG_LEVEL_BASIC,
-    LOG_LEVEL_ADVANCED,
-    LOG_LEVEL_DEBUG
+    LOG_LEVEL_NONE      = 0x0,
+    LOG_LEVEL_ERROR     = 0x1,
+    LOG_LEVEL_BASIC     = 0x2,
+    LOG_LEVEL_ADVANCED  = 0x4,
+    LOG_LEVEL_DEBUG     = 0x8
 } LogLevel;
 
 typedef enum LogTarget_e
@@ -52,3 +53,6 @@ extern logger_handle_t* logger_handle;
 
 void logger_init(LogLevel level, LogTarget target, void* data);
 void logger_log(logger_handle_t* handle, LogLevel level, const char* format, ...);
+void logger_enable(bool enable);
+void logger_set_level(LogLevel level);
+

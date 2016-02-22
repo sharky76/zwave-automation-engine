@@ -47,7 +47,7 @@ int variant_compare_byte(const variant_t* v, const variant_t* other)
 
 int variant_compare_string(const variant_t* v, const variant_t* other)
 {
-    //printf("variant_compare_string: compare %s with %s\n", variant_get_string(v), variant_get_string(other));
+    printf("variant_compare_string: compare %s with %s\n", variant_get_string(v), variant_get_string(other));
     return strcmp(variant_get_string(v), variant_get_string(other));
 }
 
@@ -148,8 +148,13 @@ variant_t*  variant_create_variant(int type, variant_t* variant)
 
 variant_t*  variant_create_float(double data)
 {
-    variant_t* new_variant = variant_create(DT_FLOAT, NULL);
+    variant_t* new_variant = (variant_t*)calloc(1, sizeof(variant_t));
+    new_variant->type = DT_FLOAT;
+    new_variant->delete_cb = NULL;
+    new_variant->ref_count = 1;
+
     new_variant->storage.double_data = data;
+    new_variant->compare_cb = &variant_compare_float;
 
     return new_variant;
 }
@@ -282,6 +287,12 @@ bool variant_to_string(variant_t* variant, char** string)
             {
                 strcat(*string, "False");
             }
+        }
+        break;
+    case DT_FLOAT:
+        {
+            *string = (char*)calloc(6, sizeof(char));
+            snprintf(*string, 5, "%f", variant_get_float(variant));
         }
         break;
     default:

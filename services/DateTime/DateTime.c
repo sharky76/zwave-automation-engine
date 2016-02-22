@@ -13,8 +13,8 @@ variant_t*  datetime_time_greater_than(service_method_t* method, va_list args);
 void    service_create(service_t** service, int service_id)
 {
     SERVICE_INIT(DateTime, "Provides date/time display")
-    SERVICE_ADD_METHOD(GetTimeString, datetime_get_time_string, 0, "Returns date formatted as string")
-    SERVICE_ADD_METHOD(GetTimeStamp,  datetime_get_timestamp, 0, "Returns date as UNIX timestamp")
+    SERVICE_ADD_METHOD(GetTimeString, datetime_get_time_string, 0, "Returns time formatted as string (hours from 0-24, minutes from 00-59)")
+    SERVICE_ADD_METHOD(GetTimeStamp,  datetime_get_timestamp, 0, "Returns time as UNIX timestamp")
     SERVICE_ADD_METHOD(TimeLessThan,  datetime_time_less_than, 1, "Compare current time with string")
     SERVICE_ADD_METHOD(TimeGreaterThan,  datetime_time_greater_than, 1, "Compare current time with string")
 

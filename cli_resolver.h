@@ -6,7 +6,6 @@
 
 #include <stack.h>
 #include "cli_commands.h"
-#include "resolver.h"
 
 // Forward decl
 //typedef struct vty_t vty_t;

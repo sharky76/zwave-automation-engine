@@ -69,6 +69,8 @@ void script_exec(const char* path, char** envp)
 
     if(0 != pid)
     {
+        store_env(pid, envp);
+
         // parent
         struct sigaction sa;
         sa.sa_handler = &script_done_handler;
@@ -79,8 +81,6 @@ void script_exec(const char* path, char** envp)
             perror(0);
             exit(1);
         }
-
-        store_env(pid, envp);
     }
     else
     {

@@ -19,6 +19,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
 
 ZWay zway;
 
@@ -60,6 +62,12 @@ sigint (int sig)
   rl_forced_update_display ();
 }
 
+void sigpipe(int sig)
+{
+    keep_running = 0;
+    siglongjmp (jmpbuf, 1);
+}
+
 /* Signale wrapper for vtysh. We don't use sigevent because
  * vtysh doesn't use threads. TODO */
 void
@@ -82,9 +90,9 @@ main_signal_set (int signo, void (*func)(int))
 /* Initialization of signal handles. */
 void signal_init()
 {
-  main_signal_set (SIGINT, sigint);
-  main_signal_set (SIGTSTP, sigtstp);
-  main_signal_set (SIGPIPE, SIG_IGN);
+  //main_signal_set (SIGINT, sigint);
+  //main_signal_set (SIGTSTP, sigtstp);
+  main_signal_set (SIGPIPE, sigpipe);
 }
 
 char* null_function(const char *ignore, int key)
@@ -143,28 +151,96 @@ int main (int argc, char *argv[])
             rl_attempted_completion_function = &cli_command_completer;
             rl_completion_entry_function = &null_function;
             rl_bind_key ('?', (rl_command_func_t *) cli_command_describe);
-
+            //rl_pre_input_hook = &cli_print_prompt_function;
             signal_init();
             
-            vty_data_t data = {
+            /*vty_data_t data = {
                 .desc.io_pair[0] = stdin,
                 .desc.io_pair[1] = stdout
-            };
-            vty_t* vty_console = vty_create(VTY_STD, &data);
-            cli_set_vty(vty_console);
+            };*/
+            //vty_t* vty_console = vty_create(VTY_STD, &data);
+            //cli_set_vty(vty_console);
             
             /* Preparation for longjmp() in sigtstp(). */
-            sigsetjmp (jmpbuf, 1);
-            jmpflag = 1;
-            setjmp(exit_jmpbuf);
+            
+            
 
-            while(keep_running)
+            /*while(keep_running)
             {
                 char* str = vty_read(vty_console);
                 cli_command_exec(vty_console, str);
                 free(str);
-            }
+            }*/
             
+
+
+            int cli_sock = socket(AF_INET, SOCK_STREAM, 0);
+            struct sockaddr_in addr;
+            memset(&addr, 0, sizeof(struct sockaddr_in));
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons(3333);
+            addr.sin_addr.s_addr = /*inet_addr("192.168.1.91");*/INADDR_ANY;
+            bind(cli_sock, &addr, sizeof(struct sockaddr_in));
+            int on = 1;
+            setsockopt(cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int));
+            //setsockopt(cli_sock, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(int));
+
+            listen(cli_sock, 1);
+
+            while(true)
+            {
+                int session_sock = accept(cli_sock, NULL, NULL);
+                    
+                LOG_ADVANCED("Remote client connected");
+
+                int saved_stdout = dup(STDOUT_FILENO);
+                int saved_stdin = dup(STDIN_FILENO);
+
+                close(STDOUT_FILENO);
+                dup2(session_sock, STDOUT_FILENO);
+                close(STDIN_FILENO);
+                dup2(session_sock, STDIN_FILENO);
+    
+                //FILE* readline_io = fdopen(session_sock, "rw");
+                vty_data_t vty_data = {
+                    .desc.io_pair[0] = stdin,
+                    .desc.io_pair[1] = stdout
+                };
+                vty_t* vty_sock = vty_create(VTY_STD, &vty_data);
+                cli_set_vty(vty_sock);
+    
+                //sigsetjmp(exit_jmpbuf, 1);
+                sigsetjmp (jmpbuf, 1);
+                jmpflag = 1;
+
+                while(keep_running)
+                {
+                    char* str = vty_read(vty_sock);
+                    cli_command_exec(vty_sock, str);
+                    free(str);
+                }
+
+                keep_running = 1;
+                vty_free(vty_sock);
+                close(session_sock);
+
+                dup2(saved_stdout, 1);
+                dup2(saved_stdin, 0);
+
+                LOG_ADVANCED("Remote client disconnected");
+            }
+
+
+
+
+
+
+
+
+
+
+
+
             //rl_ding();
             /*rl_callback_handler_install ("# ", cli_command_exec_default);
 
@@ -210,7 +286,7 @@ int main (int argc, char *argv[])
               }
             }*/
 
-            vty_free(vty_console);
+            //vty_free(vty_console);
         }
         else
         {

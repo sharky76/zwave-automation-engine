@@ -12,6 +12,7 @@ typedef struct logger_handle_t
 {
     LogLevel    level;
     LogTarget   target;
+    bool        enabled;
     FILE*       fh;
 
     void    (*do_log)(struct logger_handle_t*, const char*, va_list);
@@ -39,6 +40,7 @@ void logger_init(LogLevel level, LogTarget target, void* data)
 
     logger_handle->level = level;
     logger_handle->target = target;
+    logger_handle->enabled = true;
 
     switch(target)
     {
@@ -59,7 +61,7 @@ void logger_init(LogLevel level, LogTarget target, void* data)
 
 void logger_log(logger_handle_t* handle, LogLevel level, const char* format, ...)
 {
-    if(handle->level >= level)
+    if(handle->level >= level && handle->enabled)
     {
         time_t t = time(NULL);
         struct tm* ptime = localtime(&t);
@@ -92,6 +94,16 @@ void logger_log(logger_handle_t* handle, LogLevel level, const char* format, ...
         va_start(args, format);
         handle->do_log(handle, log_format_buffer, args);
     }
+}
+
+void logger_set_level(LogLevel level)
+{
+    logger_handle->level = level;
+}
+
+void logger_enable(bool enable)
+{
+    logger_handle->enabled = enable;
 }
 
 void file_logger_data_init(logger_handle_t* handle)

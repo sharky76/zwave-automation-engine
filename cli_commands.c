@@ -19,6 +19,7 @@
 #include "cli_scene.h"
 #include "cli_sensor.h"
 #include "cli_service.h"
+#include "cli_logger.h"
 #include <setjmp.h>
 
 extern jmp_buf  exit_jmpbuf;
@@ -322,6 +323,7 @@ void    cli_init()
     cli_resolver_init(root_node);
     cli_sensor_init(root_node);
     cli_service_init(root_node);
+    cli_logger_init(root_node);
 
     current_node = root_node;
 }
@@ -658,7 +660,7 @@ int     cli_command_describe()
 int     cli_command_quit(int count, int key)
 {
     keep_running = 0;
-    longjmp(exit_jmpbuf, 1);
+    siglongjmp(exit_jmpbuf, 1);
 }
 
 bool    cli_command_exec(vty_t* vty, const char* line)
@@ -938,3 +940,4 @@ void    show_command_class_helper(command_class_t* command_class, void* arg)
 
     vty_write(vty, "\n");
 }
+

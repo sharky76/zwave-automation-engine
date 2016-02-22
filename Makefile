@@ -23,8 +23,9 @@ OUTFILE=$(OUTDIR)/zwave-automation-engine
 CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
 CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+COMMON_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/data_cache.o $(OUTDIR)/data_callbacks.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
@@ -33,8 +34,9 @@ COMMON_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_resolver.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
 	$(OUTDIR)/vty.o $(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+ALL_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/data_cache.o $(OUTDIR)/data_callbacks.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
@@ -87,8 +89,9 @@ OUTFILE=$(OUTDIR)/zwave-automation-engine
 CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
 CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+COMMON_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/data_cache.o $(OUTDIR)/data_callbacks.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
@@ -97,8 +100,9 @@ COMMON_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_resolver.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
 	$(OUTDIR)/vty.o $(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+ALL_OBJ=$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/data_cache.o $(OUTDIR)/data_callbacks.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \

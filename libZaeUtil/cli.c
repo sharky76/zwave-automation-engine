@@ -133,31 +133,46 @@ void cmd_create_tree(cli_command_t* cmd, variant_stack_t* command_tree)
     {
         const char* cmd_part = variant_get_string(stack_peek_at(cmd_vec, i));
         
-        // Find the node matching command or, find the last node to which we will append child
-        cmd_tree_node_t* node = cmd_find_node(command_tree_root, cmd_part);
+        // Lets see if cmd_part is actually |-separated list of options:
+        char* tok = strtok((char*)cmd_part, "|");
+        variant_stack_t*    saved_root = command_tree_root;
 
-        if(NULL == node)
+        while(NULL != tok)
         {
-            // Append new node to root
-            cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
-            new_node->data = cmd_create_node_data(cmd_part, cmd);
-            new_node->children = stack_create();
-            stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
-            command_tree_root = new_node->children;
-
-            // Special case for terminator nodes
-            if(cmd_vec->count-1 == i)
+            // Find the node matching command or, find the last node to which we will append child
+            cmd_tree_node_t* node = cmd_find_node(command_tree_root, tok);
+    
+            if(NULL == node)
             {
-                cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
-                term_node->data = cmd_create_final_node_data(cmd);
-                term_node->children = stack_create();
-                stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
+                // Append new node to root
+                cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
+                new_node->data = cmd_create_node_data(tok, cmd);
+                new_node->children = stack_create();
+                stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
+                saved_root = command_tree_root;
+                command_tree_root = new_node->children;
+    
+                // Special case for terminator nodes
+                if(cmd_vec->count-1 == i)
+                {
+                    cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
+                    term_node->data = cmd_create_final_node_data(cmd);
+                    term_node->children = stack_create();
+                    stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
+                }
             }
-        }
-        else
-        {
-            // Matching node was found - continue search its children
-            command_tree_root = node->children;
+            else
+            {
+                // Matching node was found - continue search its children
+                saved_root = command_tree_root;
+                command_tree_root = node->children;
+            }
+
+            tok = strtok(NULL, "|");
+            if(NULL != tok)
+            {
+                command_tree_root = saved_root;
+            }
         }
     }
 

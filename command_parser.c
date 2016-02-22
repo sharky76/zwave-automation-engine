@@ -205,7 +205,7 @@ State    state_alpha(state_context_t* state_context, void* priv)
     {
         strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
     }
-    *state_context->parsed_token = '\0';
+    //*state_context->parsed_token = '\0';
 
     return (ret_val)? parser_dfa_next_state(STATE_ALPHA, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
@@ -224,7 +224,7 @@ State    state_digit(state_context_t* state_context, void* priv)
         strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
     }
 
-    *state_context->parsed_token = '\0';
+    //*state_context->parsed_token = '\0';
 
     return (ret_val)? parser_dfa_next_state(STATE_DIGIT, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
@@ -299,7 +299,7 @@ State    state_capture_string(state_context_t* state_context, void* priv)
         
     }
 
-    *state_context->parsed_token = '\0';
+    //*state_context->parsed_token = '\0';
 
     return (ret_val)? parser_dfa_next_state(STATE_CAPTURE_STRING, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
