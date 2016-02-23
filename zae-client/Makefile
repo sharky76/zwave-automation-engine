@@ -27,8 +27,8 @@ COMMON_OBJ=$(OUTDIR)/zae-client.o
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/zae-client.o 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c  -g -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=gcc -c  -x c  -g -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=gcc  -g -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -39,7 +39,6 @@ all: $(OUTFILE)
 
 $(OUTFILE): $(OUTDIR)  $(OBJ)
 	$(LINK)
-	-scp $(OUTDIR)/zae-client osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
 
 $(OUTDIR):
 	$(MKDIR) -p "$(OUTDIR)"
@@ -69,8 +68,8 @@ COMMON_OBJ=$(OUTDIR)/zae-client.o
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/zae-client.o 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c  -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=gcc -c  -x c  -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=gcc  -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -81,7 +80,6 @@ all: $(OUTFILE)
 
 $(OUTFILE): $(OUTDIR)  $(OBJ)
 	$(LINK)
-	-scp $(OUTDIR)/zae-client osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
 
 $(OUTDIR):
 	$(MKDIR) -p "$(OUTDIR)"

@@ -55,4 +55,6 @@ void logger_init(LogLevel level, LogTarget target, void* data);
 void logger_log(logger_handle_t* handle, LogLevel level, const char* format, ...);
 void logger_enable(bool enable);
 void logger_set_level(LogLevel level);
+bool logger_is_enabled();
+LogLevel    logger_get_level();
 

@@ -47,7 +47,7 @@ int variant_compare_byte(const variant_t* v, const variant_t* other)
 
 int variant_compare_string(const variant_t* v, const variant_t* other)
 {
-    printf("variant_compare_string: compare %s with %s\n", variant_get_string(v), variant_get_string(other));
+    //printf("variant_compare_string: compare %s with %s\n", variant_get_string(v), variant_get_string(other));
     return strcmp(variant_get_string(v), variant_get_string(other));
 }
 

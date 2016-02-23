@@ -1,4 +1,5 @@
 #include "cli_logger.h"
+#include <string.h>
 
 cli_node_t*     logger_node;
 
@@ -40,12 +41,50 @@ bool    cmd_set_log_level(vty_t* vty, variant_stack_t* params)
     }
     else if(strcmp(log_level, "info") == 0)
     {
-        logger_set_level(LOG_LEVEL_INFO);
+        logger_set_level(LOG_LEVEL_BASIC);
+    }
+    else if(strcmp(log_level, "error") == 0)
+    {
+        logger_set_level(LOG_LEVEL_ERROR);
+    }
+    else if(strcmp(log_level, "advanced") == 0)
+    {
+        logger_set_level(LOG_LEVEL_ADVANCED);
+    }
+    else if(strcmp(log_level, "debug") == 0)
+    {
+        logger_set_level(LOG_LEVEL_DEBUG);
     }
 }
 
 bool    cmd_show_logger(vty_t* vty, variant_stack_t* params)
 {
+    if(logger_is_enabled())
+    {
+        vty_write(vty, "logger enable\n");
+    }
+    else
+    {
+        vty_write(vty, "no logger enable\n");
+    }
 
+    switch(logger_get_level())
+    {
+    case LOG_LEVEL_NONE:
+        vty_write(vty, "loger set-level none\n");
+        break;
+    case LOG_LEVEL_BASIC:
+        vty_write(vty, "loger set-level info\n");
+        break;
+    case LOG_LEVEL_ERROR:
+        vty_write(vty, "loger set-level error\n");
+        break;
+    case LOG_LEVEL_ADVANCED:
+        vty_write(vty, "loger set-level advanced\n");
+        break;
+    case LOG_LEVEL_DEBUG:
+        vty_write(vty, "loger set-level debug\n");
+        break;
+    }
 }
 

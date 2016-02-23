@@ -23,7 +23,7 @@
 				OutputExts="*.o"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -g -o "%bd%n%oe" %i %f'/>
+				<Exec CmdLine='gcc -c %xup -x c %defd -g -o "%bd%n%oe" %i %f'/>
 			</Target>
 			<Target
 				Name="Link"
@@ -34,7 +34,7 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g -o "%o" %objs'/>
+				<Exec CmdLine='gcc %xup -g -o "%o" %objs'/>
 			</Target>
 			<Target
 				Name="Build"
@@ -95,9 +95,6 @@
 		</Menu>
 		<Includes/>
 		<Libs PreObjects="0"/>
-		<PostBuildCommands>
-			<Exec CmdLine="scp %bdzae-client osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
-		</PostBuildCommands>
 	</Config>
 	<Config
 		Name="Release"
@@ -117,7 +114,7 @@
 				OutputExts="*.o"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -o "%bd%n%oe" %i %f'/>
+				<Exec CmdLine='gcc -c %xup -x c %defd -o "%bd%n%oe" %i %f'/>
 			</Target>
 			<Target
 				Name="Link"
@@ -128,7 +125,7 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -o "%o" %objs'/>
+				<Exec CmdLine='gcc %xup -o "%o" %objs'/>
 			</Target>
 			<Target
 				Name="Build"
@@ -189,9 +186,6 @@
 		</Menu>
 		<Includes/>
 		<Libs PreObjects="0"/>
-		<PostBuildCommands>
-			<Exec CmdLine="scp %bdzae-client osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
-		</PostBuildCommands>
 	</Config>
 	<Files>
 		<Folder

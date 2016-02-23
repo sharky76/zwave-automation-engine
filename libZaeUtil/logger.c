@@ -106,6 +106,16 @@ void logger_enable(bool enable)
     logger_handle->enabled = enable;
 }
 
+bool logger_is_enabled()
+{
+    return logger_handle->enabled;
+}
+
+LogLevel    logger_get_level()
+{
+    return logger_handle->level;
+}
+
 void file_logger_data_init(logger_handle_t* handle)
 {
     handle->fh = fopen(handle->data.file->filename, "a+");

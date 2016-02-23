@@ -22,7 +22,7 @@
 #include "cli_logger.h"
 #include <setjmp.h>
 
-extern jmp_buf  exit_jmpbuf;
+extern sigjmp_buf jmpbuf;
 extern int keep_running;
 
 // Forward declaration of commands
@@ -660,7 +660,7 @@ int     cli_command_describe()
 int     cli_command_quit(int count, int key)
 {
     keep_running = 0;
-    siglongjmp(exit_jmpbuf, 1);
+    siglongjmp(jmpbuf, 1);
 }
 
 bool    cli_command_exec(vty_t* vty, const char* line)
@@ -888,6 +888,8 @@ bool    cmd_close_session(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
 {
+    cli_command_exec(vty, "show logger");
+    vty_write(vty, "!\n");
     cli_command_exec(vty, "show resolver");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show service");

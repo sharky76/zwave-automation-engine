@@ -22,15 +22,17 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 
+#define DEFAULT_PORT 9231
+
 ZWay zway;
 
 /* For sigsetjmp() & siglongjmp(). */
-static sigjmp_buf jmpbuf;
+sigjmp_buf jmpbuf;
 
 /* Flag for avoid recursive siglongjmp() call. */
 static int jmpflag = 0;
 
-jmp_buf  exit_jmpbuf;
+//jmp_buf  exit_jmpbuf;
 int keep_running = 1;
 
 /* SIGTSTP handler.  This function care user's ^Z input. */
@@ -65,6 +67,10 @@ sigint (int sig)
 void sigpipe(int sig)
 {
     keep_running = 0;
+    if (! jmpflag)
+    return;
+
+    jmpflag = 0;
     siglongjmp (jmpbuf, 1);
 }
 
@@ -178,7 +184,7 @@ int main (int argc, char *argv[])
             struct sockaddr_in addr;
             memset(&addr, 0, sizeof(struct sockaddr_in));
             addr.sin_family = AF_INET;
-            addr.sin_port = htons(3333);
+            addr.sin_port = htons(DEFAULT_PORT);
             addr.sin_addr.s_addr = /*inet_addr("192.168.1.91");*/INADDR_ANY;
             bind(cli_sock, &addr, sizeof(struct sockaddr_in));
             int on = 1;

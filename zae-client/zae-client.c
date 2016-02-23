@@ -14,6 +14,8 @@
 #include <setjmp.h>
 #include <errno.h>
 
+#define DEFAULT_PORT 9231
+
 /* SIGTSTP handler.  This function care user's ^Z input. */
 int got_sigtstp = 0;
 int got_sigint = 0;
@@ -56,8 +58,6 @@ void signal_init()
 
 int main (int argc, char *argv[])
 {
-    
-
     struct termios org_opts, new_opts;
     int res=0;
         //-----  store old settings -----------
@@ -74,7 +74,7 @@ int main (int argc, char *argv[])
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(3333);
+    addr.sin_port = htons(DEFAULT_PORT);
     addr.sin_addr.s_addr = inet_addr("192.168.1.91");
     int on = 1;
     setsockopt(cli_sock, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(int));
@@ -102,6 +102,7 @@ int main (int argc, char *argv[])
         sigprocmask(SIG_BLOCK, &blockset, NULL);
 
         bool keep_running = true;
+        char escape_seq_buf[3];
 
         while(keep_running)
         {
@@ -120,7 +121,18 @@ int main (int argc, char *argv[])
                 if(FD_ISSET(0, &read_fds))
                 {
                     char ch = getchar();
-                    write(cli_sock, &ch, sizeof(ch));
+                    if (ch == 27) {
+                        escape_seq_buf[0] = ch;
+                        // "throw away" next two characters which specify escape sequence
+                        escape_seq_buf[1] = getchar();
+                        escape_seq_buf[2] = getchar();
+                        write(cli_sock, escape_seq_buf, 3);
+                    }
+                    else
+                    {
+                        //printf("CH = %d\n", ch);
+                            write(cli_sock, &ch, sizeof(ch));
+                    }
                 }
 
                 if(FD_ISSET(cli_sock, &read_fds))
@@ -136,25 +148,6 @@ int main (int argc, char *argv[])
                         }
                     }
 
-                    /*if(buf[0] == 0)
-                    {
-                        printf("Oh oh! %d\n", nread);
-                        int i;
-                        for(i = 0; i < 20; i++)
-                        {
-                            if(buf[i] == 0)
-                            {
-                                printf("0 ");
-                            }
-                            else
-                            {
-                                printf("%c ", buf[i]);
-                            }
-                        }
-                        printf("\n");
-                    }*/
-
-                    //fprintf(stdout, "%s", buf);
                     fflush(stdout);
                     memset(buf, 0, sizeof(buf));
                 }
