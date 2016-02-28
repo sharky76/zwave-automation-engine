@@ -119,14 +119,11 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
 void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg)
 {
     device_event_data_t* event_data = (device_event_data_t*)arg;
-
-    //if(NULL == event_data->device_name)
-    {
-        event_data->device_name = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
-    }
+    event_data->device_name = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
 
     if(changeType == Updated)
     {
+        LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
         struct timespec tp;
         clock_gettime(CLOCK_MONOTONIC, &tp);
        

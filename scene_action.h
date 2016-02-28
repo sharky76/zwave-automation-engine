@@ -19,7 +19,9 @@ typedef enum ActionType_e
 {
     A_SCRIPT,
     A_SCENE,
-    A_COMMAND
+    A_COMMAND,
+    A_ENABLE,
+    A_DISABLE
 } ActionType;
 
 typedef struct action_t

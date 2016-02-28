@@ -1,6 +1,7 @@
 #include "cli_scene.h"
 #include "scene_manager.h"
 #include "scene_action.h"
+#include <logger.h>
 
 //extern cli_command_t   scene_command_list[];
 cli_node_t*     scene_node;
@@ -30,12 +31,22 @@ bool cmd_delete_scene_action_scene(vty_t* vty, variant_stack_t* params);
 bool cmd_delete_scene_action_command(vty_t* vty, variant_stack_t* params);
 bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params);
 
+bool cmd_config_scene_action_enable(vty_t* vty, variant_stack_t* params);
+bool cmd_delete_scene_action_enable(vty_t* vty, variant_stack_t* params);
+bool cmd_config_scene_action_disable(vty_t* vty, variant_stack_t* params);
+bool cmd_delete_scene_action_disable(vty_t* vty, variant_stack_t* params);
+
 bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params);
 bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params);
+
+bool cmd_scene_enable(vty_t* vty, variant_stack_t* params);
+bool cmd_scene_disable(vty_t* vty, variant_stack_t* params);
 
 void    show_scene_helper(scene_t* scene, void* arg);
 void    show_scene_action_helper(action_t* action, void* arg);
 void    show_scene_action_env_helper(env_t* env, void* arg);
+
+DECLARE_LOGGER(CLI_SCENE);
 
 cli_command_t   scene_root_list[] = {
     {"scene LINE",           cmd_enter_scene_node,          "Configure scene"},
@@ -54,8 +65,14 @@ cli_command_t   scene_command_list[] = {
     {"no action scene LINE",    cmd_delete_scene_action_scene,    "Delete scene action scene"},
     {"action command LINE",     cmd_config_scene_action_command,    "Configure scene action command"},
     {"no action command LINE",  cmd_delete_scene_action_command,    "Delete scene action command"},
+    {"action enable LINE",      cmd_config_scene_action_enable,     "Configure enable scene action"},
+    {"no action enable LINE",   cmd_delete_scene_action_enable,     "Delete enable scene action"},
+    {"action disable LINE",     cmd_config_scene_action_disable,    "Configure disable scene action"},
+    {"no action disable LINE",  cmd_delete_scene_action_disable,    "Delete disable scene action"},
     {"show action",             cmd_scene_show_action,              "Show scene actions"},
     {"show condition",          cmd_scene_show_condition,           "Show scene condition"},
+    {"enable",                  cmd_scene_enable,                   "Enable scene"},
+    {"no enable",               cmd_scene_disable,                  "Disable scene"},
     //{"end",                     cmd_exit_scene_node,             "Exit scene configuration"},
     {NULL,                          NULL,                   NULL}
 };
@@ -160,7 +177,7 @@ bool cmd_config_scene_action_scene(vty_t* vty, variant_stack_t* params)
     cli_assemble_line(params, 2, scene_name);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
-    action_t* new_action = scene_get_action(scene, scene_name);
+    action_t* new_action = scene_get_action_with_type(scene, scene_name, A_SCENE);
     if(NULL == new_action)
     {
         new_action = scene_action_create(A_SCENE, scene_name);
@@ -210,9 +227,9 @@ bool cmd_delete_scene_action_scene(vty_t* vty, variant_stack_t* params)
     cli_assemble_line(params, 3, scene_name);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
-    action_t* action = scene_get_action(scene, scene_name);
+    action_t* action = scene_get_action_with_type(scene, scene_name, A_SCENE);
 
-    if(NULL != action && action->type == A_SCENE)
+    if(NULL != action)
     {
         scene_del_action(scene, action);
     }
@@ -238,6 +255,62 @@ bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params)
     scene_action_del_environment(action, variant_get_string(stack_peek_at(params, 2)));
 }
 
+bool cmd_config_scene_action_enable(vty_t* vty, variant_stack_t* params)
+{
+    char scene_name[512] = {0};
+    cli_assemble_line(params, 2, scene_name);
+
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    action_t* new_action = scene_get_action_with_type(scene, scene_name, A_ENABLE);
+    if(NULL == new_action)
+    {
+        new_action = scene_action_create(A_ENABLE, scene_name);
+        scene_add_action(scene, new_action);
+    }
+}
+
+bool cmd_delete_scene_action_enable(vty_t* vty, variant_stack_t* params)
+{
+    char scene_name[512] = {0};
+    cli_assemble_line(params, 3, scene_name);
+
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    action_t* action = scene_get_action_with_type(scene, scene_name, A_ENABLE);
+
+    if(NULL != action)
+    {
+        scene_del_action(scene, action);
+    }
+}
+
+bool cmd_config_scene_action_disable(vty_t* vty, variant_stack_t* params)
+{
+    char scene_name[512] = {0};
+    cli_assemble_line(params, 2, scene_name);
+
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    action_t* new_action = scene_get_action_with_type(scene, scene_name, A_DISABLE);
+    if(NULL == new_action)
+    {
+        new_action = scene_action_create(A_DISABLE, scene_name);
+        scene_add_action(scene, new_action);
+    }
+}
+
+bool cmd_delete_scene_action_disable(vty_t* vty, variant_stack_t* params)
+{
+    char scene_name[512] = {0};
+    cli_assemble_line(params, 3, scene_name);
+
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    action_t* action = scene_get_action_with_type(scene, scene_name, A_DISABLE);
+
+    if(NULL != action)
+    {
+        scene_del_action(scene, action);
+    }
+}
+
 bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params)
 {
     scene_t* scene = scene_manager_get_scene(scene_node->context);
@@ -250,11 +323,33 @@ bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "condition %s\n", scene->condition);
 }
 
+bool cmd_scene_enable(vty_t* vty, variant_stack_t* params)
+{
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    scene->is_enabled = true;
+}
+
+bool cmd_scene_disable(vty_t* vty, variant_stack_t* params)
+{
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    scene->is_enabled = false;
+}
+
 void    show_scene_helper(scene_t* scene, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
     vty_write(vty, "scene %s\n", scene->name);
+
+    if(scene->is_enabled)
+    {
+        vty_write(vty, " enable\n");
+    }
+    else
+    {
+        vty_write(vty, " no enable\n");
+    }
+
     vty_write(vty, " source %s\n", scene->source);
     vty_write(vty, " condition %s\n", scene->condition);
     
@@ -280,6 +375,14 @@ void    show_scene_action_helper(action_t* action, void* arg)
     case A_SCENE:
         vty_write(vty, " action scene %s\n", action->path);
         break;
+    case A_ENABLE:
+        vty_write(vty, " action enable %s\n", action->path);
+        break;
+    case A_DISABLE:
+        vty_write(vty, " action disable %s\n", action->path);
+        break;
+    default:
+        LOG_ERROR(CLI_SCENE, "Unknow scene action type: %d", action->type);
     }
 
 }

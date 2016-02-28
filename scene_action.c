@@ -7,6 +7,8 @@
 void scene_action_exec_scene(action_t* action);
 void scene_action_exec_script(action_t* action);
 void scene_action_exec_command(action_t* action);
+void scene_action_enable_scene(action_t* action);
+void scene_action_disable_scene(action_t* action);
 
 DECLARE_LOGGER(SceneAction)
 
@@ -142,6 +144,12 @@ void  scene_action_exec(action_t* action)
     case A_COMMAND:
         scene_action_exec_command(action);
         break;
+    case A_ENABLE:
+        scene_action_enable_scene(action);
+        break;
+    case A_DISABLE:
+        scene_action_disable_scene(action);
+        break;
     default:
         break;
     }
@@ -163,6 +171,26 @@ void scene_action_exec_scene(action_t* action)
     if(NULL != scene)
     {
         scene_exec(scene);
+    }
+}
+
+void scene_action_enable_scene(action_t* action)
+{
+    scene_t* scene = scene_manager_get_scene(action->path);
+
+    if(NULL != scene)
+    {
+        scene->is_enabled = true;
+    }
+}
+
+void scene_action_disable_scene(action_t* action)
+{
+    scene_t* scene = scene_manager_get_scene(action->path);
+
+    if(NULL != scene)
+    {
+        scene->is_enabled = false;
     }
 }
 

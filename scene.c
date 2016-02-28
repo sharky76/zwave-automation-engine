@@ -23,6 +23,7 @@ scene_t*    scene_create(const char* name)
     scene_t* new_scene = (scene_t*)calloc(1, sizeof(scene_t));
     new_scene->actions = stack_create();
     new_scene->is_valid = true;
+    new_scene->is_enabled = true;
     new_scene->name = strdup(name);
 
     return new_scene;
@@ -119,11 +120,31 @@ action_t*   scene_get_action(scene_t* scene, const char* action_path)
     return NULL;
 }
 
+action_t*   scene_get_action_with_type(scene_t* scene, const char* action_path, ActionType type)
+{
+    stack_for_each(scene->actions, action_data)
+    {
+        action_t* action = (action_t*)variant_get_ptr(action_data);
+        if(strcmp(action->path, action_path) == 0 && action->type == type)
+        {
+            return action;
+        }
+    }
+    
+    return NULL;
+}
+
 void scene_exec(scene_t* scene)
 {
     if(!scene->is_valid)
     {
-        LOG_ERROR(SceneGeneral, "Unable to execute invalid scene %s", scene->name);
+        LOG_ERROR(SceneGeneral, "Unable to execute: invalid scene %s", scene->name);
+        return;
+    }
+
+    if(!scene->is_enabled)
+    {
+        LOG_ERROR(SceneGeneral, "Unable to execute: scene %s is disabled", scene->name);
         return;
     }
     

@@ -6,7 +6,7 @@
 #include "stack.h"
 #include "resolver.h"
 #include "vty.h"
-//#include "scene_action.h"
+#include "scene_action.h"
 
 typedef struct action_t action_t;
 
@@ -15,15 +15,18 @@ typedef struct scene_t
     char*               name;
     char*               source;
     char*               condition;
-    //variant_stack_t*    compiled_condition;
     variant_stack_t*    actions;
     bool                is_valid;
+    bool                is_enabled;
 } scene_t;
 
 scene_t*    scene_create(const char* name);
 bool        scene_add_action(scene_t* scene, action_t* action);
 void        scene_del_action(scene_t* scene, action_t* action);
 action_t*   scene_get_action(scene_t* scene, const char* action_path);
+
+action_t*   scene_get_action_with_type(scene_t* scene, const char* action_path, ActionType type);
+
 scene_t*    scene_load(struct json_object* scene_obj);
 void        scene_exec(scene_t* scene);
 void        scene_delete(void* arg);

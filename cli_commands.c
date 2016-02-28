@@ -32,9 +32,6 @@ bool    cmd_controller_reset(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_factory_reset(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params);
-bool    cmd_scene_enable(vty_t* vty, variant_stack_t* params);
-bool    cmd_scene_disable(vty_t* vty, variant_stack_t* params);
-bool    cmd_scene_execute(vty_t* vty, variant_stack_t* params);
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
 
 
@@ -60,7 +57,6 @@ cli_command_t root_command_list[] = {
     {"controller remove-failed node-id INT", cmd_controller_remove_failed_node, "Remove failed node from the controller"},
     {"show controller queue",       cmd_show_controller_queue,   "Display the contents of controller job queue"},
     {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
-    {"scene execute WORD",        cmd_scene_execute,             "Execute scene"}, 
     {"help",                 cmd_help,                      "(module) Display help for module"},
     {"prompt LINE",          cmd_set_prompt,                "Set new prompt"},
     {"show running-config",  cmd_show_running_config,       "Show running configuration"},
@@ -778,20 +774,6 @@ bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "%-15s%-15s%s\n", "Command Id", "Name", "Methods(Args)");
     command_class_for_each(show_command_class_helper, vty);
 }
-
-bool    cmd_scene_enable(vty_t* vty, variant_stack_t* params)
-{
-}
-
-bool    cmd_scene_disable(vty_t* vty, variant_stack_t* params)
-{
-}
-
-bool    cmd_scene_execute(vty_t* vty, variant_stack_t* params)
-{
-}
-
-
 
 bool    cmd_help(vty_t* vty, variant_stack_t* params)
 {

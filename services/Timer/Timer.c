@@ -46,7 +46,7 @@ void service_create(service_t** service, int service_id)
     }
     else
     {
-        //alarm(1);
+        alarm(1);
     }
 }
 
