@@ -5,6 +5,8 @@
 #include "scene_action.h"
 #include "logger.h"
 
+DECLARE_LOGGER(SceneGeneral)
+
 void scene_delete(void* arg)
 {
     scene_t* scene = (scene_t*)arg;
@@ -62,19 +64,19 @@ scene_t*    scene_load(struct json_object* scene_obj)
                 }
                 else if(strcmp(key, "source") == 0)
                 {
-                    LOG_DEBUG("Scene source: %s", json_object_get_string(val));
+                    LOG_DEBUG(SceneGeneral, "Scene source: %s", json_object_get_string(val));
                     new_scene->source = strdup(json_object_get_string(val)); //resolver_nodeId_from_name(resolver, json_object_get_string(val));
                 }
                 else if(strcmp(key, "condition") == 0)
                 {
-                    LOG_DEBUG("Scene condition: %s", json_object_get_string(val));
+                    LOG_DEBUG(SceneGeneral, "Scene condition: %s", json_object_get_string(val));
                     new_scene->condition = strdup(json_object_get_string(val));
                 }
                 else if(strcmp(key, "actions") == 0)
                 {
                     int num_actions = json_object_array_length(val);
 
-                    LOG_DEBUG("Found %d scene actions", num_actions);
+                    LOG_DEBUG(SceneGeneral, "Found %d scene actions", num_actions);
                     for(int i = 0; i < num_actions; i++)
                     {
                         struct json_object* record = json_object_array_get_idx(val, i);
@@ -121,7 +123,7 @@ void scene_exec(scene_t* scene)
 {
     if(!scene->is_valid)
     {
-        LOG_ERROR("Unable to execute invalid scene %s", scene->name);
+        LOG_ERROR(SceneGeneral, "Unable to execute invalid scene %s", scene->name);
         return;
     }
     
@@ -130,7 +132,7 @@ void scene_exec(scene_t* scene)
 
     if(!isOk)
     {
-        LOG_ERROR("Error compiling condition %s", scene->condition);
+        LOG_ERROR(SceneGeneral, "Error compiling condition %s", scene->condition);
     }
     else
     {
@@ -145,7 +147,7 @@ void scene_exec(scene_t* scene)
     
                 if(NULL != action)
                 {
-                    LOG_DEBUG("Call action %s", action->path);
+                    LOG_DEBUG(SceneGeneral, "Call action %s", action->path);
                     scene_action_exec(action);
                 }
             }
@@ -153,7 +155,7 @@ void scene_exec(scene_t* scene)
     }
 }
 
-void    scene_manager_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg)
+void    scene_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg)
 {
     stack_for_each(scene->actions, action_data)
     {

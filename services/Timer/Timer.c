@@ -46,7 +46,7 @@ void service_create(service_t** service, int service_id)
     }
     else
     {
-        alarm(1);
+        //alarm(1);
     }
 }
 
@@ -76,7 +76,7 @@ variant_t*  timer_start(service_method_t* method, va_list args)
         }
         else
         {
-            LOG_ERROR("Failed to create timer");
+            LOG_ERROR(DT_TIMER, "Failed to create timer");
             free(timer);
             return variant_create_bool(false);
         }
@@ -126,7 +126,7 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
         }
         else
         {
-            LOG_ERROR("Failed to create interval");
+            LOG_ERROR(DT_TIMER, "Failed to create interval");
             free(timer);
             return variant_create_bool(false);
         }
@@ -159,6 +159,11 @@ void alarm_expire_handler(int sig)
                 timer->ticks_left = timer->timeout;
             }
         }
+    }
+
+    if(timer_enabled)
+    {
+        service_post_event(DT_TIMER, "tick");
     }
 
     alarm(1);

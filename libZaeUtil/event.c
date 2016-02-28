@@ -1,8 +1,10 @@
 #include "event.h"
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 
 variant_stack_t* event_list;
+pthread_mutex_t  event_list_mutex;
 
 void    event_destroy(void* arg);
 
@@ -22,13 +24,17 @@ void        event_delete(event_t* event)
 
 void        event_post(event_t* event)
 {
+    pthread_mutex_lock(&event_list_mutex);
     stack_push_back(event_list, variant_create_ptr(DT_EVENT, event, NULL));
+    pthread_mutex_unlock(&event_list_mutex);
     raise(SIGUSR1);
 }
 
 event_t*    event_receive()
 {
+    pthread_mutex_lock(&event_list_mutex);
     variant_t* event_variant = stack_pop_front(event_list);
+    pthread_mutex_unlock(&event_list_mutex);
     event_t* event = (event_t*)variant_get_ptr(event_variant);
     free(event_variant);
     return event;

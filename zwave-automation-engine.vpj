@@ -335,14 +335,16 @@
 		<F N="command_class.h"/>
 		<F N="command_parser.c"/>
 		<F N="command_parser.h"/>
-		<F N="data_cache.c"/>
-		<F N="data_cache.h"/>
+		<F N="config.c"/>
+		<F N="config.h"/>
 		<F N="data_callbacks.c"/>
 		<F N="data_callbacks.h"/>
 		<F N="device_callbacks.c"/>
 		<F N="device_callbacks.h"/>
 		<F N="event_manager.c"/>
 		<F N="event_manager.h"/>
+		<F N="logging_modules.c"/>
+		<F N="logging_modules.h"/>
 		<F
 			N="Makefile"
 			Type="Makefile"/>

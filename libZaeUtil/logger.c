@@ -4,6 +4,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <string.h>
+#include "hash.h"
 
 #define MAX_LOG_ENTRY_LEN   512
 
@@ -14,8 +15,14 @@ typedef struct logger_handle_t
     LogTarget   target;
     bool        enabled;
     FILE*       fh;
+    hash_table_t*   logger_service_table;
 
-    void    (*do_log)(struct logger_handle_t*, const char*, va_list);
+    bool        console;
+
+    int log_buffer_size;
+    variant_stack_t*    log_buffer;
+
+    void    (*do_log)(struct logger_handle_t*, const char*);
 
     union {
         file_logger_data_t*      file;
@@ -30,9 +37,12 @@ void file_logger_data_init(logger_handle_t* handle);
 void syslog_logger_data_init(logger_handle_t* handle);
 void stdout_logger_data_init(logger_handle_t* handle);
 
-void    do_file_log(logger_handle_t* handle, const char* format, va_list args);
-void    do_syslog_log(logger_handle_t* handle, const char* format, va_list args);
-void    do_stdout_log(logger_handle_t* handle, const char* format, va_list args);
+void    do_file_log(logger_handle_t* handle, const char* line);
+void    do_syslog_log(logger_handle_t* handle, const char* line);
+void    do_stdout_log(logger_handle_t* handle, const char* line);
+void    valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel level, const char* format, va_list args);
+
+void    logger_add_buffer(const char* line);
 
 void logger_init(LogLevel level, LogTarget target, void* data)
 {
@@ -41,6 +51,13 @@ void logger_init(LogLevel level, LogTarget target, void* data)
     logger_handle->level = level;
     logger_handle->target = target;
     logger_handle->enabled = true;
+    
+    logger_handle->logger_service_table = variant_hash_init();
+
+    logger_handle->log_buffer_size = 100;
+    logger_handle->log_buffer = stack_create();
+
+    logger_handle->console = false;
 
     switch(target)
     {
@@ -59,46 +76,113 @@ void logger_init(LogLevel level, LogTarget target, void* data)
     }
 }
 
-void logger_log(logger_handle_t* handle, LogLevel level, const char* format, ...)
+void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel level, const char* format, va_list args)
 {
-    if(handle->level >= level && handle->enabled)
+    if(NULL != service && service->enabled == true &&
+       service->level >= level && handle->enabled)
     {
         time_t t = time(NULL);
         struct tm* ptime = localtime(&t);
-        char time_str[10] = {0};
+        char time_str[12] = {0};
 
-        strftime(time_str, sizeof(time_str), "%H:%M:%S", ptime);
+        strftime(time_str, sizeof(time_str), "%H:%M:%S %%%", ptime);
         char log_format_buffer[MAX_LOG_ENTRY_LEN] = {0};
         strcat(log_format_buffer, time_str);
-        strcat(log_format_buffer, " ");
+        strcat(log_format_buffer, service->service_name);
+        strcat(log_format_buffer, "-");
 
         switch(level)
         {
         case LOG_LEVEL_BASIC:
-            strcat(log_format_buffer, "[INFO] ");
+            strcat(log_format_buffer, "INFO: ");
             break;
         case LOG_LEVEL_ERROR:
-            strcat(log_format_buffer, "[ERROR] ");
+            strcat(log_format_buffer, "ERROR: ");
             break;
         case LOG_LEVEL_ADVANCED:
-            strcat(log_format_buffer, "[ADV] ");
+            strcat(log_format_buffer, "ADVANCED: ");
             break;
         case LOG_LEVEL_DEBUG:
-            strcat(log_format_buffer, "[DEBUG] ");
+            strcat(log_format_buffer, "DEBUG: ");
             break;
+        default:
+            return;
         }
 
-        strncat(log_format_buffer, format, MAX_LOG_ENTRY_LEN-21);
+        int len_so_far = strlen(log_format_buffer);
+
+        strncat(log_format_buffer, format, MAX_LOG_ENTRY_LEN-len_so_far-1);
         strcat(log_format_buffer, "\n");
-        va_list args;
-        va_start(args, format);
-        handle->do_log(handle, log_format_buffer, args);
+
+        char buf[1024] = {0};
+        vsnprintf(buf, 1023, log_format_buffer, args);
+        logger_add_buffer(buf);
+        handle->do_log(handle, buf);
     }
 }
 
-void logger_set_level(LogLevel level)
+void logger_log(logger_handle_t* handle, int id, LogLevel level, const char* format, ...)
 {
-    logger_handle->level = level;
+    // First check if the service id is enabled
+    variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, id);
+
+    if(NULL != service_variant)
+    {
+        logger_service_t* service = (logger_service_t*)variant_get_ptr(service_variant);
+        va_list args;
+        va_start(args, format);
+        valogger_log(handle, service, level, format, args);
+    }
+    else
+    {
+        printf("Unregistered module id: %d\n", id);
+    }
+}
+
+void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const char* func, const char* format, ...)
+{
+    // First check if the service id is enabled
+    variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, id);
+
+    if(NULL != service_variant)
+    {
+        logger_service_t* service = (logger_service_t*)variant_get_ptr(service_variant);
+    
+        char* new_format = calloc(strlen(format) + strlen(func) + 5, sizeof(char));
+        strcat(new_format, func);
+        strcat(new_format, "(): ");
+        strcat(new_format, format);
+    
+        va_list args;
+        va_start(args, format);
+        valogger_log(handle, service, level, new_format, args);
+    }
+    else
+    {
+        printf("Unregistered module id: %d\n", id);
+    }
+}
+
+void    logger_add_buffer(const char* line)
+{
+    while(logger_handle->log_buffer->count > logger_handle->log_buffer_size)
+    {
+        variant_t* log_var = stack_pop_front(logger_handle->log_buffer);
+        variant_free(log_var);
+    }
+
+    if(logger_handle->log_buffer_size > 0)
+    {
+        stack_push_back(logger_handle->log_buffer, variant_create_string(strdup(line)));
+    }
+}
+
+void logger_set_level(int serviceId, LogLevel level)
+{
+    variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, serviceId);
+    logger_service_t* service = (logger_service_t*)variant_get_ptr(service_variant);
+    service->level = level;
+    service->enabled = true;
 }
 
 void logger_enable(bool enable)
@@ -111,9 +195,11 @@ bool logger_is_enabled()
     return logger_handle->enabled;
 }
 
-LogLevel    logger_get_level()
+LogLevel    logger_get_level(int serviceId)
 {
-    return logger_handle->level;
+    variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, serviceId);
+    logger_service_t* service = (logger_service_t*)variant_get_ptr(service_variant);
+    return service->level;
 }
 
 void file_logger_data_init(logger_handle_t* handle)
@@ -131,16 +217,123 @@ void syslog_logger_data_init(logger_handle_t* handle)
 void stdout_logger_data_init(logger_handle_t* handle)
 {
     handle->fh = handle->data.stdout->fd;
-    handle->do_log = &do_file_log;
+    handle->do_log = &do_stdout_log;
 }
 
-void    do_file_log(logger_handle_t* handle, const char* format, va_list args)
+void    do_file_log(logger_handle_t* handle, const char* line)
 {
-    vfprintf(handle->fh, format, args);
+   fprintf(handle->fh, "%s", line);
 }
 
-void    do_syslog_log(logger_handle_t* handle, const char* format, va_list args)
+void    do_stdout_log(logger_handle_t* handle, const char* line)
 {
-    vsyslog(handle->data.syslog->priority, format, args);
+    if(handle->console)
+    {
+        do_file_log(handle, line);
+    }
+}
+
+void    do_syslog_log(logger_handle_t* handle, const char* line)
+{
+    syslog(handle->data.syslog->priority, line);
+}
+
+void logger_register_service(int* serviceId, const char* name)
+{
+    *serviceId = variant_get_next_user_type();
+    logger_register_service_with_id(*serviceId, name);
+}
+
+void logger_register_service_with_id(int serviceId, const char* name)
+{
+    logger_service_t* new_service = calloc(1, sizeof(logger_service_t));
+    new_service->service_id = serviceId;
+    new_service->service_name = strdup(name);
+    new_service->enabled = true;
+    new_service->level = LOG_LEVEL_ERROR;
+    variant_hash_insert(logger_handle->logger_service_table, serviceId, variant_create_ptr(DT_PTR, new_service, variant_delete_default));
+}
+
+
+void logger_enable_service(int serviceId)
+{
+    variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, serviceId);
+    logger_service_t* service = (logger_service_t*)variant_get_ptr(service_variant);
+    service->enabled = true;
+}
+
+void logger_disable_service(int serviceId)
+{
+    variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, serviceId);
+    logger_service_t* service = (logger_service_t*)variant_get_ptr(service_variant);
+    service->enabled = false;
+}
+
+/*
+ 
+    Helper method for traversing service hash... 
+ 
+*/
+typedef struct add_service_context_t
+{
+    logger_service_t** service_array;
+    int                current_index;
+} add_service_context_t;
+
+void add_service(hash_node_data_t* hash_node_data, void* context);
+
+bool logger_get_services(logger_service_t*** services, int* size)
+{
+    // Create array of pointers
+    *services = calloc(logger_handle->logger_service_table->count, sizeof(logger_service_t*));
+
+    add_service_context_t service_context = {
+        .current_index = 0,
+        .service_array = *services
+    };
+
+    variant_hash_for_each(logger_handle->logger_service_table, add_service, (void*)&service_context);
+    *size = logger_handle->logger_service_table->count;
+
+    return true;
+}
+
+void add_service(hash_node_data_t* hash_node_data, void* context)
+{
+    add_service_context_t* service_context = (add_service_context_t*)context;
+    logger_service_t* service = (logger_service_t*)variant_get_ptr(hash_node_data->data);
+    
+    //printf("%d service: %s\n", service->service_id, service->service_name);
+
+    *(service_context->service_array) = service;
+    service_context->service_array ++;
+}
+
+void logger_set_buffer(int size)
+{
+    logger_handle->log_buffer_size = size;
+}
+
+int  logger_get_buffer_size()
+{
+    return logger_handle->log_buffer_size;
+}
+
+void logger_set_console(bool is_console)
+{
+    logger_handle->console = is_console;
+}
+
+void logger_print_buffer()
+{
+    bool saved_console = logger_handle->console;
+    logger_handle->console = true;
+
+    stack_for_each(logger_handle->log_buffer, log_variant)
+    {
+        logger_handle->do_log(logger_handle, variant_get_string(log_variant));
+    }
+
+    logger_handle->console = saved_console;
 }
 

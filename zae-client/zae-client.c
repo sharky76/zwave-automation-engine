@@ -53,7 +53,7 @@ void signal_init()
 {
   main_signal_set (SIGINT, sigint);
   main_signal_set (SIGTSTP, sigtstp);
-  main_signal_set (SIGPIPE, SIG_IGN);
+  //main_signal_set (SIGPIPE, SIG_IGN);
 }
 
 int main (int argc, char *argv[])
@@ -80,7 +80,7 @@ int main (int argc, char *argv[])
     setsockopt(cli_sock, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(int));
 
     fd_set read_fds;
-    fd_set write_fds;
+    fd_set except_fds;
 
     if(0 == connect(cli_sock, (struct sockaddr*)&addr, sizeof(struct sockaddr_in)))
     {
@@ -107,14 +107,15 @@ int main (int argc, char *argv[])
         while(keep_running)
         {
             FD_ZERO(&read_fds);
+            FD_ZERO(&except_fds);
             FD_SET(0, &read_fds);
             FD_SET(cli_sock, &read_fds);
-
+            FD_SET(cli_sock, &except_fds);
             //FD_ZERO(&write_fds)
             //FD_SET(1, &write_fds);
             //FD_SET(cli_sock, &write_fds);
-
-            int ret = pselect(cli_sock+1, &read_fds, NULL, NULL, NULL, &emptyset);
+            
+            int ret = pselect(cli_sock+1, &read_fds, NULL, &except_fds, NULL, &emptyset);
 
             if(ret > 0)
             {
@@ -123,33 +124,45 @@ int main (int argc, char *argv[])
                     char ch = getchar();
                     if (ch == 27) {
                         escape_seq_buf[0] = ch;
-                        // "throw away" next two characters which specify escape sequence
+                        // get next two characters which specify escape sequence
                         escape_seq_buf[1] = getchar();
                         escape_seq_buf[2] = getchar();
                         write(cli_sock, escape_seq_buf, 3);
                     }
                     else
                     {
-                        //printf("CH = %d\n", ch);
-                            write(cli_sock, &ch, sizeof(ch));
+                        write(cli_sock, &ch, sizeof(ch));
                     }
                 }
 
                 if(FD_ISSET(cli_sock, &read_fds))
                 {
-                    int nread = recv(cli_sock, buf, sizeof(buf), 0);
-
-                    int i = 0;
-                    for(i = 0; i < sizeof(buf); i++)
+                    int nread = sizeof(buf);
+                    while(nread == sizeof(buf))
                     {
-                        if(buf[i] != 0)
+                        nread = recv(cli_sock, buf, sizeof(buf), 0);
+    
+                        if(nread <= 0)
                         {
-                            fprintf(stdout, "%c", buf[i]);
+                            keep_running = false;
                         }
+                        int i = 0;
+                        for(i = 0; i < sizeof(buf); i++)
+                        {
+                            if(buf[i] != 0)
+                            {
+                                fprintf(stdout, "%c", buf[i]);
+                            }
+                        }
+    
+                        fflush(stdout);
+                        memset(buf, 0, sizeof(buf));
                     }
+                }
 
-                    fflush(stdout);
-                    memset(buf, 0, sizeof(buf));
+                if(FD_ISSET(cli_sock, &except_fds))
+                {
+                    keep_running = false;
                 }
             }
             else if(errno == EINTR)
@@ -167,7 +180,13 @@ int main (int argc, char *argv[])
                     char endbuf[5] = {"exit\n"};
                     write(cli_sock, endbuf, sizeof(endbuf));
                     keep_running = false;
+                    printf("\n");
                 }
+            }
+            else
+            {
+                // Stop the client!
+                keep_running = false;
             }
         }
 
@@ -178,6 +197,6 @@ int main (int argc, char *argv[])
    res=tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
    //assert(res==0);
 
-    return(0);
+   return(0);
 }
 

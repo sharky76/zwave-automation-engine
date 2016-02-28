@@ -17,17 +17,33 @@ void show_service_method_helper(service_method_t* method, void* arg);
 void show_service_config_helper(service_t* service, void* arg);
 
 cli_command_t   service_root_list[] = {
-    {"service WORD",         cmd_enter_service_node,        "Configure service"},
+    //{"service WORD",         cmd_enter_service_node,        "Configure service"},
     {"show service",                cmd_show_service_config,      "Show service configuration"},
     {"show service classes",         cmd_list_service_classes,             "List loaded services"},
     {"show service methods WORD",  cmd_show_service_methods,      "Show service methods"},
     {NULL,                          NULL,                   NULL}
 };
 
+cli_node_t* service_parent_node;
+
 void    cli_service_init(cli_node_t* parent_node)
 {
     cli_append_to_node(parent_node, service_root_list);
     cli_install_node(&service_node, parent_node, NULL, "service", "service");
+    service_parent_node = parent_node;
+}
+
+void    cli_add_service(const char* service_name)
+{
+    char* full_command = calloc(256, sizeof(char));
+    snprintf(full_command, 255, "service %s", service_name);     
+
+    cli_command_t* command_list = calloc(2, sizeof(cli_command_t));
+    command_list[0].name = full_command;
+    command_list[0].func=cmd_enter_service_node;
+    command_list[0].help=strdup("Configure service");
+
+    cli_append_to_node(service_parent_node, command_list);
 }
 
 bool cmd_enter_service_node(vty_t* vty, variant_stack_t* params)

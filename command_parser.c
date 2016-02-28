@@ -115,6 +115,8 @@ static state_descriptor_t state_map[] = {
     {STATE_INVALID, &state_invalid}
 };
 
+DECLARE_LOGGER(Parser)
+
 bool process_state_transition(State current_state, state_context_t* state_context, void* priv)
 {
     parser_data_t* parser_data = (parser_data_t*)priv;
@@ -171,7 +173,7 @@ bool process_state_transition(State current_state, state_context_t* state_contex
         case STATE_ERROR:
             break;
         default:
-            printf("Error, invalid transition\n");
+            LOG_ERROR(Parser, "Error, invalid transition\n");
         }
 
         state_context->current_state = current_state;
@@ -306,7 +308,7 @@ State    state_capture_string(state_context_t* state_context, void* priv)
 
 State    state_error(state_context_t* state_context, void* priv)
 {
-    LOG_ERROR("Error parsing expression: %s", state_context->expression);
+    LOG_ERROR(Parser, "Error parsing expression: %s", state_context->expression);
     state_context->current_state = STATE_ERROR;
     return STATE_ERROR;
 }
@@ -321,7 +323,7 @@ State    state_end(state_context_t* state_context, void* priv)
         variant_t* data = stack_pop_front(parser_data->operator_stack);
         if(data->type == T_PARETHESIS)
         {
-            LOG_ERROR("Mismatched parenthesis");
+            LOG_ERROR(Parser, "Mismatched parenthesis");
             variant_free(data);
         }
         else
@@ -335,7 +337,7 @@ State    state_end(state_context_t* state_context, void* priv)
 
 State    state_invalid(state_context_t* state_context, void* priv)
 {
-    LOG_ERROR("Invalid token received: %s", state_context->parsed_token);
+    LOG_ERROR(Parser, "Invalid token received: %s", state_context->parsed_token);
     state_context->current_state = STATE_INVALID;
     return STATE_ERROR;
 }
@@ -345,7 +347,7 @@ variant_stack_t*    command_parser_compile_expression(const char* expression, bo
     variant_stack_t* operand_queue = stack_create();
     variant_stack_t* operator_stack = stack_create();
 
-    LOG_DEBUG("Parsing expression: %s", expression);
+    LOG_DEBUG(Parser, "Parsing expression: %s", expression);
 
     parser_data_t   parser_data;
     parser_data.operator_stack = operator_stack;
@@ -468,7 +470,7 @@ bool process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t*
 
     if(!left_parethesis_found)
     {
-        LOG_ERROR("Parenthesis mismatch");
+        LOG_ERROR(Parser, "Parenthesis mismatch");
     }
 
     return left_parethesis_found;
@@ -567,7 +569,7 @@ bool process_device_function_operator(const char* ch, variant_stack_t* operator_
                 else 
                 {
                     // Error!
-                    LOG_ERROR("Unresolved device %s", tok);
+                    LOG_ERROR(Parser, "Unresolved device %s", tok);
                     retVal = false;
                 }
             }
@@ -618,7 +620,7 @@ bool  process_service_method_operator(const char* ch, variant_stack_t* operator_
     }
     else
     {
-        LOG_ERROR("Method not defined: %s.%s", service_class, name);
+        LOG_ERROR(Parser, "Method not defined: %s.%s", service_class, name);
         retVal = false;
     }
 
@@ -679,7 +681,7 @@ variant_t*      command_parser_execute_expression(variant_stack_t* compiled_expr
     }
     else
     {
-        LOG_ERROR("Error executing expression");
+        LOG_ERROR(Parser, "Error executing expression");
     }
 
     stack_free(work_stack);
@@ -696,7 +698,7 @@ bool eval(variant_stack_t* work_stack, variant_t* op)
 
     if(arg_count > work_stack->count)
     {
-        LOG_ERROR("Parameter mismatch: required %d, given %d", arg_count, work_stack->count);
+        LOG_ERROR(Parser, "Parameter mismatch: required %d, given %d", arg_count, work_stack->count);
         retVal = false;
     }
     else if(arg_count == 0)
@@ -756,18 +758,18 @@ void        command_parser_print_stack(variant_stack_t* compiled_expression)
         switch(data->type)
         {
         case T_OPERAND:
-            printf(" %d ", variant_get_int(value));
+            LOG_DEBUG(Parser, " %d ", variant_get_int(value));
             break;
         case T_OPERATOR:
             {
                 operator_t* op = (operator_t*)value;
-                printf(" oper %d ", op->type);
+                LOG_DEBUG(Parser, " oper %d ", op->type);
             }
             break;
         case T_FUNCTION:
             {
                 operator_t* op = (operator_t*)value;
-                printf(" func %s ", ((function_operator_data_t*)(op->operator_data))->device_record->deviceName);
+                LOG_DEBUG(Parser, " func %s ", ((function_operator_data_t*)(op->operator_data))->device_record->deviceName);
             }
             break;
         }
@@ -775,5 +777,5 @@ void        command_parser_print_stack(variant_stack_t* compiled_expression)
         stack_item = stack_item->next;
     }
 
-    printf("\n");
+    LOG_DEBUG(Parser, "\n");
 }

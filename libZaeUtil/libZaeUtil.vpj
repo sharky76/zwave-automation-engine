@@ -213,15 +213,8 @@
 	</Config>
 	<Files>
 		<Folder
-			Name="Source Files"
-			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
-			<F N="cli.c"/>
-			<F N="event.c"/>
-			<F N="logger.c"/>
-			<F N="service.c"/>
-			<F N="stack.c"/>
-			<F N="variant.c"/>
-		</Folder>
+			Name="Bitmaps"
+			Filters="*.bmp"/>
 		<Folder
 			Name="Header Files"
 			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
@@ -233,17 +226,28 @@
 			<F N="variant.h"/>
 		</Folder>
 		<Folder
-			Name="Resource Files"
-			Filters="*.ico;*.cur;*.dlg"/>
-		<Folder
-			Name="Bitmaps"
-			Filters="*.bmp"/>
-		<Folder
 			Name="Other Files"
 			Filters="">
 			<F
 				N="Makefile"
 				Type="Makefile"/>
 		</Folder>
+		<Folder
+			Name="Resource Files"
+			Filters="*.ico;*.cur;*.dlg"/>
+		<Folder
+			Name="Source Files"
+			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
+			<F N="cli.c"/>
+			<F N="event.c"/>
+			<F N="logger.c"/>
+			<F N="service.c"/>
+			<F N="stack.c"/>
+			<F N="variant.c"/>
+		</Folder>
+		<F N="crc32.c"/>
+		<F N="crc32.h"/>
+		<F N="hash.c"/>
+		<F N="hash.h"/>
 	</Files>
 </Project>

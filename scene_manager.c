@@ -3,7 +3,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <json-c/json.h>
 #include "command_parser.h"
 #include "logger.h"
 #include "variant_types.h"
@@ -11,50 +10,12 @@
 
 static variant_stack_t* scene_list = NULL;
 
-void scene_manager_init(const char* scene_dir)
+DECLARE_LOGGER(SceneManager)
+
+void scene_manager_init()
 {
-    LOG_ADVANCED("Initializing scene manager");
+    LOG_ADVANCED(SceneManager, "Initializing scene manager");
     scene_list = stack_create();
-
-    /*DIR *dp;
-    struct dirent *ep;     
-    dp = opendir (scene_dir);
-
-    char full_path[256] = {0};
-
-    if(dp != NULL)
-    {
-        while (ep = readdir (dp))
-        {
-            strcat(full_path, scene_dir);
-            strcat(full_path, "/");
-            strcat(full_path, ep->d_name);
-            struct json_object* scene_object = json_object_from_file(full_path);
-
-            if(NULL != scene_object)
-            {
-                LOG_DEBUG("Loading scene from %s", full_path);
-                scene_t* scene = scene_load(scene_object);
-                if(scene->is_valid)
-                {
-                    stack_push_back(scene_list, variant_create_ptr(DT_PTR, scene, &scene_delete));
-                }
-                else
-                {
-                    LOG_ERROR("Error loading scene %s", scene->name);
-                    scene_delete(scene);
-                }
-            }
-            memset(full_path, 0, sizeof(full_path));
-        }
-
-        closedir (dp);
-        LOG_ADVANCED("Scene manager initialized with %d scenes", scene_list->count);
-    }
-    else
-    {
-        LOG_ERROR("Couldn't open the directory");
-    }*/
 }
 
 void scene_manager_add_scene(const char* name)
@@ -111,23 +72,23 @@ void scene_manager_on_event(event_t* event)
 
             if(NULL != calling_service)
             {
-                LOG_ADVANCED("Scene event from service: %s", calling_service->service_name);
+                LOG_DEBUG(SceneManager, "Scene event from service: %s with data: %s", calling_service->service_name, scene_name);
                 if(NULL != scene_name)
                 {
                     scene_manager_foreach_scene(scene_name, scene)
                     {
-                        LOG_DEBUG("Matching scene found: %s", scene->name);
+                        LOG_ADVANCED(SceneManager, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
                         scene_exec(scene);
                     }}
                 }
                 else
                 {
-                    LOG_ERROR("Scene not registered");
+                    LOG_ERROR(SceneManager, "Scene not registered");
                 }
             }
             else
             {
-                LOG_ERROR("Event from unknown service: %d", event->source_id);
+                LOG_ERROR(SceneManager, "Event from unknown service: %d", event->source_id);
             }
         }
         break;
@@ -135,12 +96,12 @@ void scene_manager_on_event(event_t* event)
         {
             const char* scene_source = NULL;
             device_event_data_t* event_data = (device_event_data_t*)variant_get_ptr(event->data);
-            LOG_DEBUG("Scene event from device: %s with command: 0x%x", event_data->device_name, event_data->command_id);
+            LOG_DEBUG(SceneManager, "Scene event from device: %s with command: 0x%x", event_data->device_name, event_data->command_id);
     
             command_class_t* command_class = get_command_class_by_id(event_data->command_id);
             if(NULL != command_class)
             {
-                LOG_ADVANCED("Scene event from %s", event_data->device_name);
+                LOG_ADVANCED(SceneManager, "Scene event from %s", event_data->device_name);
             }
             scene_source = event_data->device_name;
 
@@ -148,13 +109,13 @@ void scene_manager_on_event(event_t* event)
             {
                 scene_manager_foreach_source(scene_source, scene)
                 {
-                    LOG_DEBUG("Matching scene found: %s", scene->name);
+                    LOG_DEBUG(SceneManager, "Matching scene found: %s", scene->name);
                     scene_exec(scene);
                 }}
             }
             else
             {
-                LOG_DEBUG("Scene not registered");
+                LOG_DEBUG(SceneManager, "Scene not registered");
             }
         }
     }

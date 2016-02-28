@@ -241,7 +241,7 @@ bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params)
 bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params)
 {
     scene_t* scene = scene_manager_get_scene(scene_node->context);
-    scene_manager_for_each_action(scene, show_scene_action_helper, vty);
+    scene_for_each_action(scene, show_scene_action_helper, vty);
 }
 
 bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params)
@@ -258,7 +258,7 @@ void    show_scene_helper(scene_t* scene, void* arg)
     vty_write(vty, " source %s\n", scene->source);
     vty_write(vty, " condition %s\n", scene->condition);
     
-    scene_manager_for_each_action(scene, show_scene_action_helper, vty);
+    scene_for_each_action(scene, show_scene_action_helper, vty);
 
     vty_write(vty, "!\n");
 }

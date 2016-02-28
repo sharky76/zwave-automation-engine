@@ -4,14 +4,14 @@
 #include <ZWayLib.h>
 #include "variant_types.h"
 #include "resolver.h"
-#include "data_cache.h"
 #include <ZLogging.h>
 #include <stdio.h>
 #include "device_callbacks.h"
-#include "data_cache.h"
 #include <time.h>
 
 extern ZWay zway;
+
+DECLARE_LOGGER(DataCallback)
 
 void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg);
 
@@ -112,7 +112,7 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
     }
     else if(changeType == (Deleted & 0x0f) || changeType ==  (Invalidated & 0x0f))
     {
-        LOG_DEBUG("Command removed node-id %d, instance-id %d, command-id %d", event_data->node_id, event_data->instance_id, event_data->command_id);
+        LOG_DEBUG(DataCallback, "Command removed node-id %d, instance-id %d, command-id %d", event_data->node_id, event_data->instance_id, event_data->command_id);
     }
 }
 

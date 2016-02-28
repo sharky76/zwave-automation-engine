@@ -9,7 +9,7 @@
 #include "scene.h"
 #include <event.h>
 
-void    scene_manager_init(const char* scene_dir);
+void    scene_manager_init();
 void    scene_manager_add_scene(const char* name);
 void    scene_manager_remove_scene(const char* name);
 void    scene_manager_free();

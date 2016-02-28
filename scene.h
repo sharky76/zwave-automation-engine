@@ -27,5 +27,5 @@ action_t*   scene_get_action(scene_t* scene, const char* action_path);
 scene_t*    scene_load(struct json_object* scene_obj);
 void        scene_exec(scene_t* scene);
 void        scene_delete(void* arg);
-void        scene_manager_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg);
+void        scene_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg);
 

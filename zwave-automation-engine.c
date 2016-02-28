@@ -10,7 +10,6 @@
 #include "logger.h"
 #include "cli_commands.h"
 #include "vty.h"
-#include "data_cache.h"
 #include <signal.h>
 #include <setjmp.h>
 #include <readline/readline.h>
@@ -21,10 +20,14 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include "config.h"
+#include "logging_modules.h"
 
 #define DEFAULT_PORT 9231
 
 ZWay zway;
+
+DECLARE_LOGGER(General)
 
 /* For sigsetjmp() & siglongjmp(). */
 sigjmp_buf jmpbuf;
@@ -109,9 +112,15 @@ char* null_function(const char *ignore, int key)
 int main (int argc, char *argv[])
 {
     stdout_logger_data_t log_data = { stdout };
-    logger_init(LOG_LEVEL_DEBUG, LOG_TARGET_STDOUT, &log_data);
+    logger_init(LOG_LEVEL_BASIC, LOG_TARGET_STDOUT, &log_data);
+    logging_modules_init();
 
-    LOG_INFO("Initializing engine...");
+    LOG_INFO(General, "Initializing engine...");
+
+    /*if(!config_load("config.json"))
+    {
+        return 1;
+    }*/
 
     memset(&zway, 0, sizeof(zway));
     ZWLog logger = zlog_create(stdout, 4);
@@ -119,18 +128,15 @@ int main (int argc, char *argv[])
                 "/home/osmc/z-way-server/translations",
                 "/home/osmc/z-way-server/ZDDX", "ZAE", logger);
 
-    
-
     if(r == NoError)
     {
-        LOG_ADVANCED("Zway API initialized");
-        cli_init();
+        LOG_ADVANCED(General, "Zway API initialized");
         resolver_init();
+        cli_init();
 
         service_manager_init("services");
-        scene_manager_init("scenes");
+        scene_manager_init();
         event_manager_init();
-        //data_cache_init();
 
         cli_load_config();
         
@@ -138,7 +144,7 @@ int main (int argc, char *argv[])
         zway_device_add_callback(zway, CommandAdded, command_added_callback, NULL);
         zway_device_add_callback(zway, DeviceRemoved, command_removed_callback, NULL);
 
-        LOG_ADVANCED("Engine data initialized");
+        LOG_ADVANCED(General, "Engine data initialized");
 
         r = zway_start(zway, NULL, NULL);
     
@@ -151,7 +157,7 @@ int main (int argc, char *argv[])
 
             zway_discover(zway);
 
-            LOG_INFO("Engine ready");
+            LOG_INFO(General, "Engine ready");
 
             rl_editing_mode = 1;
             rl_attempted_completion_function = &cli_command_completer;
@@ -197,7 +203,7 @@ int main (int argc, char *argv[])
             {
                 int session_sock = accept(cli_sock, NULL, NULL);
                     
-                LOG_ADVANCED("Remote client connected");
+                LOG_ADVANCED(General, "Remote client connected");
 
                 int saved_stdout = dup(STDOUT_FILENO);
                 int saved_stdin = dup(STDIN_FILENO);
@@ -233,7 +239,7 @@ int main (int argc, char *argv[])
                 dup2(saved_stdout, 1);
                 dup2(saved_stdin, 0);
 
-                LOG_ADVANCED("Remote client disconnected");
+                LOG_ADVANCED(General, "Remote client disconnected");
             }
 
 
@@ -296,15 +302,13 @@ int main (int argc, char *argv[])
         }
         else
         {
-            LOG_ERROR("Error starting Zway: %d", r);
-            printf("zway error %d\n", r);
+            LOG_ERROR(General, "Error starting Zway: %d", r);
             zway_log_error(zway, Critical, "Failed to start ZWay", r);
         }
     }
     else
     {
-        LOG_ERROR("Error initializing Zway: %d", r);
-        printf("Error initializing zway %d!\n", r);
+        LOG_ERROR(General, "Error initializing Zway: %d", r);
     }
 
     return(0);

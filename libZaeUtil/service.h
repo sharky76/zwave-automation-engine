@@ -28,7 +28,7 @@ typedef struct service_t
     char*       service_name;
     char*       description;
     char**      (*get_config_callback)(void);
-    void        (*on_event)(event_t*);
+    void        (*on_event)(const char*, event_t*);
     variant_stack_t*    service_methods;
 } service_t;
 

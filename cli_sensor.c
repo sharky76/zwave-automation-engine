@@ -3,7 +3,6 @@
 #include <ZWayLib.h>
 #include <ZData.h>
 #include <ZPlatform.h>
-#include "data_cache.h"
 #include "resolver.h"
 
 extern ZWay zway;

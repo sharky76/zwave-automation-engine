@@ -46,7 +46,7 @@ char**  timer_cli_get_config()
         free(config_list);
     }
 
-    config_list = calloc(timer_list->count + 2, sizeof(char*));
+    config_list = calloc(timer_list_static->count + 2, sizeof(char*));
 
     if(timer_enabled)
     {
@@ -68,6 +68,7 @@ char**  timer_cli_get_config()
                 timer_info->name);
         config_list[i++] = strdup(timer_config_buf);
     }
+
     return config_list;
 }
 

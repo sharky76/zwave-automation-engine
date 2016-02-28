@@ -12,7 +12,6 @@
 #include <ZPlatform.h>
 #include "variant_types.h"
 #include "resolver.h"
-#include "data_cache.h"
 #include "command_class.h"
 //#include "scene_manager.h"
 #include "cli_resolver.h"
@@ -542,6 +541,7 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
     CmdMatchStatus match_status = CMD_NO_MATCH;
 
     variant_stack_t* cmd_vec = create_cmd_vec(cmdline);
+
     //if(cmd_vec->count == 0 || rl_end && isspace((int)rl_line_buffer[rl_end - 1]))
     {
         stack_push_back(cmd_vec, variant_create_string(NULL));
@@ -627,7 +627,7 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
 
                 match_status = CMD_PARTIAL_MATCH;
                 
-                //break;
+                break;
             }
         }
     }
@@ -759,7 +759,6 @@ bool    cmd_controller_reset(vty_t* vty, variant_stack_t* params)
 bool    cmd_controller_factory_reset(vty_t* vty, variant_stack_t* params)
 {
     zway_fc_set_default(zway,NULL,NULL,NULL);
-    data_cache_clear();
 }
 
 bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params)
@@ -823,7 +822,9 @@ bool    cmd_enter_node(vty_t* vty, variant_stack_t* params)
     const char* node_name = variant_get_string(stack_peek_at(params, 0));
     stack_for_each(cli_node_list, cli_node_variant)
     {
+        
         cli_node_t* node = (cli_node_t*)variant_get_ptr(cli_node_variant);
+
         if(strstr(node->name, node_name) == node->name)
         {
             char prompt[256] = {0};
@@ -888,7 +889,7 @@ bool    cmd_close_session(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
 {
-    cli_command_exec(vty, "show logger");
+    cli_command_exec(vty, "show logging");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show resolver");
     vty_write(vty, "!\n");

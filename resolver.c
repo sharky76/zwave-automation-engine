@@ -19,10 +19,11 @@ typedef struct resolver_handle_t
 
 
 static resolver_handle* resolver;
+DECLARE_LOGGER(Resolver)
 
 void   resolver_init()
 {
-    LOG_ADVANCED("Initializing resolver...");
+    LOG_ADVANCED(Resolver, "Initializing resolver...");
 
     resolver = (resolver_handle*)malloc(sizeof(resolver_handle));
     resolver->record_list = stack_create();

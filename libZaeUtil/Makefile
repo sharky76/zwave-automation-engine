@@ -25,10 +25,12 @@ CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-ra
 	-lpthread 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/cli.o $(OUTDIR)/event.o $(OUTDIR)/logger.o \
-	$(OUTDIR)/service.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o 
+	$(OUTDIR)/service.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/cli.o $(OUTDIR)/event.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/service.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread 
 
@@ -72,10 +74,12 @@ CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-ra
 	-lpthread 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/cli.o $(OUTDIR)/event.o $(OUTDIR)/logger.o \
-	$(OUTDIR)/service.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o 
+	$(OUTDIR)/service.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/cli.o $(OUTDIR)/event.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/service.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread 
 

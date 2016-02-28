@@ -15,7 +15,8 @@ cli_node_t* weather_node;
 cli_command_t    weather_command_list[] = {
     {"location country-code WORD zip INT",   &weather_cli_set_location,  "Set location. Country code is 2-letter code (us, ca, etc...)"},
     {"units metric", &weather_cli_set_metric, "Set metric units"},
-    {"units imperial", &weather_cli_set_imperial, "Set imperial units"}
+    {"units imperial", &weather_cli_set_imperial, "Set imperial units"},
+    {NULL, NULL, NULL}
 };
 
 void    weather_cli_init(cli_node_t* parent_node)

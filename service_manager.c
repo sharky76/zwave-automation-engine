@@ -7,12 +7,16 @@
 #include <dirent.h>
 #include "logger.h"
 #include "variant_types.h"
+#include "cli_logger.h"
+#include "cli_service.h"
 
 static variant_stack_t* service_list;
 
+DECLARE_LOGGER(ServiceManager)
+
 void    service_manager_init(const char* service_dir)
 {
-    LOG_ADVANCED("Initializing service manager...");
+    LOG_ADVANCED(ServiceManager, "Initializing service manager...");
     DIR *dp;
     struct dirent *ep;     
     dp = opendir (service_dir);
@@ -35,23 +39,28 @@ void    service_manager_init(const char* service_dir)
             char* error = dlerror();
                 if(NULL != error)
                 {
-                    LOG_ERROR("Error opening service %s: %s", full_path, error);
+                    LOG_ERROR(ServiceManager, "Error opening service %s: %s", full_path, error);
                 }
             if(NULL != handle)
             {
-                LOG_DEBUG("Loading services from %s", full_path);
+                LOG_DEBUG(ServiceManager, "Loading services from %s", full_path);
                 dlerror();
                 *(void**) (&service_create) = dlsym(handle, "service_create");
 
                 char* error = dlerror();
                 if(NULL != error)
                 {
-                    LOG_ERROR("Error getting service entry point: %s", error);
+                    LOG_ERROR(ServiceManager, "Error getting service entry point: %s", error);
                 }
                 else
                 {
                     service_t* service;
                     (*service_create)(&service, variant_get_next_user_type());
+                    logger_register_service_with_id(service->service_id, service->service_name);
+
+                    cli_add_logging_class(service->service_name);
+                    cli_add_service(service->service_name);
+
                     stack_push_back(service_list, variant_create_ptr(DT_SERVICE, service, NULL));
 
                     *(void**) (&service_cli_create) = dlsym(handle, "service_cli_create");
@@ -67,11 +76,11 @@ void    service_manager_init(const char* service_dir)
         }
 
         closedir(dp);
-        LOG_ADVANCED("Service manager initialized with %d services", service_list->count);
+        LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_list->count);
     }
     else
     {
-        LOG_ERROR("Error initializing service manager: Couldn't open the directory");
+        LOG_ERROR(ServiceManager, "Error initializing service manager: Couldn't open the directory");
     }
 }
 
@@ -184,7 +193,13 @@ void    service_manager_on_event(event_t* event)
 
         if(NULL != service->on_event)
         {
-            service->on_event(event);
+            service_t* calling_service = service_manager_get_class_by_id(event->source_id);
+
+            if(NULL != calling_service)
+            {
+                LOG_DEBUG(ServiceManager, "Forward event from: %s to service: %s", calling_service->service_name, service->service_name);
+                service->on_event(calling_service->service_name, event);
+            }
         }
     }
 }
