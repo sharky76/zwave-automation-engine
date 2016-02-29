@@ -1,0 +1,7 @@
+{ 
+    "device": "/dev/ttyAMA0",
+    "api_prefix": "/home/osmc/z-way-server",
+    "services": "services",
+    "config_location": "~/.zae",
+    "client_port":    9231
+ }
