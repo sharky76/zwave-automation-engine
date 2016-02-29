@@ -250,7 +250,7 @@ void logger_register_service_with_id(int serviceId, const char* name)
     new_service->service_id = serviceId;
     new_service->service_name = strdup(name);
     new_service->enabled = true;
-    new_service->level = LOG_LEVEL_ERROR;
+    new_service->level = LOG_LEVEL_ADVANCED;
     variant_hash_insert(logger_handle->logger_service_table, serviceId, variant_create_ptr(DT_PTR, new_service, variant_delete_default));
 }
 

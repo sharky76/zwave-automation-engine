@@ -139,6 +139,43 @@ int main (int argc, char *argv[])
         }
     }
 
+    pid_t pid = -1;
+    if(is_daemon)
+    {
+        pid = fork();
+    }
+
+    if(pid > 0)
+    {
+        exit(0);
+    }
+    else if(pid == 0)
+    {
+        /* Create a new SID for the child process */  
+        pid_t sid = setsid();  
+        if (sid < 0)    
+        {  
+            exit(EXIT_FAILURE);  
+        }  
+    
+        int fd = open("/dev/null",O_RDWR, 0);  
+    
+        if (fd != -1)  
+        {  
+            dup2 (fd, STDIN_FILENO);  
+            dup2 (fd, STDOUT_FILENO);  
+            dup2 (fd, STDERR_FILENO);  
+      
+            if (fd > 2)  
+            {  
+                close (fd);  
+            }  
+        }  
+      
+        /*resettign File Creation Mask */  
+        umask(027);  
+    }
+
     stdout_logger_data_t log_data = { stdout };
     logger_init(LOG_LEVEL_BASIC, LOG_TARGET_STDOUT, &log_data);
     logging_modules_init();
@@ -211,18 +248,7 @@ int main (int argc, char *argv[])
             zway_discover(zway);
 
             LOG_INFO(General, "Engine ready");
-
-            pid_t pid = -1;
-            if(is_daemon)
-            {
-                pid = fork();
-            }
-
-            if(pid > 0)
-            {
-                exit(0);
-            }
-
+            
             rl_editing_mode = 1;
             rl_attempted_completion_function = &cli_command_completer;
             rl_completion_entry_function = &null_function;
