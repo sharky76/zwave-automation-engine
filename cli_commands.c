@@ -20,6 +20,7 @@
 #include "cli_service.h"
 #include "cli_logger.h"
 #include <setjmp.h>
+#include "config.h"
 
 extern sigjmp_buf jmpbuf;
 extern int keep_running;
@@ -325,8 +326,11 @@ void    cli_init()
 
 void    cli_load_config()
 {
+    char config_loc[512] = {0};
+    snprintf(config_loc, 511, "%s/startup-config", global_config.config_location);
+
     vty_data_t file_data = {
-        .desc.file = fopen("startup-config", "r")
+        .desc.file = fopen(config_loc, "r")
     };
 
     if(NULL != file_data.desc.file)
@@ -882,8 +886,11 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
 {
+    char config_loc[512] = {0};
+    snprintf(config_loc, 511, "%s/startup-config", global_config.config_location);
+
     vty_data_t file_vty_data = {
-        .desc.file = fopen("startup-config", "w")
+        .desc.file = fopen(config_loc, "w")
     };
 
     vty_t* file_vty = vty_create(VTY_FILE, &file_vty_data);

@@ -22,6 +22,8 @@
 #include <netinet/tcp.h>
 #include "config.h"
 #include "logging_modules.h"
+#include <sys/types.h>
+#include <dirent.h>
 
 #define DEFAULT_PORT 9231
 
@@ -109,24 +111,75 @@ char* null_function(const char *ignore, int key)
     return NULL;
 }
 
+void print_help()
+{
+    printf("-c <config_file>\n-d daemonize\n");
+}
+
 int main (int argc, char *argv[])
 {
+    bool is_daemon = false;
+    char* config_file = NULL;
+    int c;
+
+    while((c = getopt(argc, argv, "dhc:")) != -1)
+    {
+        switch(c)
+        {
+        case 'd':
+            is_daemon = true;
+            break;
+        case 'c':
+            config_file = optarg;
+            break;
+        case 'h':
+            print_help();
+            exit(1);
+            break;
+        }
+    }
+
     stdout_logger_data_t log_data = { stdout };
     logger_init(LOG_LEVEL_BASIC, LOG_TARGET_STDOUT, &log_data);
     logging_modules_init();
 
+    
+
     LOG_INFO(General, "Initializing engine...");
 
-    /*if(!config_load("config.json"))
+    if(!config_load(config_file))
     {
+        printf("Error loading config file\n");
         return 1;
-    }*/
+    }
+
+    // Make sure config location exists
+    DIR* dir = opendir(global_config.config_location);
+    if (dir)
+    {
+        /* Directory exists. */
+        closedir(dir);
+    }
+    else if (ENOENT == errno)
+    {
+        /* Directory does not exist. */
+        mkdir(global_config.config_location, 0755);
+    }
 
     memset(&zway, 0, sizeof(zway));
     ZWLog logger = zlog_create(stdout, 4);
-    ZWError r = zway_init(&zway, "/dev/ttyAMA0", "/home/osmc/z-way-server/config",
-                "/home/osmc/z-way-server/translations",
-                "/home/osmc/z-way-server/ZDDX", "ZAE", logger);
+
+    char   zway_config[512] = {0};
+    char   zway_translations[512] = {0};
+    char   zway_zddx[512] = {0};
+
+    snprintf(zway_config, 511, "%s/config", global_config.api_prefix);
+    snprintf(zway_translations, 511, "%s/translations", global_config.api_prefix);
+    snprintf(zway_zddx, 511, "%s/ZDDX", global_config.api_prefix);
+
+    ZWError r = zway_init(&zway, global_config.device, zway_config,
+                zway_translations,
+                zway_zddx, "ZAE", logger);
 
     if(r == NoError)
     {
@@ -134,7 +187,7 @@ int main (int argc, char *argv[])
         resolver_init();
         cli_init();
 
-        service_manager_init("services");
+        service_manager_init(global_config.services_prefix);
         scene_manager_init();
         event_manager_init();
 
@@ -158,6 +211,17 @@ int main (int argc, char *argv[])
             zway_discover(zway);
 
             LOG_INFO(General, "Engine ready");
+
+            pid_t pid = -1;
+            if(is_daemon)
+            {
+                pid = fork();
+            }
+
+            if(pid > 0)
+            {
+                exit(0);
+            }
 
             rl_editing_mode = 1;
             rl_attempted_completion_function = &cli_command_completer;
@@ -190,7 +254,7 @@ int main (int argc, char *argv[])
             struct sockaddr_in addr;
             memset(&addr, 0, sizeof(struct sockaddr_in));
             addr.sin_family = AF_INET;
-            addr.sin_port = htons(DEFAULT_PORT);
+            addr.sin_port = htons(global_config.client_port);
             addr.sin_addr.s_addr = /*inet_addr("192.168.1.91");*/INADDR_ANY;
             bind(cli_sock, &addr, sizeof(struct sockaddr_in));
             int on = 1;
