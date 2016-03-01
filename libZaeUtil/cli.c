@@ -133,7 +133,8 @@ void cmd_process_variadic_argument(cli_command_t* cmd, variant_stack_t* cmd_vec,
 {
     const char* cmd_part = variant_get_string(stack_peek_at(cmd_vec, arg_index));
     char* saveptr;
-    char* tok = strtok_r((char*)strdup(cmd_part), "|", &saveptr);
+    char* dup_cmd_part = strdup(cmd_part);
+    char* tok = strtok_r(dup_cmd_part, "|", &saveptr);
     variant_stack_t*    command_tree_root = command_tree;
     variant_stack_t*    saved_root = command_tree_root;
 
@@ -217,6 +218,8 @@ void cmd_process_variadic_argument(cli_command_t* cmd, variant_stack_t* cmd_vec,
             //printf("No next tokes\n");
         }
     }
+
+    free(dup_cmd_part);
 }
 
 

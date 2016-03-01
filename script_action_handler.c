@@ -5,6 +5,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <logger.h>
+
+USING_LOGGER(Scene);
 
 typedef struct env_table_t
 {
@@ -58,7 +61,7 @@ void script_done_handler(int sig)
   int saved_errno = errno;
   pid_t pid = waitpid((pid_t)(-1), 0, 0);
   //while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
-  printf("Script done!\n");
+  LOG_DEBUG(Scene, "Script done!");
   clear_env(pid);
   errno = saved_errno;
 }
@@ -84,11 +87,10 @@ void script_exec(const char* path, char** envp)
     }
     else
     {
-        printf("This is child!!!\n");
         char* args[] = { NULL, NULL };
         args[0] = (char*)path;
 
-        printf("Executing %s\n", path);
+        LOG_DEBUG(Scene, "Executing %s", path);
 
         execve(path, args, envp);
         perror("execle");

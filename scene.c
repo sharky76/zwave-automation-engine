@@ -172,8 +172,12 @@ void scene_exec(scene_t* scene)
                     scene_action_exec(action);
                 }
             }
+
+            variant_free(condition);
         }
     }
+
+    stack_free(compiled_condition);
 }
 
 void    scene_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg)

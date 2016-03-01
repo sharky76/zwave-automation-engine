@@ -41,10 +41,11 @@ cli_command_t   logger_service_list[] = {
 
 void    cli_logger_init(cli_node_t* parent_node)
 {
+    logger_services = NULL;
     cli_append_to_node(parent_node, logger_root_list);
 
     // Create custom command with all registered logging modules...
-    int size;
+    int logger_services_size;
     char class_buffer[512] = {0};
     if(logger_get_services(&logger_services, &logger_services_size))
     {
@@ -53,7 +54,7 @@ void    cli_logger_init(cli_node_t* parent_node)
             logger_service_t* s = *(logger_services + i);
             strcat(class_buffer, s->service_name);
 
-            if(i < size-1)
+            if(i < logger_services_size-1)
             {
                 strcat(class_buffer, "|");
             }
@@ -85,6 +86,11 @@ void    cli_add_logging_class(const char* class_name)
     command_list[1].help=strdup("Remove logging class");
     cli_append_to_node(logger_parent_node, command_list);
     
+    if(NULL != logger_services)
+    {
+        free(logger_services);
+    }
+
     logger_get_services(&logger_services, &logger_services_size);                                  
 }
 

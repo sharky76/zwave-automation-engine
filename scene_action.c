@@ -201,8 +201,15 @@ void scene_action_exec_command(action_t* action)
 
     if(isOk)
     {
-        command_parser_execute_expression(compiled);
+        variant_t* result = command_parser_execute_expression(compiled);
+
+        if(NULL != result)
+        {
+            variant_free(result);
+        }
     }
+
+    stack_free(compiled);
 }
 
 // Fork and exec provided script
@@ -244,6 +251,8 @@ void scene_action_exec_script(action_t* action)
                 envp++;
             }
         }
+
+        stack_free(compiled_value);
     }
 
     // Add NULL value

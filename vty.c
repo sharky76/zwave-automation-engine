@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 void    file_write_cb(vty_t* vty, const char* format, va_list args);
 char*   file_read_cb(vty_t* vty);
@@ -12,6 +13,13 @@ void    std_write_cb(vty_t* vty, const char* format, va_list args);
 char*   std_read_cb(vty_t* vty);
 void    socket_write_cb(vty_t* vty, const char* format, va_list args);
 char*   socket_read_cb(vty_t* vty);
+
+bool keep_running;
+static void cb_linehandler (char *line)
+{
+    printf ("input line: %s\n", line);
+    keep_running = false;
+}
 
 vty_t*  vty_create(vty_type type, vty_data_t* data)
 {
@@ -28,6 +36,7 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
         vty->read_cb = file_read_cb;
         break;
     case VTY_STD:
+        //rl_callback_handler_install (vty->prompt, cb_linehandler);
         rl_instream = vty->data->desc.io_pair[0];
         rl_outstream = vty->data->desc.io_pair[1];
         vty->write_cb = std_write_cb;
@@ -75,7 +84,7 @@ void    vty_error(vty_t* vty, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    char* error_format_buf = calloc(strlen(format) + 3, sizeof(char));
+    char* error_format_buf = calloc(strlen(format) + 4, sizeof(char));
     strcat(error_format_buf, "%% ");
     strcat(error_format_buf, format);
     vty->write_cb(vty, error_format_buf, args);
@@ -123,7 +132,30 @@ void    std_write_cb(vty_t* vty, const char* format, va_list args)
 
 char*   std_read_cb(vty_t* vty)
 {
+    /*fd_set fds;
+    keep_running = true;
+    
+    rl_set_prompt(vty->prompt);
+    while(keep_running)
+    {
+        FD_ZERO (&fds);
+        FD_SET(fileno(rl_instream), &fds);    
+    
+        int r = select (fileno(rl_instream)+1, &fds, NULL, NULL, NULL);
+        if (r < 0)
+        {
+            rl_callback_handler_remove ();
+            return NULL;
+        }
+        else if (FD_ISSET (fileno (rl_instream), &fds))
+        {
+            rl_callback_read_char();
+        }
+    }
+
+    //rl_callback_handler_remove ();*/
     return readline(vty->prompt);
+    //return rl_line_buffer;
 }
 
 

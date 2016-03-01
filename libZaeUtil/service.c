@@ -12,6 +12,8 @@ void    service_post_event(int source_id, const char* data)
 
 variant_t*  service_call_method(service_t* service, const char* method_name, ...)
 {
+    variant_t* ret = NULL;
+
     stack_for_each(service->service_methods, method_variant)
     {
         service_method_t* method = (service_method_t*)variant_get_ptr(method_variant);
@@ -19,9 +21,11 @@ variant_t*  service_call_method(service_t* service, const char* method_name, ...
         {
             va_list args;
             va_start(args, method_name);
-            method->eval_callback(method, args);
+            ret = method->eval_callback(method, args);
             break;
         }
     }
+
+    return ret;
 }
 

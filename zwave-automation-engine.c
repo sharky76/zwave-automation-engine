@@ -176,7 +176,7 @@ int main (int argc, char *argv[])
         umask(027);  
     }
 
-    stdout_logger_data_t log_data = { stdout };
+    stdout_logger_data_t log_data = { STDOUT_FILENO };
     logger_init(LOG_LEVEL_BASIC, LOG_TARGET_STDOUT, &log_data);
     logging_modules_init();
 
@@ -293,6 +293,9 @@ int main (int argc, char *argv[])
             {
                 int session_sock = accept(cli_sock, NULL, NULL);
                     
+                stdout_logger_data_t log_data = { session_sock };
+                logger_set_data(&log_data);
+
                 LOG_ADVANCED(General, "Remote client connected");
 
                 int saved_stdout = dup(STDOUT_FILENO);
@@ -308,6 +311,7 @@ int main (int argc, char *argv[])
                     .desc.io_pair[0] = stdin,
                     .desc.io_pair[1] = stdout
                 };
+
                 vty_t* vty_sock = vty_create(VTY_STD, &vty_data);
                 cli_set_vty(vty_sock);
     
@@ -324,12 +328,14 @@ int main (int argc, char *argv[])
 
                 keep_running = 1;
                 vty_free(vty_sock);
+                LOG_ADVANCED(General, "Remote client disconnected");
+
                 close(session_sock);
 
-                dup2(saved_stdout, 1);
-                dup2(saved_stdin, 0);
+                //dup2(saved_stdout, 1);
+                //dup2(saved_stdin, 0);
 
-                LOG_ADVANCED(General, "Remote client disconnected");
+                
             }
 
 

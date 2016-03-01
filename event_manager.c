@@ -5,6 +5,7 @@
 #include <signal.h>
 #include "logger.h"
 #include <pthread.h>
+#include <semaphore.h>
 
 extern variant_stack_t* event_list;
 
@@ -17,8 +18,9 @@ int DT_USER_LOCAL_TYPE;
 void* event_manager_handle_event(void* arg);
 void event_received(int sig);
 
-pthread_cond_t  event_received_condition;
-pthread_mutex_t event_received_cond_mutex;
+//pthread_cond_t  event_received_condition;
+//pthread_mutex_t event_received_cond_mutex;
+sem_t   event_semaphore;
 
 DECLARE_LOGGER(Event)
 
@@ -45,6 +47,9 @@ void event_manager_init()
 
     LOG_ADVANCED(Event, "Event manager initialized");
 
+    // Init the semaphore
+    sem_init(&event_semaphore, 0, 0);
+
     // Now create event thread
     pthread_t   event_thread;
     pthread_create(&event_thread, NULL, event_manager_handle_event, NULL);
@@ -53,20 +58,22 @@ void event_manager_init()
 
 void event_received(int sig)
 {
-    pthread_cond_signal(&event_received_condition);
+    sem_post(&event_semaphore);
 }
 
 void* event_manager_handle_event(void* arg)
 {
     while(true)
     {
-        pthread_mutex_lock(&event_received_cond_mutex);
-        pthread_cond_wait(&event_received_condition, &event_received_cond_mutex);
+        sem_wait(&event_semaphore);
+        //pthread_mutex_lock(&event_received_cond_mutex);
+        //pthread_cond_wait(&event_received_condition, &event_received_cond_mutex);
         LOG_DEBUG(Event, "Event received");
         event_t* event = event_receive();
+        //pthread_mutex_unlock(&event_received_cond_mutex);
+
         scene_manager_on_event(event);
         service_manager_on_event(event);
         event_delete(event);
-        pthread_mutex_unlock(&event_received_cond_mutex);
     }
 }

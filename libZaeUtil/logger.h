@@ -43,7 +43,7 @@ typedef struct syslog_logger_data_t
 
 typedef struct stdout_logger_data_t
 {
-    FILE* fd;
+    int fd;
 } stdout_logger_data_t;
 
 typedef struct logger_handle_t logger_handle_t;
@@ -73,6 +73,7 @@ extern logger_handle_t* logger_handle;
     LOG_##_logger_##_register();
 
 void logger_init(LogLevel level, LogTarget target, void* data);
+void logger_set_data(void* data);
 
 void logger_register_service(int* serviceId, const char* name);
 void logger_register_service_with_id(int serviceId, const char* name);

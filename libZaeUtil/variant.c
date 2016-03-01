@@ -166,6 +166,11 @@ variant_t*  variant_create_string(const char* string)
 
 void        variant_free(variant_t* variant)
 {
+    if(NULL == variant)
+    {
+        return;
+    }
+
     if(--variant->ref_count == 0)
     {
         if(NULL != variant->delete_cb)

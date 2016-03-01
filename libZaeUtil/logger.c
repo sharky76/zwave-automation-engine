@@ -4,6 +4,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
 #include "hash.h"
 
 #define MAX_LOG_ENTRY_LEN   512
@@ -15,6 +16,7 @@ typedef struct logger_handle_t
     LogTarget   target;
     bool        enabled;
     FILE*       fh;
+    int         fd;
     hash_table_t*   logger_service_table;
 
     bool        console;
@@ -59,7 +61,12 @@ void logger_init(LogLevel level, LogTarget target, void* data)
 
     logger_handle->console = false;
 
-    switch(target)
+    logger_set_data(data);
+}
+
+void logger_set_data(void* data)
+{
+    switch(logger_handle->target)
     {
     case LOG_TARGET_FILE:
         logger_handle->data.file = (file_logger_data_t*)data;
@@ -156,6 +163,7 @@ void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const
         va_list args;
         va_start(args, format);
         valogger_log(handle, service, level, new_format, args);
+        free(new_format);
     }
     else
     {
@@ -216,13 +224,15 @@ void syslog_logger_data_init(logger_handle_t* handle)
 
 void stdout_logger_data_init(logger_handle_t* handle)
 {
-    handle->fh = handle->data.stdout->fd;
+    //handle->fh = fdopen(handle->data.stdout->fd, "rw");
+    handle->fd = handle->data.stdout->fd;
     handle->do_log = &do_stdout_log;
 }
 
 void    do_file_log(logger_handle_t* handle, const char* line)
 {
-   fprintf(handle->fh, "%s", line);
+   //fprintf(handle->fh, "%s", line);
+    write(handle->fd, line, strlen(line));
 }
 
 void    do_stdout_log(logger_handle_t* handle, const char* line)

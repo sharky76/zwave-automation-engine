@@ -344,6 +344,8 @@ void    cli_load_config()
             cli_command_exec(file_vty, str);
             free(str);
         }
+
+        vty_free(file_vty);
     }
 }
 
