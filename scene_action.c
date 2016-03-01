@@ -10,7 +10,7 @@ void scene_action_exec_command(action_t* action);
 void scene_action_enable_scene(action_t* action);
 void scene_action_disable_scene(action_t* action);
 
-DECLARE_LOGGER(SceneAction)
+USING_LOGGER(Scene)
 
 void environment_delete(void* arg)
 {
@@ -29,12 +29,12 @@ env_t*      create_environment(struct json_object* record)
     {
         if(strcmp(key, "name") == 0)
         {
-            LOG_DEBUG(SceneAction, "Name: %s", json_object_get_string(val));
+            LOG_DEBUG(Scene, "Name: %s", json_object_get_string(val));
             new_env->name = strdup(json_object_get_string(val));
         }
         else if(strcmp(key, "value") == 0)
         {
-            LOG_DEBUG(SceneAction, "Value: %s", json_object_get_string(val));
+            LOG_DEBUG(Scene, "Value: %s", json_object_get_string(val));
             new_env->value = strdup(json_object_get_string(val));
         }
     }
@@ -92,7 +92,7 @@ action_t*  scene_action_create_old(struct json_object* record)
     {
         if(strcmp(key, "url") == 0)
         {
-            LOG_DEBUG(SceneAction, "New_action URL: %s", json_object_get_string(val));
+            LOG_DEBUG(Scene, "New_action URL: %s", json_object_get_string(val));
             new_action->url = strdup(json_object_get_string(val));
 
             char scheme[10] = {0};
@@ -222,7 +222,7 @@ void scene_action_exec_script(action_t* action)
 
         if(!isOk)
         {
-            LOG_ERROR(SceneAction, "Error compiling environment value: %s", env->value);
+            LOG_ERROR(Scene, "Error compiling environment value: %s", env->value);
         }
         else
         {

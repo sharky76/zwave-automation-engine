@@ -173,7 +173,9 @@ bool process_state_transition(State current_state, state_context_t* state_contex
         case STATE_ERROR:
             break;
         default:
-            LOG_ERROR(Parser, "Error, invalid transition\n");
+            {
+                LOG_ERROR(Parser, "Error, invalid transition\n");
+            }
         }
 
         state_context->current_state = current_state;

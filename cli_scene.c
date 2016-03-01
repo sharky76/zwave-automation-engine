@@ -46,7 +46,7 @@ void    show_scene_helper(scene_t* scene, void* arg);
 void    show_scene_action_helper(action_t* action, void* arg);
 void    show_scene_action_env_helper(env_t* env, void* arg);
 
-DECLARE_LOGGER(CLI_SCENE);
+USING_LOGGER(Scene);
 
 cli_command_t   scene_root_list[] = {
     {"scene LINE",           cmd_enter_scene_node,          "Configure scene"},
@@ -382,7 +382,9 @@ void    show_scene_action_helper(action_t* action, void* arg)
         vty_write(vty, " action disable %s\n", action->path);
         break;
     default:
-        LOG_ERROR(CLI_SCENE, "Unknow scene action type: %d", action->type);
+        {
+            LOG_ERROR(Scene, "Unknow scene action type: %d", action->type);
+        }
     }
 
 }

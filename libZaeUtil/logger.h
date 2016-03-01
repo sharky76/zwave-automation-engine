@@ -61,9 +61,12 @@ extern logger_handle_t* logger_handle;
 #define LOG_DEBUG(_id_, _format_, ...) \
     logger_log_with_func(logger_handle, _id_, LOG_LEVEL_DEBUG, __func__, _format_, ##__VA_ARGS__)
 
+#define USING_LOGGER(_logger_)  \
+    extern int _logger_;
+
 #define DECLARE_LOGGER(_logger_)   \
-    static int _logger_; \
-    extern void  LOG_##_logger_##_register() { logger_register_service(&_logger_, #_logger_); } \
+    int _logger_; \
+    void LOG_##_logger_##_register() { logger_register_service(&_logger_, #_logger_); } \
 
 #define REGISTER_LOGGER(_logger_)   \
     extern void LOG_##_logger_##_register(); \

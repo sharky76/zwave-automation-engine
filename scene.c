@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include "command_parser.h"
 #include "scene_action.h"
-#include "logger.h"
+#include <logger.h>
 
-DECLARE_LOGGER(SceneGeneral)
+DECLARE_LOGGER(Scene)
 
 void scene_delete(void* arg)
 {
@@ -65,19 +65,19 @@ scene_t*    scene_load(struct json_object* scene_obj)
                 }
                 else if(strcmp(key, "source") == 0)
                 {
-                    LOG_DEBUG(SceneGeneral, "Scene source: %s", json_object_get_string(val));
+                    LOG_DEBUG(Scene, "Scene source: %s", json_object_get_string(val));
                     new_scene->source = strdup(json_object_get_string(val)); //resolver_nodeId_from_name(resolver, json_object_get_string(val));
                 }
                 else if(strcmp(key, "condition") == 0)
                 {
-                    LOG_DEBUG(SceneGeneral, "Scene condition: %s", json_object_get_string(val));
+                    LOG_DEBUG(Scene, "Scene condition: %s", json_object_get_string(val));
                     new_scene->condition = strdup(json_object_get_string(val));
                 }
                 else if(strcmp(key, "actions") == 0)
                 {
                     int num_actions = json_object_array_length(val);
 
-                    LOG_DEBUG(SceneGeneral, "Found %d scene actions", num_actions);
+                    LOG_DEBUG(Scene, "Found %d scene actions", num_actions);
                     for(int i = 0; i < num_actions; i++)
                     {
                         struct json_object* record = json_object_array_get_idx(val, i);
@@ -138,13 +138,13 @@ void scene_exec(scene_t* scene)
 {
     if(!scene->is_valid)
     {
-        LOG_ERROR(SceneGeneral, "Unable to execute: invalid scene %s", scene->name);
+        LOG_ERROR(Scene, "Unable to execute: invalid scene %s", scene->name);
         return;
     }
 
     if(!scene->is_enabled)
     {
-        LOG_ERROR(SceneGeneral, "Unable to execute: scene %s is disabled", scene->name);
+        LOG_ERROR(Scene, "Unable to execute: scene %s is disabled", scene->name);
         return;
     }
     
@@ -153,7 +153,7 @@ void scene_exec(scene_t* scene)
 
     if(!isOk)
     {
-        LOG_ERROR(SceneGeneral, "Error compiling condition %s", scene->condition);
+        LOG_ERROR(Scene, "Error compiling condition %s", scene->condition);
     }
     else
     {
@@ -168,7 +168,7 @@ void scene_exec(scene_t* scene)
     
                 if(NULL != action)
                 {
-                    LOG_DEBUG(SceneGeneral, "Call action %s", action->path);
+                    LOG_DEBUG(Scene, "Call action %s", action->path);
                     scene_action_exec(action);
                 }
             }

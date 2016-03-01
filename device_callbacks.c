@@ -16,11 +16,11 @@ void device_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE node
 
         if(NULL != deviceName)
         {
-            LOG_DEBUG(DeviceCallback, "New device added (%s) - Change type %d, Node Id %d, Instance Id %d, Command Id %d", deviceName, type, node_id, instance_id, command_id);
+            LOG_ADVANCED(DeviceCallback, "New device added (%s) - Change type %d, Node Id %d, Instance Id %d, Command Id %d", deviceName, type, node_id, instance_id, command_id);
         }
         else
         {
-            LOG_DEBUG(DeviceCallback, "New unresolved device added - Change type %d, Node Id %d, Instance Id %d, Command Id %d", type, node_id, instance_id, command_id);
+            LOG_ADVANCED(DeviceCallback, "New unresolved device added - Change type %d, Node Id %d, Instance Id %d, Command Id %d", type, node_id, instance_id, command_id);
         }
     }
 }
@@ -34,7 +34,7 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
 {
     if(1 != node_id)
     {
-        LOG_DEBUG(DeviceCallback, "New command found - Change type %d, Node Id %d, Instance Id %d, Command Id 0x%x", type, node_id, instance_id, command_id);
+        LOG_ADVANCED(DeviceCallback, "New command found - Change type %d, Node Id %d, Instance Id %d, Command Id 0x%x", type, node_id, instance_id, command_id);
         
         zdata_acquire_lock(ZDataRoot(zway));
 
