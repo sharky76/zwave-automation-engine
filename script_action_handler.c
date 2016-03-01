@@ -2,10 +2,13 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <logger.h>
+#include <fcntl.h>
 
 USING_LOGGER(Scene);
 
@@ -91,6 +94,30 @@ void script_exec(const char* path, char** envp)
         args[0] = (char*)path;
 
         LOG_DEBUG(Scene, "Executing %s", path);
+
+        /* Create a new SID for the child process */  
+        pid_t sid = setsid();  
+        if (sid < 0)    
+        {  
+            exit(EXIT_FAILURE);  
+        }  
+    
+        int fd = open("/dev/null",O_RDWR, 0);  
+    
+        if (fd != -1)  
+        {  
+            dup2 (fd, STDIN_FILENO);  
+            dup2 (fd, STDOUT_FILENO);  
+            dup2 (fd, STDERR_FILENO);  
+      
+            if (fd > 2)  
+            {  
+                close (fd);  
+            }  
+        }  
+      
+        /*resettign File Creation Mask */  
+        umask(027); 
 
         execve(path, args, envp);
         perror("execle");
