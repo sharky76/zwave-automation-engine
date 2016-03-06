@@ -395,8 +395,11 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
                 int num = strtol(cmd_part_str, &endptr, base);
                 if(*endptr == '\0')
                 {
-                    stack_push_back(matches, command_tree_node_variant);
-                    last_node = node;
+                    if(!node->data->has_range || *cmd_part_str == 0 || (variant_get_int(node->data->value_range.start) <= num && variant_get_int(node->data->value_range.end) >= num))
+                    {
+                        stack_push_back(matches, command_tree_node_variant);
+                        last_node = node;
+                    }
                 }
             }
             else if((node->data->type == TYPE_TERM && *cmd_part_str == 0) || node->data->type == TYPE_WORD || node->data->type == TYPE_LINE ||
@@ -438,9 +441,13 @@ char**  cmd_find_matches(variant_stack_t* cmd_vec, variant_stack_t* matches, int
     {
         const char* cmd_part_str = variant_get_string(cmd_part_variant);
 
-        if(NULL != cmd_part_str || matches->count == 0)
+        if(NULL != cmd_part_str /*|| matches->count == 0*/)
         {
             cmd_find_matches_worker(&root, matches, cmd_part_str);
+            if(matches->count == 0)
+            {
+                break;
+            }
         }
     }
     

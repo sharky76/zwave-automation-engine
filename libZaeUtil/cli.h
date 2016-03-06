@@ -36,10 +36,17 @@ typedef enum
     CMD_NO_MATCH
 } CmdMatchStatus;
 
+typedef struct value_range_t
+{
+    variant_t*  start;
+    variant_t*  end;
+} value_range_t;
+
 typedef struct node_data_t
 {
     NodeType    type;
-    //bool        is_term;
+    bool        has_range;
+    value_range_t   value_range;
     char*       name;
     cli_command_t*  command;
 } node_data_t;

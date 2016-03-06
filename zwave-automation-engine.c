@@ -282,7 +282,12 @@ int main (int argc, char *argv[])
             addr.sin_family = AF_INET;
             addr.sin_port = htons(global_config.client_port);
             addr.sin_addr.s_addr = /*inet_addr("192.168.1.91");*/INADDR_ANY;
-            bind(cli_sock, &addr, sizeof(struct sockaddr_in));
+            if(-1 == bind(cli_sock, &addr, sizeof(struct sockaddr_in)))
+            {
+                return EXIT_FAILURE;
+            }
+
+
             int on = 1;
             setsockopt(cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int));
             //setsockopt(cli_sock, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(int));

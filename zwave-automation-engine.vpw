@@ -1,6 +1,7 @@
 <!DOCTYPE Workspace SYSTEM "http://www.slickedit.com/dtd/vse/10.0/vpw.dtd">
 <Workspace Version="10.0" VendorName="SlickEdit">
 	<Projects>
+		<Project File="services/Cron/Cron.vpj" />
 		<Project File="services/DateTime/DateTime.vpj" />
 		<Project File="libZaeUtil/libZaeUtil.vpj" />
 		<Project File="services/Timer/Timer.vpj" />

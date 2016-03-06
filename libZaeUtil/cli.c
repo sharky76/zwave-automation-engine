@@ -17,8 +17,8 @@ cli_command_t end_cmd = {
 
 node_data_t*    cmd_create_node_data(const char* cmd_part, cli_command_t* cmd)
 {
-    node_data_t* data = malloc(sizeof(node_data_t));
-
+    node_data_t* data = calloc(1, sizeof(node_data_t));
+    data->has_range = false;
     data->name = strdup(cmd_part);
     //data->is_term = false;
     data->command = cmd;
@@ -31,9 +31,21 @@ node_data_t*    cmd_create_node_data(const char* cmd_part, cli_command_t* cmd)
     {
         data->type = TYPE_LINE;
     }
-    else if(strcmp(cmd_part, "INT") == 0)
+    else if(strstr(cmd_part, "INT") == cmd_part)
     {
         data->type = TYPE_INT;
+        if(strchr(cmd_part, '[') != 0)
+        {
+            int start;
+            int end;
+            if(sscanf(cmd_part, "INT[%d-%d]", &start, &end) == 2)
+            {
+                data->value_range.start = variant_create_int32(DT_INT32, start);
+                data->value_range.end = variant_create_int32(DT_INT32, end);
+                data->has_range = true;
+            }
+        }
+
     }
     else
     {
@@ -45,8 +57,9 @@ node_data_t*    cmd_create_node_data(const char* cmd_part, cli_command_t* cmd)
 
 node_data_t*    cmd_create_final_node_data(cli_command_t* cmd)
 {
-    node_data_t* data = malloc(sizeof(node_data_t));
-    
+    node_data_t* data = calloc(1, sizeof(node_data_t));
+    data->has_range = false;
+
     data->name = strdup("<cr>");
     //data->is_term = true;
     data->command = cmd;
@@ -58,6 +71,8 @@ void    cmd_tree_node_delete(void* arg)
 {
     cmd_tree_node_t* node = (cmd_tree_node_t*)arg;
     free(node->data->name);
+    variant_free(node->data->value_range.start);
+    variant_free(node->data->value_range.end);
     free(node->data);
     stack_free(node->children);
     free(node);
@@ -141,70 +156,84 @@ void cmd_process_variadic_argument(cli_command_t* cmd, variant_stack_t* cmd_vec,
     //printf("TOken index %d\n", arg_index);
     while(NULL != tok)
     {
-        // Append new node to root
-        //printf("append variadic token to root: %s\n", tok);
-        cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
-        new_node->data = cmd_create_node_data(tok, cmd);
-        new_node->children = stack_create();
-        stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
-        saved_root = command_tree_root;
-        command_tree_root = new_node->children;
-    
-        // Special case for terminator nodes
-        if(cmd_vec->count-1 == arg_index)
+        cmd_tree_node_t* node = cmd_find_node(command_tree_root, tok);
+        
+        if(NULL != node)
         {
-            //printf("append final node root\n");
-
-            cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
-            term_node->data = cmd_create_final_node_data(cmd);
-            term_node->children = stack_create();
-            stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
+            //printf("Node with token (%s) was found, search for next...\n", tok);
+            saved_root = command_tree_root;
+            command_tree_root = node->children;
         }
-
-        // Continue adding commands till the end of the command line
-        for(int i = arg_index+1; i < cmd_vec->count; i++)
+        else
         {
-            const char* cmd_part = variant_get_string(stack_peek_at(cmd_vec, i));
-
-            //printf("Next token at index %d is %s\n", i, cmd_part);
-            if(strchr((char*)cmd_part, '|') != NULL)
+            // Append new node to root
+            //printf("append variadic token to root: %s, ptr: %p\n", tok, command_tree_root);
+            cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
+            new_node->data = cmd_create_node_data(tok, cmd);
+            new_node->children = stack_create();
+            stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
+            saved_root = command_tree_root;
+            command_tree_root = new_node->children;
+        
+            // Special case for terminator nodes
+            if(cmd_vec->count-1 == arg_index)
             {
-                //printf("Process variadic args: %s\n", cmd_part);
-                cmd_process_variadic_argument(cmd, cmd_vec, i, command_tree_root);
-                //printf("-- recursion end\n");
+                //printf("append final node root\n");
+    
+                cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
+                term_node->data = cmd_create_final_node_data(cmd);
+                term_node->children = stack_create();
+                stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
             }
-            else
+        }
+    
+            // Continue adding commands till the end of the command line
+            for(int i = arg_index+1; i < cmd_vec->count; i++)
             {
-                // Find the node matching command or, find the last node to which we will append child
-                cmd_tree_node_t* node = cmd_find_node(command_tree_root, tok);
-        
-                if(NULL == node)
+                const char* cmd_part = variant_get_string(stack_peek_at(cmd_vec, i));
+    
+                //printf("Next token at index %d is %s\n", i, cmd_part);
+                if(strchr((char*)cmd_part, '|') != NULL)
                 {
-                    //printf("append regular token to root: %s\n", tok);
-                    // Append new node to root
-                    cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
-                    new_node->data = cmd_create_node_data(tok, cmd);
-                    new_node->children = stack_create();
-                    stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
-                    saved_root = command_tree_root;
-                    command_tree_root = new_node->children;
-        
-                    // Special case for terminator nodes
-                    if(cmd_vec->count-1 == i)
-                    {
-                        cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
-                        term_node->data = cmd_create_final_node_data(cmd);
-                        term_node->children = stack_create();
-                        stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
-                    }
+                    //printf("Process variadic args: %sm saveptr = %p (%s)\n", cmd_part, saveptr, saveptr);
+                    cmd_process_variadic_argument(cmd, cmd_vec, i, command_tree_root);
+                    //printf("-- recursion end, saveptr = %p (%s)\n", saveptr, saveptr);
+                    break;
                 }
                 else
                 {
-                    // Matching node was found - continue search its children
-                    saved_root = command_tree_root;
-                    command_tree_root = node->children;
+                    // Find the node matching command or, find the last node to which we will append child
+                    cmd_tree_node_t* node = cmd_find_node(command_tree_root, cmd_part);
+            
+                    if(NULL == node)
+                    {
+                        //printf("append regular token to root: %s, ptr: %p\n", cmd_part, command_tree_root);
+                        // Append new node to root
+                        cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
+                        new_node->data = cmd_create_node_data(cmd_part, cmd);
+                        new_node->children = stack_create();
+                        stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
+                        //saved_root = command_tree_root;
+                        command_tree_root = new_node->children;
+            
+                        // Special case for terminator nodes
+                        if(cmd_vec->count-1 == i)
+                        {
+                            //printf("Terminate regular node\n");
+                            cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
+                            term_node->data = cmd_create_final_node_data(cmd);
+                            term_node->children = stack_create();
+                            stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
+                        }
+                    }
+                    else
+                    {
+                        //printf("Matching node found, search children\n");
+                        // Matching node was found - continue search its children
+                        //saved_root = command_tree_root;
+                        command_tree_root = node->children;
+                    }
                 }
-            }
         }
 
         tok = strtok_r(NULL, "|", &saveptr);
@@ -212,6 +241,7 @@ void cmd_process_variadic_argument(cli_command_t* cmd, variant_stack_t* cmd_vec,
         {
             //printf("Next token: %s\n", tok);
             command_tree_root = saved_root;
+            //printf("Next token: %s, append to: %p\n", tok, command_tree_root);
         }
         else
         {
@@ -236,7 +266,9 @@ void cmd_create_tree(cli_command_t* cmd, variant_stack_t* command_tree)
     for(int i = 0; i < cmd_vec->count; i++)
     {
         const char* cmd_part = variant_get_string(stack_peek_at(cmd_vec, i));
-        
+        //printf("CMD_PART: %s\n", cmd_part);
+
+                
         // Lets see if cmd_part is actually |-separated list of options:
         if(strchr((char*)cmd_part, '|') != NULL)
         {
