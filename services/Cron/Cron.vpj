@@ -218,6 +218,7 @@
 			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
 			<F N="cron_cli.h"/>
 			<F N="cron_config.h"/>
+			<F N="crontab.h"/>
 		</Folder>
 		<Folder
 			Name="Other Files"
@@ -233,6 +234,7 @@
 			Name="Source Files"
 			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
 			<F N="cron_cli.c"/>
+			<F N="crontab.c"/>
 		</Folder>
 		<F N="Cron.c"/>
 	</Files>

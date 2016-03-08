@@ -24,9 +24,9 @@ CFG_INC=-I../../libZaeUtil
 CFG_LIB=-L../../libZaeUtil/Debug -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/Cron.o 
+COMMON_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/crontab.o $(OUTDIR)/Cron.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/Cron.o \
+ALL_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/crontab.o $(OUTDIR)/Cron.o \
 	-L../../libZaeUtil/Debug -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 
@@ -69,9 +69,9 @@ CFG_INC=-I../../libZaeUtil
 CFG_LIB=-L../../libZaeUtil/Debug -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/Cron.o 
+COMMON_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/crontab.o $(OUTDIR)/Cron.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/Cron.o \
+ALL_OBJ=$(OUTDIR)/cron_cli.o $(OUTDIR)/crontab.o $(OUTDIR)/Cron.o \
 	-L../../libZaeUtil/Debug -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 
