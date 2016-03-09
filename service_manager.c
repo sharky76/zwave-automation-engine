@@ -191,14 +191,18 @@ void    service_manager_on_event(event_t* event)
     {
         service_t* service = (service_t*)variant_get_ptr(service_variant);
 
-        if(NULL != service->on_event)
+        //if(NULL != service->on_event)
+        service_t* calling_service = service_manager_get_class_by_id(event->source_id);
+        if(NULL != calling_service )
         {
-            service_t* calling_service = service_manager_get_class_by_id(event->source_id);
-
-            if(NULL != calling_service)
+            stack_for_each(service->event_subscriptions, event_subscription_variant)
             {
-                LOG_DEBUG(ServiceManager, "Forward event from: %s to service: %s", calling_service->service_name, service->service_name);
-                service->on_event(calling_service->service_name, event);
+                event_subscription_t* es = VARIANT_GET_PTR(event_subscription_t, event_subscription_variant);
+                if(strcmp(es->source, calling_service->service_name) == 0)
+                {
+                    LOG_DEBUG(ServiceManager, "Forward event from: %s to service: %s", calling_service->service_name, service->service_name);
+                    es->on_event(calling_service->service_name, event);
+                }
             }
         }
     }

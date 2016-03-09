@@ -43,6 +43,9 @@ typedef struct variant_t
     int     (*compare_cb)(const struct variant_t* v, const struct variant_t* other);
 } variant_t;
 
+#define VARIANT_GET_PTR(_type_, _var_)  \
+    (_type_*)variant_get_ptr(_var_)
+
 variant_t*  variant_create(VariantDataType type, void* data);
 void        variant_delete_default(void* ptr);
 void        variant_delete_variant(void* ptr);

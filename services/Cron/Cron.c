@@ -13,11 +13,11 @@ void  timer_tick_event(const char* name, event_t* pevent);
 void  service_create(service_t** service, int service_id)
 {
     SERVICE_INIT(Cron, "Provides cron-like ability to execute scenes or commands at pre defined times");
-    SERVICE_ADD_EVENT_HANDLER(timer_tick_event);
 
     DT_CRON = service_id;
 
     (*service)->get_config_callback = cron_cli_get_config;
+    SERVICE_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_event);
 
     // Test
     /*crontab_time_t ee;
@@ -115,7 +115,7 @@ void    service_cli_create(cli_node_t* parent_node)
  */
 void  timer_tick_event(const char* name, event_t* pevent)
 {
-    if(++timer_tick_counter > 60)
+    if(++timer_tick_counter > 60 && strcmp(variant_get_string(pevent->data), "tick") == 0)
     {
         timer_tick_counter = 0;
         LOG_DEBUG(DT_CRON, "Event %s tick", name);
