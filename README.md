@@ -1,4 +1,4 @@
-# zwave-automation-engine
+# Z-WAVE Home Automation Engine
 Create and manage home automation scenes which are activated by certain criteria
 
 Uses Z-Way C API to communicate with the HW.
@@ -10,6 +10,8 @@ Provides easy to use CLI for creation of scenes and managing Z-WAVE network and 
 
 zae-client project is cli client. Currently it is hardcoded to my local IP address. 
 Change it or add a command argument to customize...
+
+Cron service is available for scheduling jobs to run at specific time periods
 
 Look at Makefile to find out how to build this. 
 Requires JSON-C and some other more well known libraries
