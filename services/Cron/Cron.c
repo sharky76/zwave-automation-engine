@@ -139,8 +139,6 @@ void  timer_tick_event(const char* name, event_t* pevent)
                 LOG_DEBUG(DT_CRON, "Sending event for scene %s", variant_get_string(scene_variant));
                 service_post_event(DT_CRON, variant_get_string(scene_variant));
             }
-
-            stack_free(scene_list);
         }
     }
 }
