@@ -7,6 +7,7 @@
 
 int DT_CRON;
 
+static int timer_tick_counter;
 void  timer_tick_event(const char* name, event_t* pevent);
 
 void  service_create(service_t** service, int service_id)
@@ -19,7 +20,7 @@ void  service_create(service_t** service, int service_id)
     (*service)->get_config_callback = cron_cli_get_config;
 
     // Test
-    crontab_time_t ee;
+    /*crontab_time_t ee;
     ADD_MINUTE(ee, 1);
     ADD_HOUR(ee, 4);
     ADD_DAY(ee, 6);
@@ -95,7 +96,7 @@ void  service_create(service_t** service, int service_id)
     crontab_del_entry(ee2, "TestScene2");
 
     printf("Adding scene to the empty tree:\n");
-    crontab_add_entry(ee, "TestScene");
+    crontab_add_entry(ee, "TestScene");*/
 
 }
 
@@ -104,9 +105,43 @@ void    service_cli_create(cli_node_t* parent_node)
     cron_cli_init(parent_node);
 }
 
+/**
+ * Timer emits "tick" events every second
+ * 
+ * @author alex (3/8/2016)
+ * 
+ * @param name 
+ * @param pevent 
+ */
 void  timer_tick_event(const char* name, event_t* pevent)
 {
-    LOG_DEBUG(DT_CRON, "Event %s", name);
+    if(++timer_tick_counter > 60)
+    {
+        timer_tick_counter = 0;
+        LOG_DEBUG(DT_CRON, "Event %s tick", name);
+    
+        time_t t = time(NULL);
+        struct tm* p_tm = localtime(&t);
+    
+        crontab_time_t job_time;
+        ADD_MINUTE(job_time, p_tm->tm_min);
+        ADD_HOUR(job_time, p_tm->tm_hour);
+        ADD_DAY(job_time, p_tm->tm_mday);
+        ADD_MONTH(job_time, p_tm->tm_mon);
+        ADD_WEEKDAY(job_time, p_tm->tm_wday);
 
+        variant_stack_t* scene_list = crontab_get_scene(job_time);
+
+        if(NULL != scene_list)
+        {
+            stack_for_each(scene_list, scene_variant)
+            {
+                LOG_DEBUG(DT_CRON, "Sending event for scene %s", variant_get_string(scene_variant));
+                service_post_event(DT_CRON, variant_get_string(scene_variant));
+            }
+
+            stack_free(scene_list);
+        }
+    }
 }
 

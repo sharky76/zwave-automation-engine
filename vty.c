@@ -59,6 +59,7 @@ void    vty_free(vty_t* vty)
         fclose(vty->data->desc.file);
     }
 
+    free(vty->prompt);
     free(vty);
 }
 
@@ -88,6 +89,7 @@ void    vty_error(vty_t* vty, const char* format, ...)
     strcat(error_format_buf, "%% ");
     strcat(error_format_buf, format);
     vty->write_cb(vty, error_format_buf, args);
+    free(error_format_buf);
 }
 
 char*   vty_read(vty_t* vty)

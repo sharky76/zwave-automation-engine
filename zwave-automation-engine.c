@@ -284,6 +284,7 @@ int main (int argc, char *argv[])
             addr.sin_addr.s_addr = /*inet_addr("192.168.1.91");*/INADDR_ANY;
             if(-1 == bind(cli_sock, &addr, sizeof(struct sockaddr_in)))
             {
+                perror("bind");
                 return EXIT_FAILURE;
             }
 

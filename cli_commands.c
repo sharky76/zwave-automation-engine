@@ -441,7 +441,7 @@ char**  cmd_find_matches(variant_stack_t* cmd_vec, variant_stack_t* matches, int
     {
         const char* cmd_part_str = variant_get_string(cmd_part_variant);
 
-        if(NULL != cmd_part_str /*|| matches->count == 0*/)
+        if(NULL != cmd_part_str || matches->count == 0)
         {
             cmd_find_matches_worker(&root, matches, cmd_part_str);
             if(matches->count == 0)

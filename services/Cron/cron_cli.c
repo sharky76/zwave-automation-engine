@@ -10,8 +10,8 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params);
 cli_node_t* cron_node;
 
 cli_command_t cron_command_list[] = {
-    {"execute *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-7] scene LINE",   cmd_cron_add_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-7] (0 = Monday). * means first-last"},
-    {"no execute *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-7] scene LINE",   cmd_cron_del_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-7] (0 = Monday). * means first-last"},
+    {"job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-7] scene LINE",   cmd_cron_add_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-7] (0 = Monday). * means first-last"},
+    {"no job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-7] scene LINE",   cmd_cron_del_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-7] (0 = Monday). * means first-last"},
 };
 
 typedef struct cron_cli_record_t
@@ -82,7 +82,7 @@ char** cron_cli_get_config()
     {
         config_list[i] = calloc(512, sizeof(char));
         cron_cli_record_t* crontab_record = (cron_cli_record_t*)variant_get_ptr(crontab_record_variant);
-        snprintf(config_list[i], 511, "execute %s scene %s", crontab_time_to_string(crontab_record->time), crontab_record->scene);
+        snprintf(config_list[i], 511, "job %s scene %s", crontab_time_to_string(crontab_record->time), crontab_record->scene);
         i++;
     }
 
@@ -91,7 +91,7 @@ char** cron_cli_get_config()
 
 bool cmd_cron_add_entry(vty_t* vty, variant_stack_t* params)
 {
-    cron_cli_record_t* crontab_record = malloc(sizeof(crontab_record));
+    cron_cli_record_t* crontab_record = malloc(sizeof(char*) + sizeof(int)*5);
 
     for(int i = 1; i < 6; i++)
     {
@@ -116,20 +116,20 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params)
 {
     cron_cli_record_t crontab_record;
 
-    for(int i = 1; i < 6; i++)
+    for(int i = 2; i < 7; i++)
     {
         variant_t* time_val = stack_peek_at(params, i);
         if(time_val->type == DT_STRING && strcmp(variant_get_string(time_val), "*") == 0)
         {
-            crontab_record.time[i-1] = -1;
+            crontab_record.time[i-2] = -1;
         }
         else
         {
-            crontab_record.time[i-1] = variant_get_int(time_val);
+            crontab_record.time[i-2] = variant_get_int(time_val);
         }
     }
 
-    crontab_record.scene = (char*)variant_get_string(stack_peek_at(params, 7));
+    crontab_record.scene = (char*)variant_get_string(stack_peek_at(params, 8));
 
     stack_for_each(cron_cli_record_list, crontab_record_variant)
     {

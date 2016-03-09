@@ -52,7 +52,7 @@ void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
             crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
             if(e->time == *time_ptr)
             {
-                printf("Time %d was found, go to next\n", e->time);
+                //printf("Time %d was found, go to next\n", e->time);
                 root = e->child_array;
                 time_ptr++;
                 node_found = true;
@@ -64,10 +64,11 @@ void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
 
         if(!node_found)
         {
-            crontab_time_entry_t* new_time_entry = calloc(1, sizeof(crontab_time_entry_t));
+            //printf("Alloc %d\n", sizeof(crontab_time_entry_t));
+            crontab_time_entry_t* new_time_entry = malloc(sizeof(crontab_time_entry_t));
             new_time_entry->time = *time_ptr;
             time_ptr++;
-            printf("Adding time %d\n", new_time_entry->time);
+            //printf("Adding time %d\n", new_time_entry->time);
             new_time_entry->child_array = stack_create();
             stack_push_back(root, variant_create_ptr(DT_PTR, new_time_entry, &delete_time_entry));
             root = new_time_entry->child_array;
@@ -77,7 +78,7 @@ void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
     }
 
     // Here root points to the last child array which must hold the command
-    printf("Adding scene %s\n", scene);
+    //printf("Adding scene %s\n", scene);
     stack_push_back(root, variant_create_string(strdup(scene)));
 }
 
@@ -117,7 +118,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
                     }
                     else
                     {
-                        printf("Time %d has more than one child: %d\n", e->time, e->child_array->count);
+                        //printf("Time %d has more than one child: %d\n", e->time, e->child_array->count);
                         // clear all remove candidates!
                         memset(remove_candidates, 0, sizeof(remove_candidates));
                         remove_count = 0;
@@ -147,7 +148,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
         }
     }
 
-    printf("Remove candidates: %d\n", remove_count);
+    //printf("Remove candidates: %d\n", remove_count);
     for(int i = remove_count; i >= 0; i--)
     {
         stack_remove(remove_candidates[i].stack, remove_candidates[i].data);
@@ -155,7 +156,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
 
         if(remove_candidates[i].stack->count == 0)
         {
-            printf("All stack items removed\n");
+            //printf("All stack items removed\n");
         }
     }
 }
@@ -176,9 +177,9 @@ variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
         stack_for_each(root, time_entry_variant)
         {
             crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
-            if(e->time == *time_ptr)
+            if(e->time == *time_ptr || e->time == -1)
             {
-                printf("Time %d was found, go to next\n", e->time);
+                //printf("Time %d was found, go to next\n", e->time);
                 root = e->child_array;
                 time_ptr++;
                 node_found = true;
@@ -190,7 +191,7 @@ variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
 
         if(!node_found)
         {
-            printf("Scene not found!\n");
+            //printf("Scene not found!\n");
             break;
         }
     }
