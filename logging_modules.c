@@ -12,4 +12,6 @@ void logging_modules_init()
     REGISTER_LOGGER(DeviceCallback)
     REGISTER_LOGGER(Resolver)
     REGISTER_LOGGER(ServiceManager)
+    REGISTER_LOGGER(User)
+    REGISTER_LOGGER(HTTPServer)
 }

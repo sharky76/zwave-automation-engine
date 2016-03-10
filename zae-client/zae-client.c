@@ -177,8 +177,8 @@ int main (int argc, char *argv[])
                 else if(got_sigint == 1)
                 {
                     got_sigint = 0;
-                    char endbuf[5] = {"exit\n"};
-                    write(cli_sock, endbuf, sizeof(endbuf));
+                    /*char endbuf[4] = {"end\n"};
+                    write(cli_sock, endbuf, sizeof(endbuf));*/
                     keep_running = false;
                     printf("\n");
                 }

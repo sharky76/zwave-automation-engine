@@ -6,13 +6,18 @@ Define virtual TTY handle for CLI command module
  
 */
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef enum vty_type_e
 {
     VTY_FILE,
     VTY_SOCKET,
     VTY_STD,
+    VTY_HTTP,
 } vty_type;
+
+#define IN  0
+#define OUT 1
 
 typedef FILE* iopair[2];
 
@@ -33,12 +38,17 @@ typedef struct vty_t
     vty_type type;
     void    (*write_cb)(struct vty_t*, const char*, va_list);
     char*   (*read_cb)(struct vty_t*);
+    void    (*flush_cb)(struct vty_t*);
     vty_data_t* data;
     char*   prompt;
+    bool    echo;
+    char*   buffer;
+    int     buf_size;
 } vty_t;
 
 void    vty_signal_init();
 vty_t*  vty_create(vty_type type, vty_data_t* data);
+void    vty_set_echo(vty_t* vty, bool is_echo);
 void    vty_free(vty_t* vty);
 void    vty_set_prompt(vty_t* vty, const char* format, ...);
 void    vty_write(vty_t* vty, const char* format, ...);

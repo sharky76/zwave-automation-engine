@@ -319,6 +319,8 @@
 			</Folder>
 		</Folder>
 		<F N="callback_descriptor.json"/>
+		<F N="cli_auth.c"/>
+		<F N="cli_auth.h"/>
 		<F N="cli_commands.c"/>
 		<F N="cli_commands.h"/>
 		<F N="cli_logger.c"/>
@@ -343,6 +345,8 @@
 		<F N="device_callbacks.h"/>
 		<F N="event_manager.c"/>
 		<F N="event_manager.h"/>
+		<F N="http_server.c"/>
+		<F N="http_server.h"/>
 		<F N="logging_modules.c"/>
 		<F N="logging_modules.h"/>
 		<F
@@ -365,6 +369,8 @@
 		<F N="script_action_handler.h"/>
 		<F N="service_manager.c"/>
 		<F N="service_manager.h"/>
+		<F N="user_manager.c"/>
+		<F N="user_manager.h"/>
 		<F N="variant_types.h"/>
 		<F N="vty.c"/>
 		<F N="vty.h"/>

@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "http_server.h"
+
+#define BUFSIZE 8096
 
 void    file_write_cb(vty_t* vty, const char* format, va_list args);
 char*   file_read_cb(vty_t* vty);
@@ -14,19 +17,17 @@ char*   std_read_cb(vty_t* vty);
 void    socket_write_cb(vty_t* vty, const char* format, va_list args);
 char*   socket_read_cb(vty_t* vty);
 
-bool keep_running;
-static void cb_linehandler (char *line)
-{
-    printf ("input line: %s\n", line);
-    keep_running = false;
-}
+char*   http_read_cb(vty_t* vty);
+void    http_write_cb(vty_t* vty, const char* format, va_list args);
+void    http_flush_cb(vty_t* vty);
 
 vty_t*  vty_create(vty_type type, vty_data_t* data)
 {
     vty_t* vty = (vty_t*)calloc(1, sizeof(vty_t));
     vty->type = type;
     vty->data = data;
-    
+    vty->echo = true;
+
     switch(vty->type)
     {
     case VTY_FILE:
@@ -37,11 +38,17 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
         break;
     case VTY_STD:
         //rl_callback_handler_install (vty->prompt, cb_linehandler);
-        rl_instream = vty->data->desc.io_pair[0];
-        rl_outstream = vty->data->desc.io_pair[1];
+        rl_instream = vty->data->desc.io_pair[IN];
+        rl_outstream = vty->data->desc.io_pair[OUT];
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
         break;
+    case VTY_HTTP:
+        vty->write_cb = http_write_cb;
+        vty->read_cb = http_read_cb;
+        vty->flush_cb = http_flush_cb;
+        vty->buffer = calloc(BUFSIZE, sizeof(char));
+
     /*case VTY_SOCKET:
         rl_instream = vty->data->desc.socket;
         rl_outstream = vty->data->desc.socket;
@@ -52,14 +59,25 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
     return vty;
 }
 
+void    vty_set_echo(vty_t* vty, bool is_echo)
+{
+    vty->echo = is_echo;
+}
+
 void    vty_free(vty_t* vty)
 {
+    if(NULL != vty->flush_cb)
+    {
+        vty->flush_cb(vty);
+    }
+
     if(vty->type == VTY_FILE)
     {
         fclose(vty->data->desc.file);
     }
 
     free(vty->prompt);
+    free(vty->buffer);
     free(vty);
 }
 
@@ -126,8 +144,8 @@ char*   file_read_cb(vty_t* vty)
 
 void    std_write_cb(vty_t* vty, const char* format, va_list args)
 {
-    char buf[1024] = {0};
-    vsnprintf(buf, 1023, format, args);
+    char buf[BUFSIZE+1] = {0};
+    vsnprintf(buf, BUFSIZE, format, args);
     //vfprintf(rl_outstream, format, args);
     write(fileno(rl_outstream), buf, sizeof(buf));
 }
@@ -156,10 +174,59 @@ char*   std_read_cb(vty_t* vty)
     }
 
     //rl_callback_handler_remove ();*/
-    return readline(vty->prompt);
+
+    if(!vty->echo)
+    {
+        fprintf(rl_outstream, "%s", vty->prompt);
+        fflush(rl_outstream);
+
+        char* line = calloc(128, sizeof(char));
+        fgets(line, 127, rl_instream);
+        fprintf(rl_outstream, "\n");
+        fflush(rl_outstream);
+
+        return line;
+    }
+    else
+    {
+        return readline(vty->prompt);
+    }
     //return rl_line_buffer;
 }
 
+char*   http_read_cb(vty_t* vty)
+{
+    int socket = vty->data->desc.socket;
+    return strdup(http_server_read_request(socket));
+}
+
+void    http_write_cb(vty_t* vty, const char* format, va_list args)
+{
+    char buf[BUFSIZE+1] = {0};
+    int size = vsnprintf(buf, BUFSIZE, format, args);
+
+    if(vty->buf_size + size < BUFSIZE)
+    {
+        vty->buf_size += size;
+        strncat(vty->buffer, buf, size);
+    }
+    else
+    {
+        http_flush_cb(vty);
+    }
+}
+
+void    http_flush_cb(vty_t* vty)
+{
+    if(vty->buf_size > 0)
+    {
+        int socket = vty->data->desc.socket;
+        http_server_write_response(socket, vty->buffer, vty->buf_size);
+
+        vty->buf_size = 0;
+        *vty->buffer = 0;
+    }
+}
 
 void    socket_write_cb(vty_t* vty, const char* format, va_list args)
 {

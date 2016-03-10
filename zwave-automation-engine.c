@@ -9,6 +9,7 @@
 #include "event_manager.h"
 #include "logger.h"
 #include "cli_commands.h"
+#include "cli_auth.h"
 #include "vty.h"
 #include <signal.h>
 #include <setjmp.h>
@@ -24,6 +25,8 @@
 #include "logging_modules.h"
 #include <sys/types.h>
 #include <dirent.h>
+#include "user_manager.h"
+#include "http_server.h"
 
 #define DEFAULT_PORT 9231
 
@@ -76,7 +79,8 @@ void sigpipe(int sig)
     return;
 
     jmpflag = 0;
-    siglongjmp (jmpbuf, 1);
+    rl_done = 1;
+    //siglongjmp (jmpbuf, 1);
 }
 
 /* Signale wrapper for vtysh. We don't use sigevent because
@@ -227,6 +231,7 @@ int main (int argc, char *argv[])
         service_manager_init(global_config.services_prefix);
         scene_manager_init();
         event_manager_init();
+        user_manager_init();
 
         cli_load_config();
         
@@ -294,50 +299,87 @@ int main (int argc, char *argv[])
             //setsockopt(cli_sock, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(int));
 
             listen(cli_sock, 1);
+            int http_socket = http_server_get_socket(8088);
+
+            fd_set fds;
+            int session_sock = -1;
+            vty_t* vty_sock;
 
             while(true)
             {
-                int session_sock = accept(cli_sock, NULL, NULL);
-                    
-                stdout_logger_data_t log_data = { session_sock };
-                logger_set_data(&log_data);
+                FD_ZERO (&fds);
+                FD_SET(cli_sock,    &fds);    
+                FD_SET(http_socket, &fds);
 
-                LOG_ADVANCED(General, "Remote client connected");
+                r = select (FD_SETSIZE, &fds, NULL, NULL, NULL);
 
-                int saved_stdout = dup(STDOUT_FILENO);
-                int saved_stdin = dup(STDIN_FILENO);
-
-                close(STDOUT_FILENO);
-                dup2(session_sock, STDOUT_FILENO);
-                close(STDIN_FILENO);
-                dup2(session_sock, STDIN_FILENO);
-    
-                //FILE* readline_io = fdopen(session_sock, "rw");
-                vty_data_t vty_data = {
-                    .desc.io_pair[0] = stdin,
-                    .desc.io_pair[1] = stdout
-                };
-
-                vty_t* vty_sock = vty_create(VTY_STD, &vty_data);
-                cli_set_vty(vty_sock);
-    
-                //sigsetjmp(exit_jmpbuf, 1);
-                sigsetjmp (jmpbuf, 1);
-                jmpflag = 1;
-
-                while(keep_running)
+                if(r <= 0)
                 {
+                    continue;
+                }
+
+                if(FD_ISSET(cli_sock, &fds))
+                {
+                    session_sock = accept(cli_sock, NULL, NULL);
+                        
+                    stdout_logger_data_t log_data = { session_sock };
+                    logger_set_data(&log_data);
+    
+                    LOG_ADVANCED(General, "Remote client connected");
+    
+                    int saved_stdout = dup(STDOUT_FILENO);
+                    int saved_stdin = dup(STDIN_FILENO);
+    
+                    close(STDOUT_FILENO);
+                    dup2(session_sock, STDOUT_FILENO);
+                    close(STDIN_FILENO);
+                    dup2(session_sock, STDIN_FILENO);
+        
+                    //FILE* readline_io = fdopen(session_sock, "rw");
+                    vty_data_t vty_data = {
+                        .desc.io_pair[0] = stdin,
+                        .desc.io_pair[1] = stdout
+                    };
+    
+                    vty_sock = vty_create(VTY_STD, &vty_data);
+                    cli_set_vty(vty_sock);
+        
+                    if(user_manager_get_count() > 0)
+                    {
+                        cmd_enter_auth_node(vty_sock);
+                    }
+                
+                    //sigsetjmp(exit_jmpbuf, 1);
+                    sigsetjmp (jmpbuf, 1);
+                    jmpflag = 1;
+    
+                    while(keep_running)
+                    {
+                        char* str = vty_read(vty_sock);
+                        cli_command_exec(vty_sock, str);
+                        free(str);
+                    }
+    
+                    keep_running = 1;
+                } 
+                else if(FD_ISSET(http_socket, &fds))
+                {
+                    session_sock = accept(http_socket, NULL, NULL);
+                    vty_data_t vty_data = {
+                        .desc.socket = session_sock
+                    };
+
+                    vty_sock = vty_create(VTY_HTTP, &vty_data);
                     char* str = vty_read(vty_sock);
                     cli_command_exec(vty_sock, str);
                     free(str);
                 }
 
-                keep_running = 1;
                 vty_free(vty_sock);
                 LOG_ADVANCED(General, "Remote client disconnected");
 
                 close(session_sock);
-
+                
                 //dup2(saved_stdout, 1);
                 //dup2(saved_stdin, 0);
 

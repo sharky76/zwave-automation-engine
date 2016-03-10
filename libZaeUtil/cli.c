@@ -340,7 +340,8 @@ void  cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t comm
             }
         }
         
-        if(*node != root_node)
+        //if(*node != root_node)
+        if(parent != NULL)
         {
             /*cli_command_t*   end_cmd = malloc(sizeof(cli_command_t));
     

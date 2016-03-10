@@ -19,6 +19,7 @@
 #include "cli_sensor.h"
 #include "cli_service.h"
 #include "cli_logger.h"
+#include "cli_auth.h"
 #include <setjmp.h>
 #include "config.h"
 
@@ -43,6 +44,7 @@ bool    cmd_exit_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_close_session(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params);
+bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_quit(vty_t* vty, variant_stack_t* params);
 
@@ -62,7 +64,7 @@ cli_command_t root_command_list[] = {
     {"prompt LINE",          cmd_set_prompt,                "Set new prompt"},
     {"show running-config",  cmd_show_running_config,       "Show running configuration"},
     {"copy running-config startup-config", cmd_save_running_config, "Save running config into startup config"},
-    {"copy running-config file WORD", cmd_show_running_config, "Save running config into custom location"},
+    {"copy running-config file WORD", cmd_copy_running_config, "Save running config into custom location"},
     {"show history",                       cmd_show_history,    "Show command history"},
     {"end",                  cmd_exit_node,             "End configuration session"},
     {"exit",                 cmd_quit,                  "Exit the application"},
@@ -320,6 +322,7 @@ void    cli_init()
     cli_sensor_init(root_node);
     cli_service_init(root_node);
     cli_logger_init(root_node);
+    cli_auth_init(root_node);
 
     current_node = root_node;
 }
@@ -812,6 +815,23 @@ bool    cmd_set_prompt(vty_t* vty, variant_stack_t* params)
     vty_set_prompt(vty, prompt);
 }
 
+void    cmd_enter_root_node(vty_t* vty)
+{
+    stack_for_each(cli_node_list, cli_node_variant)
+    {
+        cli_node_t* node = (cli_node_t*)variant_get_ptr(cli_node_variant);
+
+        if(strstr(node->name, "") == node->name)
+        {
+            current_node = node;
+            char prompt[256] = {0};
+            sprintf(prompt, "(%s)# ", current_node->prompt);
+            vty_set_prompt(vty, prompt);
+            break;
+        }
+    }
+}
+
 bool    cmd_enter_node(vty_t* vty, variant_stack_t* params)
 {
     const char* node_name = variant_get_string(stack_peek_at(params, 0));
@@ -834,6 +854,7 @@ bool    cmd_enter_node(vty_t* vty, variant_stack_t* params)
             //sprintf(prompt, "(%s-%s)# ", current_node->prompt, node->prompt);
             vty_set_prompt(vty, prompt);
             current_node = node;
+            sprintf(prompt, "(%s)# ", current_node->prompt);
             break;
         }
     }
@@ -884,6 +905,8 @@ bool    cmd_close_session(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
 {
+    cli_command_exec(vty, "show user");
+    vty_write(vty, "!\n");
     cli_command_exec(vty, "show logging");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show resolver");
@@ -897,6 +920,23 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
 {
     char config_loc[512] = {0};
     snprintf(config_loc, 511, "%s/startup-config", global_config.config_location);
+
+    vty_data_t file_vty_data = {
+        .desc.file = fopen(config_loc, "w")
+    };
+
+    vty_t* file_vty = vty_create(VTY_FILE, &file_vty_data);
+    cmd_show_running_config(file_vty, NULL);
+
+    vty_free(file_vty);
+}
+
+bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params)
+{
+    const char* dest_filename = variant_get_string(stack_peek_at(params, 3));
+
+    char config_loc[512] = {0};
+    snprintf(config_loc, 511, "%s/%s", global_config.config_location, dest_filename);
 
     vty_data_t file_vty_data = {
         .desc.file = fopen(config_loc, "w")
