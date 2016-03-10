@@ -47,7 +47,7 @@ int keep_running = 1;
 void sigtstp (int sig)
 {
   /* Execute "end" command. */
-  cli_command_exec_default("end");
+  //cli_command_exec_default("end");
   
   /* Initialize readline. */
   rl_initialize ();
@@ -357,10 +357,12 @@ int main (int argc, char *argv[])
                     {
                         char* str = vty_read(vty_sock);
                         cli_command_exec(vty_sock, str);
+                        rl_on_new_line();
                         free(str);
                     }
     
                     keep_running = 1;
+                    LOG_ADVANCED(General, "Remote client disconnected");
                 } 
                 else if(FD_ISSET(http_socket, &fds))
                 {
@@ -372,12 +374,9 @@ int main (int argc, char *argv[])
                     vty_sock = vty_create(VTY_HTTP, &vty_data);
                     char* str = vty_read(vty_sock);
                     cli_command_exec(vty_sock, str);
-                    free(str);
                 }
 
                 vty_free(vty_sock);
-                LOG_ADVANCED(General, "Remote client disconnected");
-
                 close(session_sock);
                 
                 //dup2(saved_stdout, 1);

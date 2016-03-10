@@ -105,12 +105,12 @@ typedef struct cmd_tree_node_t
 cli_node_t*         current_node;
 extern ZWay         zway;
 //variant_stack_t*    cli_node_list;
-struct vty_t*   vty;
+//struct vty_t*   vty;
 
 void    cli_set_vty(vty_t* new_vty)
 {
-    vty = new_vty;
-    vty_set_prompt(vty, "(%s)# ", root_node->prompt);
+    //vty_t* vty = new_vty;
+    vty_set_prompt(new_vty, "(%s)# ", root_node->prompt);
 
 }
 
@@ -660,8 +660,12 @@ int     cli_command_describe()
 
     if(match_status == CMD_FULL_MATCH)
     {
-        vty_write(vty, "\n%% %s\n", cmd_node->data->command->help);
-        rl_on_new_line();
+        rl_save_prompt();
+        rl_crlf();
+        rl_message("%% %s", cmd_node->data->command->help);
+        rl_crlf();
+        rl_restore_prompt();
+        rl_forced_update_display();
     }
     else
     {
@@ -705,12 +709,11 @@ bool    cli_command_exec(vty_t* vty, const char* line)
     }
 
     stack_free(params);
-    rl_on_new_line();
 }
 
 void    cli_command_exec_default(char* line)
 {
-    cli_command_exec(vty, line);
+    //cli_command_exec(vty, line);
 }
 
 /*void    cli_assemble_line(variant_stack_t* params, int start, char* out_line)

@@ -197,7 +197,7 @@ char*   std_read_cb(vty_t* vty)
 char*   http_read_cb(vty_t* vty)
 {
     int socket = vty->data->desc.socket;
-    return strdup(http_server_read_request(socket));
+    return http_server_read_request(socket);
 }
 
 void    http_write_cb(vty_t* vty, const char* format, va_list args)
@@ -218,7 +218,7 @@ void    http_write_cb(vty_t* vty, const char* format, va_list args)
 
 void    http_flush_cb(vty_t* vty)
 {
-    if(vty->buf_size > 0)
+    //if(vty->buf_size > 0)
     {
         int socket = vty->data->desc.socket;
         http_server_write_response(socket, vty->buffer, vty->buf_size);
