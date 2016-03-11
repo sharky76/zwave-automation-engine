@@ -126,6 +126,37 @@ char* http_server_read_request(int client_socket)
 		}
 	}
 
+    // expression spaces will be encoded as %20 - we need to revert them back to ' '
+    // we will try to do in-place conversion...
+    int body_len = strlen(request_body);
+    int string_index = 0;
+    for(i = 0; i < body_len; i++,string_index++) 
+    {
+        if(i+2 < body_len)
+        {
+            if(request_body[i] == '%' && request_body[i+1] == '2' && request_body[i+2] == '0')
+            {
+                // forward i to past-%20 place
+                i += 2;
+                request_body[i] = ' ';
+            }
+        }
+
+        if(i != string_index)
+        {
+            request_body[string_index] = request_body[i];
+        }
+    }
+    // Now, add the last '\0' character
+    request_body[string_index] = '\0';
+
+    // Browsers really like to get favicon.ico - tell them to fuck off
+    if(strcmp(request_body, "favicon.ico") == 0)
+    {
+        http_server_error_response(NOTFOUND, client_socket);
+        return NULL;
+    }
+
     // ok, we have request
     return request_body;
 }
