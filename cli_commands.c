@@ -22,6 +22,7 @@
 #include "cli_auth.h"
 #include <setjmp.h>
 #include "config.h"
+#include "command_parser.h"
 
 extern sigjmp_buf jmpbuf;
 extern int keep_running;
@@ -47,6 +48,7 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_quit(vty_t* vty, variant_stack_t* params);
+bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params);
 
 void    show_command_class_helper(command_class_t* command_class, void* arg);
 
@@ -66,6 +68,7 @@ cli_command_t root_command_list[] = {
     {"copy running-config startup-config", cmd_save_running_config, "Save running config into startup config"},
     {"copy running-config file WORD", cmd_copy_running_config, "Save running config into custom location"},
     {"show history",                       cmd_show_history,    "Show command history"},
+    {"eval LINE",            cmd_eval_expression,       "Evaluate expression"},
     {"end",                  cmd_exit_node,             "End configuration session"},
     {"exit",                 cmd_quit,                  "Exit the application"},
     {NULL,                   NULL,                          NULL}
@@ -965,6 +968,30 @@ bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
 bool    cmd_quit(vty_t* vty, variant_stack_t* params)
 {
     cli_command_quit(0, 0);
+}
+
+bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
+{
+    bool isOk;
+    char expression[512] = {0};
+    cli_assemble_line(params, 1, expression);
+    variant_stack_t* compiled_value = command_parser_compile_expression(expression, &isOk);
+
+    if(isOk)
+    {
+        variant_t* result = command_parser_execute_expression(compiled_value);
+        if(NULL != result)
+        {
+            char* str_result;
+            if(variant_to_string(result, &str_result))
+            {
+                vty_write(vty, "%% %s\n", str_result);
+                return true;
+            }
+        }
+    }
+
+    vty_error(vty, "Error evaluating expression\n");
 }
 
 void    show_command_class_helper(command_class_t* command_class, void* arg)

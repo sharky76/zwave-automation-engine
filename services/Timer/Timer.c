@@ -28,7 +28,7 @@ void service_create(service_t** service, int service_id)
     SERVICE_ADD_METHOD(StopInterval, timer_stop, 1, "Timer name (string)");   // Timer.StopInterval(<Name>)
 
     timer_list = stack_create();
-    self = *service;
+    //self = *service;
     DT_TIMER = service_id;
     (*service)->get_config_callback = timer_cli_get_config;
 
@@ -46,7 +46,7 @@ void service_create(service_t** service, int service_id)
     }
     else
     {
-        //alarm(1);
+        alarm(1);
     }
 }
 
@@ -139,30 +139,27 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
 
 void alarm_expire_handler(int sig)
 {
-    stack_for_each(timer_list, timer_variant)
-    {
-        timer_info_t* timer = variant_get_ptr(timer_variant);
-        if(--timer->ticks_left == 0)
-        {
-            if(timer_enabled)
-            {
-                service_post_event(DT_TIMER, timer->name);
-            }
-
-            if(timer->singleshot)
-            {
-                stack_remove(timer_list, timer_variant);
-                variant_free(timer_variant);
-            }
-            else
-            {
-                timer->ticks_left = timer->timeout;
-            }
-        }
-    }
-
     if(timer_enabled)
     {
+        stack_for_each(timer_list, timer_variant)
+        {
+            timer_info_t* timer = variant_get_ptr(timer_variant);
+            if(--timer->ticks_left == 0)
+            {
+                service_post_event(DT_TIMER, timer->name);
+    
+                if(timer->singleshot)
+                {
+                    stack_remove(timer_list, timer_variant);
+                    variant_free(timer_variant);
+                }
+                else
+                {
+                    timer->ticks_left = timer->timeout;
+                }
+            }
+        }
+    
         service_post_event(DT_TIMER, "tick");
     }
 

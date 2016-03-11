@@ -25,7 +25,7 @@ void        event_delete(event_t* event)
 void        event_post(event_t* event)
 {
     pthread_mutex_lock(&event_list_mutex);
-    stack_push_back(event_list, variant_create_ptr(DT_EVENT, event, NULL));
+    stack_push_back(event_list, variant_create_ptr(DT_PTR, event, NULL));
     pthread_mutex_unlock(&event_list_mutex);
     raise(SIGUSR1);
 }

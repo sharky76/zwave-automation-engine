@@ -209,7 +209,7 @@ const char* variant_get_string(const variant_t* variant)
 
 void*       variant_get_ptr(variant_t* variant)
 {
-    return variant->storage.ptr_data;
+    return (NULL != variant)? variant->storage.ptr_data : NULL;
 }
 
 variant_t*  variant_get_variant(variant_t* variant)
@@ -277,7 +277,7 @@ bool variant_to_string(variant_t* variant, char** string)
     case DT_INT64:
         {
             *string = (char*)calloc(12, sizeof(char));
-            int n = snprintf(*string, 1, "%d", variant_get_int(variant));
+            int n = snprintf(*string, 12, "%d", variant_get_int(variant));
             retVal = (n > 0);
         }
         break;

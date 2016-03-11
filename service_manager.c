@@ -9,8 +9,10 @@
 #include "variant_types.h"
 #include "cli_logger.h"
 #include "cli_service.h"
+#include <hash.h>
 
 static variant_stack_t* service_list;
+extern hash_table_t* service_table;
 
 DECLARE_LOGGER(ServiceManager)
 
@@ -26,6 +28,7 @@ void    service_manager_init(const char* service_dir)
     char full_path[256] = {0};
     
     service_list = stack_create();
+    service_table = variant_hash_init();
 
     if(dp != NULL)
     {
@@ -61,7 +64,8 @@ void    service_manager_init(const char* service_dir)
                     cli_add_logging_class(service->service_name);
                     cli_add_service(service->service_name);
 
-                    stack_push_back(service_list, variant_create_ptr(DT_SERVICE, service, NULL));
+                    stack_push_back(service_list, variant_create_ptr(DT_PTR, service, NULL));
+                    variant_hash_insert(service_table, service->service_id, variant_create_ptr(DT_PTR, service, NULL));
 
                     *(void**) (&service_cli_create) = dlsym(handle, "service_cli_create");
                     char* error = dlerror();
@@ -128,7 +132,8 @@ service_t*  service_manager_get_class(const char* service_class)
 
 service_t*  service_manager_get_class_by_id(int service_id)
 {
-    stack_for_each(service_list, service_variant)
+    return service_self(service_id);
+    /*stack_for_each(service_list, service_variant)
     {
         service_t* service = (service_t*)variant_get_ptr(service_variant);
         if(service->service_id == service_id)
@@ -137,7 +142,7 @@ service_t*  service_manager_get_class_by_id(int service_id)
         }
     }
 
-    return NULL;
+    return NULL;*/
 }
 
 bool    service_manager_is_class_exists(const char* service_class)

@@ -347,3 +347,12 @@ void logger_print_buffer()
     logger_handle->console = saved_console;
 }
 
+void logger_clear_buffer()
+{
+    while(logger_handle->log_buffer->count > 0)
+    {
+        variant_t* line = stack_pop_front(logger_handle->log_buffer);
+        variant_free(line);
+    }
+}
+

@@ -17,7 +17,7 @@ typedef enum VariantDataType
     DT_FLOAT,
     DT_STRING,
     DT_PTR,
-    DT_EVENT,
+    DT_SENSOR,
     DT_SENSOR_EVENT_DATA,
     DT_SERVICE_EVENT_DATA,
     DT_NULL,

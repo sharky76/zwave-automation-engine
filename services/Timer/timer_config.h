@@ -13,6 +13,6 @@ typedef struct timer_info_t
 extern bool timer_enabled;
 extern variant_stack_t* timer_list;
 extern int DT_TIMER;
-service_t* self;
+//service_t* self;
 
 void timer_delete(void* arg);

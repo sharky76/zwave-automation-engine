@@ -115,7 +115,9 @@ void    service_cli_create(cli_node_t* parent_node)
  */
 void  timer_tick_event(const char* name, event_t* pevent)
 {
-    if(++timer_tick_counter > 60 && strcmp(variant_get_string(pevent->data), "tick") == 0)
+    service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
+
+    if(++timer_tick_counter > 60 && strcmp(timer_event_data->data, "tick") == 0)
     {
         timer_tick_counter = 0;
         LOG_DEBUG(DT_CRON, "Event %s tick", name);

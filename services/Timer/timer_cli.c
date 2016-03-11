@@ -94,7 +94,7 @@ bool    cmd_timer_set_timeout(vty_t* vty, variant_stack_t* params)
     stack_push_back(timer_list_static, variant_create_ptr(DT_TIMER, timer, &timer_delete));
     
     variant_t* scene_variant = variant_create_string(scene_name);
-    variant_t* ret = service_call_method(self, "Start", variant_create_string(scene_name), stack_peek_at(params, 1));
+    variant_t* ret = service_call_method(DT_TIMER, "Start", variant_create_string(scene_name), stack_peek_at(params, 1));
     free(scene_variant);
     variant_free(ret);
 }
@@ -111,7 +111,7 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
     stack_push_back(timer_list_static, variant_create_ptr(DT_TIMER, timer, &timer_delete));
 
     variant_t* scene_variant = variant_create_string(scene_name);
-    variant_t* ret = service_call_method(self, "StartInterval", scene_variant, stack_peek_at(params, 1));
+    variant_t* ret = service_call_method(DT_TIMER, "StartInterval", scene_variant, stack_peek_at(params, 1));
     free(scene_variant);
     variant_free(ret);
 }
@@ -133,7 +133,7 @@ bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
     }
 
     variant_t* scene_variant = variant_create_string(scene_name);
-    variant_t* ret = service_call_method(self, "Stop", scene_variant);
+    variant_t* ret = service_call_method(DT_TIMER, "Stop", scene_variant);
     free(scene_variant);
     variant_free(ret);
 }
@@ -155,7 +155,7 @@ bool    cmd_timer_del_interval(vty_t* vty, variant_stack_t* params)
     }
 
     variant_t* scene_variant = variant_create_string(scene_name);
-    variant_t* ret = service_call_method(self, "Stop", scene_variant);
+    variant_t* ret = service_call_method(DT_TIMER, "Stop", scene_variant);
     free(scene_variant);
     variant_free(ret);
 }

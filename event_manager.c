@@ -9,11 +9,11 @@
 
 extern variant_stack_t* event_list;
 
-int DT_SENSOR;
-int DT_DEV_RECORD;
-int DT_SERVICE;
-int DT_DATA_ENTRY_TYPE;
-int DT_USER_LOCAL_TYPE;
+//int DT_SENSOR;
+//int DT_DEV_RECORD;
+//int DT_SERVICE;
+//int DT_DATA_ENTRY_TYPE;
+//int DT_USER_LOCAL_TYPE;
 
 void* event_manager_handle_event(void* arg);
 void event_received(int sig);
@@ -29,11 +29,12 @@ void event_manager_init()
     LOG_ADVANCED(Event, "Initializing event manager");
     event_list = stack_create();
 
-    DT_SENSOR = variant_get_next_user_type();
-    DT_DEV_RECORD = variant_get_next_user_type();
-    DT_SERVICE = variant_get_next_user_type();
-    DT_DATA_ENTRY_TYPE = variant_get_next_user_type();
-    DT_USER_LOCAL_TYPE= variant_get_next_user_type();
+    //DT_SENSOR_EVENT = variant_get_next_user_type();
+
+    //DT_DEV_RECORD = variant_get_next_user_type();
+    //DT_SERVICE = variant_get_next_user_type();
+    //DT_DATA_ENTRY_TYPE = variant_get_next_user_type();
+    //DT_USER_LOCAL_TYPE= variant_get_next_user_type();
 
     // Setup SIGALARM handler
     struct sigaction sa;
@@ -61,6 +62,20 @@ void event_received(int sig)
     sem_post(&event_semaphore);
 }
 
+/**
+ * Events can be of following types: 
+ * DT_SENSOR - Event from sensor, has data of type 
+ * DT_SENSOR_EVENT_DATA 
+ *  
+ * DT_XXXX - Event from service XXXX, has data of type 
+ * DT_SERVICE_EVENT_DATA 
+ * 
+ * @author alex (3/11/2016)
+ * 
+ * @param arg 
+ * 
+ * @return void* 
+ */
 void* event_manager_handle_event(void* arg)
 {
     while(true)

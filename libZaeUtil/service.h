@@ -45,7 +45,7 @@ typedef struct service_t
 (*service)->description = strdup(_desc);    \
 (*service)->service_id = service_id;        \
 (*service)->service_methods = stack_create(); \
-(*service)->event_subscriptions = stack_create();
+(*service)->event_subscriptions = stack_create(); 
 
 #define SERVICE_ADD_METHOD(_method_name, _method, _nargs, _help) \
 service_method_t* _method_name = (service_method_t*)malloc(sizeof(service_method_t));  \
@@ -66,9 +66,16 @@ service_method_t* _method_name = (service_method_t*)malloc(sizeof(service_method
         stack_push_back((*service)->event_subscriptions, variant_create_ptr(DT_PTR, es, variant_delete_none)); \
     }
 
+typedef struct service_event_data_t
+{
+    char*   data;
+    //service_t*  service;
+} service_event_data_t;
+
 void    service_create(service_t** service, int service_id);
 void    service_cli_create(cli_node_t* parent_node);
-void    service_post_event(int source_id, const char* data);
+void    service_post_event(int service_id, const char* data);
 
-variant_t*  service_call_method(service_t* service, const char* method_name, ...);
+service_t*  service_self(int service_id);
+variant_t*  service_call_method(int service_id, const char* method_name, ...);
 

@@ -22,7 +22,7 @@ void delete_user_entry(void* arg)
 
 void    user_manager_init()
 {
-    LOG_ADVANCED(User, "Initializing user manager\n");
+    LOG_ADVANCED(User, "Initializing user manager");
     user_list = stack_create();
     LOG_INFO(User, "User manager initialized");
 }

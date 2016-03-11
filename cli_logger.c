@@ -16,6 +16,7 @@ bool    cmd_del_log_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_enable_console(vty_t* vty, variant_stack_t* params);
 bool    cmd_disable_console(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_logger_history(vty_t* vty, variant_stack_t* params);
+bool    cmd_clear_logger_history(vty_t* vty, variant_stack_t* params);
 
 cli_command_t   logger_root_list[] = {
     {"logging enable",                           cmd_enable_logger,  "Enable logger"},
@@ -26,6 +27,7 @@ cli_command_t   logger_root_list[] = {
     {"no logging console",                       cmd_disable_console, "Disable console logging"},
     {"show logging",                             cmd_show_logger,    "Show logger configuration"},
     {"show logging history",                     cmd_show_logger_history, "Show logger history"},
+    {"clear logging",                            cmd_clear_logger_history, "Clear logger history"},
     {NULL,                     NULL,                            NULL}
 };
 
@@ -229,3 +231,7 @@ bool    cmd_show_logger(vty_t* vty, variant_stack_t* params)
     }
 }
 
+bool    cmd_clear_logger_history(vty_t* vty, variant_stack_t* params)
+{
+    logger_clear_buffer();
+}

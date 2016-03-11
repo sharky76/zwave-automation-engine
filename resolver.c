@@ -119,7 +119,7 @@ void    resolver_add_entry(const char* name, ZWBYTE nodeId, ZWBYTE instanceId, Z
         new_record->instanceId = instanceId;
         new_record->commandId = commandId;
         strncpy(new_record->deviceName, name, MAX_DEVICE_NAME_LEN-1);
-        stack_push_back(resolver->record_list, variant_create_ptr(DT_DEV_RECORD, new_record, variant_delete_default));
+        stack_push_back(resolver->record_list, variant_create_ptr(DT_PTR, new_record, variant_delete_default));
     }
     else 
     {

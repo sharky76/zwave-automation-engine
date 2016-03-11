@@ -91,6 +91,7 @@ void logger_set_buffer(int size);
 int  logger_get_buffer_size();
 void logger_set_console(bool is_console);
 void logger_print_buffer();
+void logger_clear_buffer();
 
 
 
