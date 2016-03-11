@@ -113,7 +113,7 @@ void    vty_error(vty_t* vty, const char* format, ...)
 char*   vty_read(vty_t* vty)
 {
     char* str = vty->read_cb(vty);
-    if(NULL != str)
+    if(NULL != str && vty->echo)
     {
         if('\0' != *str && *str != '\n' && vty->type == VTY_STD)
         {
