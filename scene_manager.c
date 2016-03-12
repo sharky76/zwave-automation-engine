@@ -67,7 +67,8 @@ void scene_manager_on_event(event_t* event)
     {
     case DT_SERVICE_EVENT_DATA:
         {
-            const char* scene_name = variant_get_string(event->data);
+            service_event_data_t* event_data = variant_get_ptr(event->data);
+            const char* scene_name = event_data->data;
             service_t* calling_service = service_manager_get_class_by_id(event->source_id);
 
             if(NULL != calling_service)
@@ -101,7 +102,8 @@ void scene_manager_on_event(event_t* event)
             command_class_t* command_class = get_command_class_by_id(event_data->command_id);
             if(NULL != command_class)
             {
-                LOG_ADVANCED(Scene, "Scene event from %s", event_data->device_name);
+                LOG_DEBUG(Scene, "Matching command-class %s found for device %s", command_class->command_name, event_data->device_name);
+
             }
             scene_source = event_data->device_name;
 
@@ -109,7 +111,7 @@ void scene_manager_on_event(event_t* event)
             {
                 scene_manager_foreach_source(scene_source, scene)
                 {
-                    LOG_DEBUG(Scene, "Matching scene found: %s", scene->name);
+                    LOG_ADVANCED(Scene, "Scene event from sensor %s for scene %s", event_data->device_name, scene->name);
                     scene_exec(scene);
                 }}
             }

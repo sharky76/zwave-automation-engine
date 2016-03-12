@@ -196,7 +196,6 @@ void    service_manager_on_event(event_t* event)
     {
         service_t* service = (service_t*)variant_get_ptr(service_variant);
 
-        //if(NULL != service->on_event)
         service_t* calling_service = service_manager_get_class_by_id(event->source_id);
         if(NULL != calling_service )
         {
