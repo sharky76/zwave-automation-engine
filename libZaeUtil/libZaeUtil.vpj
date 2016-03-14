@@ -218,6 +218,7 @@
 		<Folder
 			Name="Header Files"
 			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
+			<F N="base64.h"/>
 			<F N="cli.h"/>
 			<F N="event.h"/>
 			<F N="logger.h"/>
@@ -238,6 +239,7 @@
 		<Folder
 			Name="Source Files"
 			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
+			<F N="base64.c"/>
 			<F N="cli.c"/>
 			<F N="event.c"/>
 			<F N="logger.c"/>

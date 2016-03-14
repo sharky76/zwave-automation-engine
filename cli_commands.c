@@ -986,6 +986,7 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
             if(variant_to_string(result, &str_result))
             {
                 vty_write(vty, "%% %s\n", str_result);
+                free(str_result);
                 return true;
             }
         }

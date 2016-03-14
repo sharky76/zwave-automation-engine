@@ -251,7 +251,9 @@ bool cmd_delete_scene_action_command(vty_t* vty, variant_stack_t* params)
 
 bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params)
 {
-    action_t* action = (action_t*)scene_action_node->context;
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    action_t* action = scene_get_action(scene, scene_action_node->context);
+
     scene_action_del_environment(action, variant_get_string(stack_peek_at(params, 2)));
 }
 

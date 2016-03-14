@@ -11,6 +11,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <logger.h>
+#include <base64.h>
+#include "user_manager.h"
 
 #define VERSION 23
 #define BUFSIZE 8096
@@ -18,6 +20,7 @@
 #define LOG        44
 #define FORBIDDEN 403
 #define NOTFOUND  404
+#define DENIED    401
 
 DECLARE_LOGGER(HTTPServer)
 
@@ -65,6 +68,9 @@ void http_server_error_response(int type, int socket_fd)
 	case NOTFOUND: 
 		write(socket_fd, "HTTP/1.1 404 Not Found\nContent-Length: 136\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\nThe requested URL was not found on this server.\n</body></html>\n",224);
 		break;
+    case DENIED:
+        write(socket_fd, "HTTP/1.1 401 Access denied\nWWW-Authenticate: Basic realm=\"ZWAVE Automation Server\"\nContent-Length: 0\n", 101);
+        break;
 	}	
 }
 
@@ -95,11 +101,40 @@ char* http_server_read_request(int client_socket)
     {
 		if(buffer[i] == '\r' || buffer[i] == '\n')
         {
-            buffer[i]='*';
+            buffer[i]=' ';
         }
     }
 
-	LOG_DEBUG(HTTPServer, "Request %s", buffer);
+    char* auth_start = strstr(buffer, "Authorization: Basic");
+    if(NULL == auth_start && user_manager_get_count() > 0)
+    {
+        LOG_ERROR(HTTPServer, "Access denied");
+        http_server_error_response(DENIED, client_socket);
+        return NULL;
+    }
+    else
+    {
+        char user_pass[256] = {0};
+        sscanf(auth_start, "Authorization: Basic %s", user_pass);
+
+        char user_pass_decoded[256] = {0};
+        Base64decode(user_pass_decoded, user_pass);
+
+        char* user_tok = strtok(user_pass_decoded, ":");
+        char* pass_tok = strtok(NULL, ":");
+        if(!user_manager_authenticate(user_tok, pass_tok))
+        {
+            LOG_ERROR(HTTPServer, "Access denied");
+            http_server_error_response(DENIED, client_socket);
+            return NULL;
+        }
+        else
+        {
+            LOG_INFO(HTTPServer, "Authentication success for %s\n", user_tok);
+        }
+    }
+
+    LOG_DEBUG(HTTPServer, "Request %s", buffer);
 
 	if( strncmp(buffer,"GET ",4) && strncmp(buffer,"get ",4) ) 
     {
