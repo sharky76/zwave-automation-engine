@@ -85,6 +85,7 @@ void* event_manager_handle_event(void* arg)
         //pthread_cond_wait(&event_received_condition, &event_received_cond_mutex);
         LOG_DEBUG(Event, "Event received");
         event_t* event = event_receive();
+        LOG_ADVANCED(Event, "Received event id %d", event->source_id);
         //pthread_mutex_unlock(&event_received_cond_mutex);
 
         scene_manager_on_event(event);

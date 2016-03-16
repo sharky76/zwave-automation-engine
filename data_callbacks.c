@@ -123,14 +123,16 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
 
     if(changeType == Updated)
     {
-        LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
         struct timespec tp;
         clock_gettime(CLOCK_MONOTONIC, &tp);
        
-        double time_msec = tp.tv_sec * 1000 + (double)tp.tv_nsec / 1000000L;
+        unsigned long time_msec = tp.tv_sec * 1000 + (unsigned long)tp.tv_nsec / 1000000L;
+
+        LOG_DEBUG(DataCallback, "Value changed for device %s time: %lu, old time: %lu", event_data->device_name, time_msec, event_data->last_update_time);
 
         if(time_msec >  event_data->last_update_time + 100)
         {
+            LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
             event_data->last_update_time = time_msec;
             event_t* event = event_create(DT_SENSOR, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, variant_delete_none));
             event_post(event);

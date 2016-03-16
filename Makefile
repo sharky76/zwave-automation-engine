@@ -51,7 +51,7 @@ ALL_OBJ=$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o \
 	-lrt 
 
 COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl -o "$(OUTFILE)" $(ALL_OBJ)
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -rs  "$(OUTFILE)" $(OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -120,8 +120,8 @@ ALL_OBJ=$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o \
 	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
 	-lrt 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -O2 -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -O2 -LlibZaeUtil/Release -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c

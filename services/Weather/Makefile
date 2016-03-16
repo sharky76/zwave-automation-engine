@@ -33,7 +33,7 @@ ALL_OBJ=$(OUTDIR)/Weather.o $(OUTDIR)/weather_cache.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 
 COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c -o "$(OUTFILE)" $(ALL_OBJ)
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -rs  "$(OUTFILE)" $(OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -68,7 +68,7 @@ ifeq "$(CFG)" "Release"
 OUTDIR=Release
 OUTFILE=$(OUTDIR)/Weather.so
 CFG_INC=-I../../libZaeUtil 
-CFG_LIB=-L../../libZaeUtil/Debug -lZaeUtil \
+CFG_LIB=-L../../libZaeUtil/Release -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/Weather.o $(OUTDIR)/weather_cache.o \
@@ -76,11 +76,11 @@ COMMON_OBJ=$(OUTDIR)/Weather.o $(OUTDIR)/weather_cache.o \
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Weather.o $(OUTDIR)/weather_cache.o \
 	$(OUTDIR)/weather_cli.o $(OUTDIR)/weather_methods.o \
-	-L../../libZaeUtil/Debug -lZaeUtil \
+	-L../../libZaeUtil/Release -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -shared -fPIC -L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -O2 -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -O2 -shared -fPIC -L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c

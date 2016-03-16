@@ -15,7 +15,7 @@ typedef struct device_event_data_t
     ZWBYTE  instance_id;
     ZWBYTE  command_id;
     const char*   device_name;
-    double  last_update_time;
+    unsigned long  last_update_time;
 } device_event_data_t;
 
 void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg);

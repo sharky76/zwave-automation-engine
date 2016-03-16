@@ -120,6 +120,9 @@ void scene_manager_on_event(event_t* event)
                 LOG_DEBUG(Scene, "Scene not registered");
             }
         }
+        break;
+    default:
+        LOG_ERROR(Scene, "Invalid scene event %d", event->source_id);
     }
 }
 
