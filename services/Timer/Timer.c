@@ -70,7 +70,7 @@ variant_t*  timer_start(service_method_t* method, va_list args)
             timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
             timer->singleshot = true;
         
-            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete));
+            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
         
             return variant_create_bool(true);
         }
@@ -120,7 +120,7 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
             timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
             timer->singleshot = false;
         
-            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete));
+            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
         
             return variant_create_bool(true);
         }
@@ -166,7 +166,7 @@ void alarm_expire_handler(int sig)
     alarm(1);
 }
 
-void timer_delete(void* arg)
+void timer_delete_timer(void* arg)
 {
     timer_info_t* timer = (timer_info_t*)arg;
 

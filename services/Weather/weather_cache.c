@@ -93,7 +93,7 @@ void    weather_cache_refresh()
     /* check for errors */ 
     if(res != CURLE_OK) 
     {
-     fprintf(stderr, "curl_easy_perform() failed: %s\n",
+     LOG_ERROR(DT_WEATHER, "curl_easy_perform() failed: %s\n",
         curl_easy_strerror(res));
     }
     else 
@@ -135,10 +135,10 @@ void    weather_cache_parse_response(struct json_object* weather_response_obj)
                     {
                         old_len = strlen(weather_cache.precipitation);
                     }
-                    weather_cache.precipitation = realloc(weather_cache.precipitation, (old_len + 1 + strlen(weather_string))*sizeof(char));
+                    weather_cache.precipitation = realloc(weather_cache.precipitation, (old_len + 2 + strlen(weather_string))*sizeof(char));
                     if(NULL != weather_cache.precipitation)
                     {
-                        memset(weather_cache.precipitation + (old_len), 0, 1 + strlen(weather_string));
+                        memset(weather_cache.precipitation + (old_len), 0, 2 + strlen(weather_string));
                         strcat(weather_cache.precipitation, weather_string);
 
                         if(i < weather_entries-1)

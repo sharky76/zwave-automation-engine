@@ -73,7 +73,11 @@ void scene_manager_on_event(event_t* event)
 
             if(NULL != calling_service)
             {
-                LOG_DEBUG(Scene, "Scene event from service: %s with data: %s", calling_service->service_name, scene_name);
+                if(strcmp(scene_name, "tick") != 0)
+                {
+                    LOG_DEBUG(Scene, "Scene event from service: %s with data: %s", calling_service->service_name, scene_name);
+                }
+
                 if(NULL != scene_name)
                 {
                     scene_manager_foreach_scene(scene_name, scene)

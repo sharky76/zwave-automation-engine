@@ -12,10 +12,10 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
 
 static command_class_t command_class_table[] = {
     {0x20, "Basic",        {"Get", 0, "level", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
-    {0x30, "SensorBinary", {"Get", 1, "1.level", NULL, 0, NULL},                 &command_class_eval_binarysensor},
-    {0x80, "Battery",      {"Get", 1, "last", NULL, 0, NULL},                 &command_class_eval_battery},
-    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>"},                &command_class_eval_alarm},
-    {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False"},                &command_class_eval_binaryswitch},
+    {0x30, "SensorBinary", {"Get", 1, "1.level", NULL, 0, NULL},                        &command_class_eval_binarysensor},
+    {0x80, "Battery",      {"Get", 1, "last", NULL, 0, NULL},                           &command_class_eval_battery},
+    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>"},  &command_class_eval_alarm},
+    {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False"},              &command_class_eval_binaryswitch},
 
 
     /* other standard command classes */

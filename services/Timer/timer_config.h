@@ -15,4 +15,4 @@ extern variant_stack_t* timer_list;
 extern int DT_TIMER;
 //service_t* self;
 
-void timer_delete(void* arg);
+void timer_delete_timer(void* arg);
