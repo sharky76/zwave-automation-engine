@@ -1,6 +1,8 @@
 #include "resolver.h"
 #include <logger.h>
 #include "variant_types.h"
+#include <hash.h>
+#include <crc32.h>
 
 /* Resolver examples:
  
@@ -14,7 +16,7 @@
 */
 typedef struct resolver_handle_t
 {
-    variant_stack_t*  record_list;
+    hash_table_t*  record_table;
 } resolver_handle;
 
 
@@ -26,7 +28,7 @@ void   resolver_init()
     LOG_ADVANCED(Resolver, "Initializing resolver...");
 
     resolver = (resolver_handle*)malloc(sizeof(resolver_handle));
-    resolver->record_list = stack_create();
+    resolver->record_table = variant_hash_init();
 
 
 /*
@@ -75,9 +77,12 @@ const char* resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE comma
 {
     char* name = NULL;
 
-    stack_for_each(resolver->record_list, dev_record_variant)
+    hash_iterator_t* it = variant_hash_begin(resolver->record_table);
+
+    it = variant_hash_iterator_next(it);
+    while(!variant_hash_iterator_is_end(it))
     {
-        device_record_t* record = (device_record_t*)variant_get_ptr(dev_record_variant);
+        device_record_t* record = (device_record_t*)variant_get_ptr(variant_hash_iterator_value(it));
         if(record->nodeId == nodeId && 
            record->instanceId == instanceId && 
            record->commandId == commandId)
@@ -85,6 +90,8 @@ const char* resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE comma
             name = record->deviceName;
             break;
         }
+
+        it = variant_hash_iterator_next(it);
     }
 
     return name;
@@ -97,13 +104,12 @@ bool resolver_has_name(const char* name)
 
 device_record_t*    resolver_get_device_record(const char* name)
 {
-    stack_for_each(resolver->record_list, dev_record_variant)
+    uint32_t key = crc32(0, name, strlen(name));
+
+    variant_t* record_variant = variant_hash_get(resolver->record_table, key);
+    if(NULL != record_variant)
     {
-        device_record_t* record = (device_record_t*)variant_get_ptr(dev_record_variant);
-        if(strncmp(record->deviceName, name, MAX_DEVICE_NAME_LEN) == 0)
-        {
-            return record;
-        }
+        return (device_record_t*)variant_get_ptr(record_variant);
     }
 
     return NULL;
@@ -119,7 +125,11 @@ void    resolver_add_entry(const char* name, ZWBYTE nodeId, ZWBYTE instanceId, Z
         new_record->instanceId = instanceId;
         new_record->commandId = commandId;
         strncpy(new_record->deviceName, name, MAX_DEVICE_NAME_LEN-1);
-        stack_push_back(resolver->record_list, variant_create_ptr(DT_PTR, new_record, variant_delete_default));
+
+        uint32_t key = crc32(0, new_record->deviceName, strlen(new_record->deviceName));
+
+        //stack_push_back(resolver->record_list, variant_create_ptr(DT_PTR, new_record, variant_delete_default));
+        variant_hash_insert(resolver->record_table, key, variant_create_ptr(DT_PTR, new_record, variant_delete_default));
     }
     else 
     {
@@ -130,24 +140,31 @@ void    resolver_add_entry(const char* name, ZWBYTE nodeId, ZWBYTE instanceId, Z
 
 void resolver_remove_entry(const char* name)
 {
-    stack_for_each(resolver->record_list, dev_record_variant)
-    {
-        device_record_t* query = (device_record_t*)variant_get_ptr(dev_record_variant);
-        if(strcmp(query->deviceName, name) == 0)
-        {
-            stack_remove(resolver->record_list, dev_record_variant);
-            variant_free(dev_record_variant);
-            break;
-        }
-    }
+    uint32_t key = crc32(0, name, strlen(name));
+    variant_hash_remove(resolver->record_table, key);
+}
+
+typedef struct
+{
+    void (*resolver_visitor)(device_record_t*, void*);
+    void* resovler_arg;
+} resolver_visitor_data_t;
+
+void call_resolver_visitor(hash_node_data_t* hash_node, void* arg)
+{
+    resolver_visitor_data_t* resovler_data = (resolver_visitor_data_t*)arg;
+    device_record_t* record = (device_record_t*)variant_get_ptr(hash_node->data);
+
+    resovler_data->resolver_visitor(record, resovler_data->resovler_arg);
 }
 
 void    resolver_for_each(void (*visitor)(device_record_t*, void*), void* arg)
 {
-    stack_for_each(resolver->record_list, dev_record_variant)
-    {
-        device_record_t* record = (device_record_t*)variant_get_ptr(dev_record_variant);
-        visitor(record, arg);
-    }
+    resolver_visitor_data_t resolver_data = {
+        .resolver_visitor = visitor,
+        .resovler_arg = arg
+    };
+
+    variant_hash_for_each(resolver->record_table, call_resolver_visitor, &resolver_data);
 }
 

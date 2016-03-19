@@ -2,44 +2,210 @@
 #include "logger.h"
 #include <stdlib.h>
 
-void delete_node_data(void* arg)
+
+/*********************************************** 
+ 
+    Primes computation...
+ 
+************************************************/
+static const size_t small_primes[] =
 {
-    hash_node_data_t* node_data = (hash_node_data_t*)arg;
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29
+};
+
+static const size_t indices[] =
+{
+    1,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29
+};
+
+bool
+is_prime(size_t x)
+{
+    const size_t N = sizeof(small_primes) / sizeof(small_primes[0]);
+    for (size_t i = 3; i < N; ++i)
+    {
+        const size_t p = small_primes[i];
+        const size_t q = x / p;
+        if (q < p)
+            return true;
+        if (x == q * p)
+            return false;
+    }
+    for (size_t i = 31; true;)
+    {
+        size_t q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 6;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 4;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 2;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 4;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 2;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 4;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 6;
+
+        q = x / i;
+        if (q < i)
+            return true;
+        if (x == q * i)
+            return false;
+        i += 2;
+    }
+    return true;
+}
+
+size_t next_prime(size_t n)
+{
+    const size_t superN = n;
+    const size_t L = 30;
+    const size_t N = sizeof(small_primes) / sizeof(small_primes[0]);
+    // If n is small enough, search in small_primes
+    if (n <= small_primes[N-1])
+    {
+        for(int i = 0; i < N; i++)
+        {
+            if(small_primes[i] > n)
+            {
+                return small_primes[i];
+            }
+        }
+    }
+    // Else n > largest small_primes
+    // Start searching list of potential primes: L * k0 + indices[in]
+    const size_t M = sizeof(indices) / sizeof(indices[0]);
+    // Select first potential prime >= n
+    //   Known a-priori n >= L
+    size_t k0 = n / L;
+    size_t in = 0;//std::lower_bound(indices, indices + M, n - k0 * L) - indices;
+
+    for(int i = 0; i < M; i++)
+    {
+        if(indices[i] > n - k0 * L)
+        {
+            in = i;
+            break;
+        }
+    }
+
+    n = L * k0 + indices[in];
+    while (!is_prime(n) || n <= superN)
+    {
+        if (++in == M)
+        {
+            ++k0;
+            in = 0;
+        }
+        n = L * k0 + indices[in];
+    }
+    return n;
+}
+/********************************************************************************************/
+
+
+
+static unsigned int DEFAULT_HASH_SIZE = 89; //5003;
+
+void delete_node_data(hash_node_data_t* node_data)
+{
     variant_free(node_data->data);
     free(node_data);
 }
 
-variant_t*   create_node_data(uint32_t key, variant_t* data)
+hash_node_data_t*   create_node_data(uint32_t key, variant_t* data)
 {
     hash_node_data_t* new_data = calloc(1, sizeof(hash_node_data_t));
     new_data->data = data;
     new_data->key = key;
 
-    return variant_create_ptr(DT_PTR, new_data, delete_node_data);
+    return new_data;
+}
+
+typedef struct
+{
+    int hash_size;
+    hash_node_data_t** node_array;
+} copy_items_data_t;
+
+void    copy_hash_items(hash_node_data_t* data, void* arg)
+{
+    copy_items_data_t* copy_data = (copy_items_data_t*)arg;
+    hash_node_data_t** node_array = copy_data->node_array;
+
+    int hash_index = data->key % copy_data->hash_size;
+    node_array[hash_index] = data;
 }
 
 hash_table_t*   variant_hash_init()
 {
     hash_table_t* hash_table = calloc(1, sizeof(hash_table_t));
-    //hash_table->hash_items = stack_create();
-    hash_table->node_array = calloc(HASH_SIZE, sizeof(hash_node_t*));
+    hash_table->node_array = calloc(DEFAULT_HASH_SIZE, sizeof(hash_node_data_t*));
     hash_table->count = 0;
-
-    for(int i = 0; i < HASH_SIZE; i++)
-    {
-        hash_table->node_array[i] = calloc(1, sizeof(hash_node_t));
-        hash_table->node_array[i]->data_list = stack_create();
-    }
+    hash_table->hash_size = DEFAULT_HASH_SIZE;
 
     return hash_table;
 }
 
 void            variant_hash_free(hash_table_t* hash_table)
 {
-    for(int i = 0; i < HASH_SIZE; i++)
+    for(int i = 0; i < hash_table->hash_size; i++)
     {
-        stack_free(hash_table->node_array[i]->data_list);
-        free(hash_table->node_array[i]);
+        //stack_free(hash_table->node_array[i]->data_list);
+        //free(hash_table->node_array[i]);
+        delete_node_data(hash_table->node_array[i]);
     }
 
     free(hash_table->node_array);
@@ -49,39 +215,47 @@ void            variant_hash_free(hash_table_t* hash_table)
 
 void            variant_hash_insert(hash_table_t* hash_table, uint32_t key, variant_t* item)
 {
-    int hash_index = key % HASH_SIZE;
-    variant_t* hash_item = create_node_data(key, item);
+    int hash_index = key % hash_table->hash_size;
+    hash_node_data_t* hash_item = create_node_data(key, item);
 
-    stack_for_each(hash_table->node_array[hash_index]->data_list, node_data_variant)
+    if(NULL != hash_table->node_array[hash_index])
     {
-        hash_node_data_t* node_data = (hash_node_data_t*)variant_get_ptr(node_data_variant);
-        
-        if(node_data->key == key)
+        if(hash_table->node_array[hash_index]->key == key)
         {
-            // Same key already exists, replace the item
-            delete_node_data(node_data);
-            node_data_variant->storage.ptr_data = variant_get_ptr(hash_item);
-            free(hash_item);
-            return;
+            variant_hash_remove(hash_table, key);
+        }
+        else
+        {
+            // Collision detected... Hash table must grow!
+            int new_hash_size = next_prime(hash_table->hash_size*2);
+            hash_node_data_t** node_array = calloc(new_hash_size, sizeof(hash_node_data_t*));
+
+            copy_items_data_t data;
+            data.hash_size = new_hash_size;
+            data.node_array = node_array;
+            variant_hash_for_each(hash_table, copy_hash_items, &data);
+    
+            // Delete all node_array
+            free(hash_table->node_array);
+    
+            // Set new array
+            hash_table->node_array = node_array;
+            hash_table->hash_size = new_hash_size;
+            hash_index = key % hash_table->hash_size;
         }
     }
 
-    // No such item was found, insert new 
-    stack_push_back(hash_table->node_array[hash_index]->data_list, hash_item);
+    hash_table->node_array[hash_index] = hash_item;
     hash_table->count++;
 }
 
 variant_t*      variant_hash_get(hash_table_t* hash_table, uint32_t key)
 {
-    int hash_index = key % HASH_SIZE;
-    stack_for_each(hash_table->node_array[hash_index]->data_list, node_data_variant)
+    int hash_index = key % hash_table->hash_size;
+
+    if(NULL != hash_table->node_array[hash_index])
     {
-        hash_node_data_t* node_data = (hash_node_data_t*)variant_get_ptr(node_data_variant);
-        
-        if(node_data->key == key)
-        {
-            return node_data->data;
-        }
+        return hash_table->node_array[hash_index]->data;
     }
 
     return NULL;
@@ -89,35 +263,76 @@ variant_t*      variant_hash_get(hash_table_t* hash_table, uint32_t key)
 
 void            variant_hash_remove(hash_table_t* hash_table, uint32_t key)
 {
-    int hash_index = key % HASH_SIZE;
-    stack_for_each(hash_table->node_array[hash_index]->data_list, node_data_variant)
+    int hash_index = key % hash_table->hash_size;
+
+    if(NULL != hash_table->node_array[hash_index])
     {
-        hash_node_data_t* node_data = (hash_node_data_t*)variant_get_ptr(node_data_variant);
-        
-        if(node_data->key == key)
-        {
-            stack_remove(hash_table->node_array[hash_index]->data_list, node_data_variant);
-            variant_free(node_data_variant);
-            hash_table->count--;
-            return;
-        }
+        delete_node_data(hash_table->node_array[hash_index]);
+        hash_table->node_array[hash_index] = NULL;
+        hash_table->count--;
     }
 }
 
 void            variant_hash_for_each(hash_table_t* hash_table, void (*visitor)(hash_node_data_t*, void*), void* arg)
 {
     int counter = hash_table->count;
-    for(int i = 0; i < HASH_SIZE && counter > 0; i++)
+    for(int i = 0; i < hash_table->hash_size && counter > 0; i++)
     {
-        if(hash_table->node_array[i]->data_list->count > 0)
+        if(NULL != hash_table->node_array[i])
         {
-            stack_for_each(hash_table->node_array[i]->data_list, hash_node_variant)
-            {
-                visitor((hash_node_data_t*)variant_get_ptr(hash_node_variant), arg);
-                counter--;
-            }
+            visitor(hash_table->node_array[i], arg);
+            counter--;
         }
     }
 }
 
+hash_iterator_t*    variant_hash_begin(hash_table_t* hash_table)
+{
+    hash_iterator_t* begin = malloc(sizeof(hash_iterator_t));
+    begin->hash_table = hash_table;
+    begin->index = -1;
 
+    return begin;
+}
+
+hash_iterator_t*    variant_hash_end(hash_table_t* hash_table)
+{
+    hash_iterator_t* end = malloc(sizeof(hash_iterator_t));
+    end->hash_table = hash_table;
+    end->index = hash_table->hash_size+1;
+
+    return end;
+
+}
+
+bool                variant_hash_iterator_is_end(hash_iterator_t* it)
+{
+    bool retVal = false;
+    hash_iterator_t* end = variant_hash_end(it->hash_table);
+
+    retVal = end->index == it->index;
+    free(end);
+    return retVal;
+}
+
+
+hash_iterator_t*    variant_hash_iterator_next(hash_iterator_t* it)
+{
+    for(int i = it->index+1; i < it->hash_table->hash_size; i++)
+    {
+        if(it->hash_table->node_array[i] != NULL)
+        {
+            it->index = i;
+            return it;
+        }
+    }
+
+    // Value not found, return end iterator index
+    it->index = it->hash_table->hash_size+1;
+    return it;
+}
+
+variant_t*          variant_hash_iterator_value(hash_iterator_t* it)
+{
+    return it->hash_table->node_array[it->index]->data;
+}
