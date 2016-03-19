@@ -19,39 +19,23 @@ endif
 #
 ifeq "$(CFG)" "Debug"
 OUTDIR=Debug
-OUTFILE=$(OUTDIR)/zwave-automation-engine
-CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
-CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
+OUTFILE=$(OUTDIR)/libZaeUtil.so
+CFG_INC=
+CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
+	-lpthread 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o \
-	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
-	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/zwave-automation-engine.o 
+COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/event.o \
+	$(OUTDIR)/logger.o $(OUTDIR)/service.o $(OUTDIR)/stack.o \
+	$(OUTDIR)/variant.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o \
-	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
-	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
-	-lrt 
+ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/event.o \
+	$(OUTDIR)/logger.o $(OUTDIR)/service.o $(OUTDIR)/stack.o \
+	$(OUTDIR)/variant.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
+	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
+	-lpthread 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -60,16 +44,12 @@ $(OUTDIR)/%.o : %.c
 # Build rules
 all: $(OUTFILE)
 
-$(OUTFILE): $(OUTDIR) deps $(OBJ)
+$(OUTFILE): $(OUTDIR)  $(OBJ)
 	$(LINK)
-	-scp $(OUTDIR)/zwave-automation-engine osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
+	-scp $(OUTDIR)/libZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
 
 $(OUTDIR):
 	$(MKDIR) -p "$(OUTDIR)"
-
-# Build dependencies
-deps:
-	@(cd libZaeUtil/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -81,7 +61,6 @@ clean:
 
 # Clean this project and all dependencies
 cleanall: clean
-	@(cd libZaeUtil/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif
 
 #
@@ -89,39 +68,23 @@ endif
 #
 ifeq "$(CFG)" "Release"
 OUTDIR=Release
-OUTFILE=$(OUTDIR)/zwave-automation-engine
-CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
-CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
+OUTFILE=$(OUTDIR)/libZaeUtil.so
+CFG_INC=
+CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
+	-lpthread 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o \
-	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
-	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/zwave-automation-engine.o 
+COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/event.o \
+	$(OUTDIR)/logger.o $(OUTDIR)/service.o $(OUTDIR)/stack.o \
+	$(OUTDIR)/variant.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o \
-	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o \
-	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
-	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
-	-lrt 
+ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/event.o \
+	$(OUTDIR)/logger.o $(OUTDIR)/service.o $(OUTDIR)/stack.o \
+	$(OUTDIR)/variant.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
+	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
+	-lpthread 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -O2 -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -O2 -LlibZaeUtil/Release -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -O2 -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -O2 -shared -fPIC -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -130,16 +93,12 @@ $(OUTDIR)/%.o : %.c
 # Build rules
 all: $(OUTFILE)
 
-$(OUTFILE): $(OUTDIR) deps $(OBJ)
+$(OUTFILE): $(OUTDIR)  $(OBJ)
 	$(LINK)
-	-scp $(OUTDIR)/zwave-automation-engine osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
+	-scp $(OUTDIR)/libZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
 
 $(OUTDIR):
 	$(MKDIR) -p "$(OUTDIR)"
-
-# Build dependencies
-deps:
-	@(cd libZaeUtil/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -151,5 +110,4 @@ clean:
 
 # Clean this project and all dependencies
 cleanall: clean
-	@(cd libZaeUtil/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif

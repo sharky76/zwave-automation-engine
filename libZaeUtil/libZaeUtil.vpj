@@ -36,7 +36,7 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -rs %xup "%o" %f'/>
+				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g -shared -fPIC -o "%o" %objs'/>
 			</Target>
 			<Target
 				Name="Build"
@@ -104,9 +104,6 @@
 		<PostBuildCommands>
 			<Exec CmdLine="scp %bdlibZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
 		</PostBuildCommands>
-		<Dependencies Name="Debug">
-			<Dependency Project="../services/Weather/Weather.vpj"/>
-		</Dependencies>
 	</Config>
 	<Config
 		Name="Release"
@@ -207,9 +204,6 @@
 		<PostBuildCommands>
 			<Exec CmdLine="scp %bdlibZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
 		</PostBuildCommands>
-		<Dependencies Name="Release">
-			<Dependency Project="../services/Weather/Weather.vpj"/>
-		</Dependencies>
 	</Config>
 	<Files>
 		<Folder

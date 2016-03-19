@@ -157,7 +157,7 @@ size_t next_prime(size_t n)
 
 
 
-static unsigned int DEFAULT_HASH_SIZE = 89; //5003;
+static unsigned int DEFAULT_HASH_SIZE = 7; //89; //5003;
 
 void delete_node_data(hash_node_data_t* node_data)
 {
@@ -223,11 +223,14 @@ void            variant_hash_insert(hash_table_t* hash_table, uint32_t key, vari
         if(hash_table->node_array[hash_index]->key == key)
         {
             variant_hash_remove(hash_table, key);
+            hash_table->node_array[hash_index] = hash_item;
+            hash_table->count++;
         }
         else
         {
             // Collision detected... Hash table must grow!
             int new_hash_size = next_prime(hash_table->hash_size*2);
+            //printf("Collision detected in %p, new size is %d\n", hash_table, new_hash_size);
             hash_node_data_t** node_array = calloc(new_hash_size, sizeof(hash_node_data_t*));
 
             copy_items_data_t data;
@@ -241,19 +244,27 @@ void            variant_hash_insert(hash_table_t* hash_table, uint32_t key, vari
             // Set new array
             hash_table->node_array = node_array;
             hash_table->hash_size = new_hash_size;
+
+
+            //printf("New size for %p, is %d\n", hash_table, hash_table->hash_size);
             hash_index = key % hash_table->hash_size;
+            hash_table->node_array[hash_index] = hash_item;
+            hash_table->count++;
         }
     }
-
-    hash_table->node_array[hash_index] = hash_item;
-    hash_table->count++;
+    else
+    {
+        hash_table->node_array[hash_index] = hash_item;
+        hash_table->count++;
+    }
 }
 
 variant_t*      variant_hash_get(hash_table_t* hash_table, uint32_t key)
 {
     int hash_index = key % hash_table->hash_size;
 
-    if(NULL != hash_table->node_array[hash_index])
+    //printf("Get hash %p key = %u, index = %u\n", hash_table, key, hash_index);
+    if(NULL != hash_table->node_array[hash_index] && hash_table->node_array[hash_index]->key == key)
     {
         return hash_table->node_array[hash_index]->data;
     }
@@ -285,6 +296,19 @@ void            variant_hash_for_each(hash_table_t* hash_table, void (*visitor)(
         }
     }
 }
+
+/*void            variant_hash_for_each_value(hash_table_t* hash_table, void (*visitor)(variant_t*, void*), void* arg)
+{
+    int counter = hash_table->count;
+    for(int i = 0; i < hash_table->hash_size && counter > 0; i++)
+    {
+        if(NULL != hash_table->node_array[i])
+        {
+            visitor(hash_table->node_array[i]->data, arg);
+            counter--;
+        }
+    }
+}*/
 
 hash_iterator_t*    variant_hash_begin(hash_table_t* hash_table)
 {

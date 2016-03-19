@@ -5,6 +5,7 @@
 #include <ZData.h>
 #include <stdio.h>
 #include <logger.h>
+#include <event.h>
 
 DECLARE_LOGGER(DeviceCallback)
 
@@ -44,7 +45,7 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
         {
     		//LOG_DEBUG("Adding callback for node_id=%i instance_id=%i command_id=0x%x...",node_id,instance_id,command_id);
 
-            device_event_data_t* event_data = (device_event_data_t*)malloc(sizeof(device_event_data_t));
+            sensor_event_data_t* event_data = (sensor_event_data_t*)malloc(sizeof(sensor_event_data_t));
             event_data->node_id = node_id;
             event_data->command_id = command_id;
             event_data->instance_id = instance_id;

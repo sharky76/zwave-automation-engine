@@ -93,8 +93,7 @@ void    weather_cache_refresh()
     /* check for errors */ 
     if(res != CURLE_OK) 
     {
-     LOG_ERROR(DT_WEATHER, "curl_easy_perform() failed: %s\n",
-        curl_easy_strerror(res));
+        LOG_ERROR(DT_WEATHER, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     }
     else 
     {

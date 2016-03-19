@@ -7,26 +7,36 @@
 #include "logger.h"
 #include "variant_types.h"
 #include "service_manager.h"
+#include <hash.h>
+#include <crc32.h>
 
-static variant_stack_t* scene_list = NULL;
+//static variant_stack_t* scene_list;
+hash_table_t*   scene_table;
 
 USING_LOGGER(Scene)
 
 void scene_manager_init()
 {
     LOG_ADVANCED(Scene, "Initializing scene manager");
-    scene_list = stack_create();
+    //scene_list = stack_create();
+    scene_table = variant_hash_init();
 }
 
 void scene_manager_add_scene(const char* name)
 {
     scene_t* scene = scene_create(name);
-    stack_push_back(scene_list, variant_create_ptr(DT_PTR, scene, &scene_delete));
+    //stack_push_back(scene_list, variant_create_ptr(DT_PTR, scene, &scene_delete));
+
+    uint32_t key = crc32(0, name, strlen(name));
+    variant_hash_insert(scene_table, key, variant_create_ptr(DT_PTR, scene, &scene_delete));
 }
 
 void scene_manager_remove_scene(const char* name)
 {
-    stack_for_each(scene_list, scene_variant)
+    uint32_t key = crc32(0, name, strlen(name));
+    variant_hash_remove(scene_table, key);
+
+    /*stack_for_each(scene_list, scene_variant)
     {
         scene_t* scene = (scene_t*)variant_get_ptr(scene_variant);
         if(strcmp(scene->name, name) == 0)
@@ -34,12 +44,13 @@ void scene_manager_remove_scene(const char* name)
             stack_remove(scene_list, scene_variant);
             variant_free(scene_variant);
         }
-    }
+    }*/
 }
 
 void scene_manager_free()
 {
-    stack_free(scene_list);
+    //stack_free(scene_list);
+    variant_hash_free(scene_table);
 }
 
 #define scene_manager_foreach_source(_source, _scene)    \
@@ -80,11 +91,23 @@ void scene_manager_on_event(event_t* event)
 
                 if(NULL != scene_name)
                 {
-                    scene_manager_foreach_scene(scene_name, scene)
+                    uint32_t key = crc32(0, scene_name, strlen(scene_name));
+                    variant_t* scene_variant = variant_hash_get(scene_table, key);
+                    /*scene_manager_foreach_scene(scene_name, scene)
                     {
                         LOG_ADVANCED(Scene, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
                         scene_exec(scene);
-                    }}
+                    }}*/
+                    if(NULL != scene_variant)
+                    {
+                        scene_t* scene = (scene_t*)variant_get_ptr(scene_variant);
+                        LOG_ADVANCED(Scene, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
+                        scene_exec(scene);
+                    }
+                    else
+                    {
+                        LOG_ERROR(Scene, "Scene not registered: %s", scene_name);
+                    }
                 }
                 else
                 {
@@ -100,24 +123,38 @@ void scene_manager_on_event(event_t* event)
     case DT_SENSOR_EVENT_DATA:
         {
             const char* scene_source = NULL;
-            device_event_data_t* event_data = (device_event_data_t*)variant_get_ptr(event->data);
-            LOG_DEBUG(Scene, "Scene event from device: %s with command: 0x%x", event_data->device_name, event_data->command_id);
+            sensor_event_data_t* event_data = (sensor_event_data_t*)variant_get_ptr(event->data);
+            LOG_DEBUG(Scene, "Scene event from sensor: %s with command: 0x%x", event_data->device_name, event_data->command_id);
     
             command_class_t* command_class = get_command_class_by_id(event_data->command_id);
             if(NULL != command_class)
             {
-                LOG_DEBUG(Scene, "Matching command-class %s found for device %s", command_class->command_name, event_data->device_name);
+                LOG_DEBUG(Scene, "Matching command-class %s found for sensor %s", command_class->command_name, event_data->device_name);
 
             }
             scene_source = event_data->device_name;
 
             if(NULL != scene_source)
             {
-                scene_manager_foreach_source(scene_source, scene)
+                hash_iterator_t* it = variant_hash_begin(scene_table);
+    
+                while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
+                {
+                    scene_t* scene = (scene_t*)variant_get_ptr(variant_hash_iterator_value(it));
+                    if(NULL != scene->source && strcmp(scene->source, scene_source) == 0)
+                    {
+                        LOG_ADVANCED(Scene, "Scene event from sensor %s for scene %s", event_data->device_name, scene->name);
+                        scene_exec(scene);
+                    }
+                }
+
+                free(it);
+
+                /*scene_manager_foreach_source(scene_source, scene)
                 {
                     LOG_ADVANCED(Scene, "Scene event from sensor %s for scene %s", event_data->device_name, scene->name);
                     scene_exec(scene);
-                }}
+                }}*/
             }
             else
             {
@@ -132,7 +169,7 @@ void scene_manager_on_event(event_t* event)
 
 scene_t*    scene_manager_get_scene(const char* name)
 {
-    stack_for_each(scene_list, scene_variant)
+    /*stack_for_each(scene_list, scene_variant)
     {
         scene_t* scene = (scene_t*)variant_get_ptr(scene_variant);
         if(strcmp(scene->name, name) == 0)
@@ -141,14 +178,21 @@ scene_t*    scene_manager_get_scene(const char* name)
         }
     }
 
-    return NULL;
+    return NULL;*/
+
+    uint32_t key = crc32(0, name, strlen(name));
+    variant_t* scene_variant = variant_hash_get(scene_table, key);
+
+    return (NULL == scene_variant)? NULL : (scene_t*)variant_get_ptr(scene_variant);
 }
 
 void    scene_manager_for_each(void (*visitor)(scene_t*, void*), void* arg)
 {
-    stack_for_each(scene_list, scene_variant)
+    /*stack_for_each(scene_list, scene_variant)
     {
         scene_t* scene = (scene_t*)variant_get_ptr(scene_variant);
         visitor(scene, arg);
-    }
+    }*/
+
+    variant_hash_for_each_value(scene_table, scene_t*, visitor, arg);
 }

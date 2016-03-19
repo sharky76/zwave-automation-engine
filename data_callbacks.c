@@ -94,7 +94,7 @@ void dump_data(const ZWay zway, ZDataHolder data)
 
 void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg)
 {
-    device_event_data_t* event_data = (device_event_data_t*)arg;
+    sensor_event_data_t* event_data = (sensor_event_data_t*)arg;
 
     /*if(NULL == event_data->device_name)
     {
@@ -118,7 +118,7 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
 
 void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg)
 {
-    device_event_data_t* event_data = (device_event_data_t*)arg;
+    sensor_event_data_t* event_data = (sensor_event_data_t*)arg;
     event_data->device_name = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
 
     if(changeType == Updated)

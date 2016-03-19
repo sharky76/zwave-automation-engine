@@ -10,8 +10,9 @@
 #include "cli_logger.h"
 #include "cli_service.h"
 #include <hash.h>
+#include <crc32.h>
 
-static variant_stack_t* service_list;
+//static variant_stack_t* service_list;
 extern hash_table_t* service_table;
 
 DECLARE_LOGGER(ServiceManager)
@@ -27,7 +28,7 @@ void    service_manager_init(const char* service_dir)
     void    (*service_cli_create)(cli_node_t* root_node);
     char full_path[256] = {0};
     
-    service_list = stack_create();
+    //service_list = stack_create();
     service_table = variant_hash_init();
 
     if(dp != NULL)
@@ -64,8 +65,10 @@ void    service_manager_init(const char* service_dir)
                     cli_add_logging_class(service->service_name);
                     cli_add_service(service->service_name);
 
-                    stack_push_back(service_list, variant_create_ptr(DT_PTR, service, NULL));
-                    variant_hash_insert(service_table, service->service_id, variant_create_ptr(DT_PTR, service, NULL));
+                    //stack_push_back(service_list, variant_create_ptr(DT_PTR, service, NULL));
+
+                    uint32_t key = crc32(0, service->service_name, strlen(service->service_name));
+                    variant_hash_insert(service_table, key, variant_create_ptr(DT_PTR, service, NULL));
 
                     *(void**) (&service_cli_create) = dlsym(handle, "service_cli_create");
                     char* error = dlerror();
@@ -80,7 +83,7 @@ void    service_manager_init(const char* service_dir)
         }
 
         closedir(dp);
-        LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_list->count);
+        LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
     }
     else
     {
@@ -118,54 +121,41 @@ service_method_t*  service_manager_get_method(const char* service_class, const c
 
 service_t*  service_manager_get_class(const char* service_class)
 {
-    stack_for_each(service_list, service_variant)
-    {
-        service_t* service = (service_t*)variant_get_ptr(service_variant);
-        if(strcmp(service->service_name, service_class) == 0)
-        {
-            return service;
-        }
-    }
+    uint32_t key = crc32(0, service_class, strlen(service_class));
+    variant_t* retVal = variant_hash_get(service_table, key);
 
-    return NULL;
+    return (NULL == retVal)? NULL : (service_t*)variant_get_ptr(retVal);
 }
 
 service_t*  service_manager_get_class_by_id(int service_id)
 {
-    return service_self(service_id);
-    /*stack_for_each(service_list, service_variant)
+    hash_iterator_t* it = variant_hash_begin(service_table);
+    service_t* retVal = NULL;
+
+    while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
     {
-        service_t* service = (service_t*)variant_get_ptr(service_variant);
+        service_t* service = (service_t*)variant_get_ptr(variant_hash_iterator_value(it));
+
         if(service->service_id == service_id)
         {
-            return service;
+            retVal = service;
+            break;
         }
     }
 
-    return NULL;*/
+    free(it);
+    return retVal;
 }
 
 bool    service_manager_is_class_exists(const char* service_class)
 {
-    stack_for_each(service_list, service_variant)
-    {
-        service_t* service = variant_get_ptr(service_variant);
-        if(strcmp(service->service_name, service_class) == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    uint32_t key = crc32(0, service_class, strlen(service_class));
+    return variant_hash_get(service_table, key) != NULL;
 }
 
 void    service_manager_for_each_class(void (*visitor)(service_t*, void*), void* arg)
 {
-    stack_for_each(service_list, service_variant)
-    {
-        service_t* service = (service_t*)variant_get_ptr(service_variant);
-        visitor(service, arg);
-    }
+    variant_hash_for_each_value(service_table, service_t*, visitor, arg)
 }
 
 void    service_manager_for_each_method(const char* service_class, void (*visitor)(service_method_t*, void*), void* arg)
@@ -192,22 +182,59 @@ void    service_manager_for_each_method(const char* service_class, void (*visito
  */
 void    service_manager_on_event(event_t* event)
 {
-    stack_for_each(service_list, service_variant)
+    switch(event->data->type)
     {
-        service_t* service = (service_t*)variant_get_ptr(service_variant);
-
-        service_t* calling_service = service_manager_get_class_by_id(event->source_id);
-        if(NULL != calling_service )
+    case DT_SENSOR_EVENT_DATA:
         {
-            stack_for_each(service->event_subscriptions, event_subscription_variant)
+            // Forward sensor event to all services
+            hash_iterator_t* it = variant_hash_begin(service_table);
+    
+            while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
             {
-                event_subscription_t* es = VARIANT_GET_PTR(event_subscription_t, event_subscription_variant);
-                if(strcmp(es->source, calling_service->service_name) == 0)
+                service_t* service = (service_t*)variant_get_ptr(variant_hash_iterator_value(it));
+                stack_for_each(service->event_subscriptions, event_subscription_variant)
                 {
-                    LOG_DEBUG(ServiceManager, "Forward event from: %s to service: %s", calling_service->service_name, service->service_name);
-                    es->on_event(calling_service->service_name, event);
+                    event_subscription_t* es = VARIANT_GET_PTR(event_subscription_t, event_subscription_variant);
+                    if(strcmp(es->source, SENSOR_EVENT_SOURCE) == 0)
+                    {
+                        sensor_event_data_t* event_data = (sensor_event_data_t*)event->data;
+                        LOG_DEBUG(ServiceManager, "Forward sensor event from: %s to service: %s", event_data->device_name, service->service_name);
+                        es->on_event(SENSOR_EVENT_SOURCE, event);
+                    }
                 }
             }
+
+            free(it);
         }
+        break;
+    case DT_SERVICE_EVENT_DATA:
+        {
+            service_t* calling_service = service_manager_get_class_by_id(event->source_id);
+    
+            if(NULL != calling_service)
+            {
+                hash_iterator_t* it = variant_hash_begin(service_table);
+    
+                while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
+                {
+                    service_t* service = (service_t*)variant_get_ptr(variant_hash_iterator_value(it));
+            
+                    stack_for_each(service->event_subscriptions, event_subscription_variant)
+                    {
+                        event_subscription_t* es = VARIANT_GET_PTR(event_subscription_t, event_subscription_variant);
+                        if(strcmp(es->source, calling_service->service_name) == 0)
+                        {
+                            LOG_DEBUG(ServiceManager, "Forward event from: %s to service: %s", calling_service->service_name, service->service_name);
+                            es->on_event(calling_service->service_name, event);
+                        }
+                    }
+                }
+
+                free(it);
+            }
+        }
+        break;
+    default:
+        break;
     }
 }

@@ -22,6 +22,8 @@ typedef struct service_method_t
     variant_t*  (*eval_callback)(struct service_method_t*, va_list);
 } service_method_t;
 
+#define SENSOR_EVENT_SOURCE "Sensor"
+
 typedef struct event_subscription_t
 {
     char*   source;
@@ -66,16 +68,10 @@ service_method_t* _method_name = (service_method_t*)malloc(sizeof(service_method
         stack_push_back((*service)->event_subscriptions, variant_create_ptr(DT_PTR, es, variant_delete_none)); \
     }
 
-typedef struct service_event_data_t
-{
-    char*   data;
-    //service_t*  service;
-} service_event_data_t;
-
 void    service_create(service_t** service, int service_id);
 void    service_cli_create(cli_node_t* parent_node);
 void    service_post_event(int service_id, const char* data);
 
-service_t*  service_self(int service_id);
-variant_t*  service_call_method(int service_id, const char* method_name, ...);
+service_t*  service_self(const char* service_name);
+variant_t*  service_call_method(const char* service_name, const char* method_name, ...);
 

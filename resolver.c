@@ -79,8 +79,7 @@ const char* resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE comma
 
     hash_iterator_t* it = variant_hash_begin(resolver->record_table);
 
-    it = variant_hash_iterator_next(it);
-    while(!variant_hash_iterator_is_end(it))
+    while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
     {
         device_record_t* record = (device_record_t*)variant_get_ptr(variant_hash_iterator_value(it));
         if(record->nodeId == nodeId && 
@@ -91,8 +90,10 @@ const char* resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE comma
             break;
         }
 
-        it = variant_hash_iterator_next(it);
+        //it = variant_hash_iterator_next(it);
     }
+
+    free(it);
 
     return name;
 }
