@@ -2,7 +2,10 @@
 #include "command_parser.h"
 #include "scene_manager.h"
 #include "script_action_handler.h"
-#include "logger.h"
+#include "builtin_service.h"
+#include <logger.h>
+#include <hash.h>
+#include <crc32.h>
 
 void scene_action_exec_scene(action_t* action);
 void scene_action_exec_script(action_t* action);
@@ -21,7 +24,7 @@ void environment_delete(void* arg)
     free(env);
 }
 
-env_t*      create_environment(struct json_object* record)
+/*env_t*      create_environment(struct json_object* record)
 {
     env_t* new_env = (env_t*)malloc(sizeof(env_t));
 
@@ -40,7 +43,7 @@ env_t*      create_environment(struct json_object* record)
     }
     
     return new_env;
-}
+}*/
 
 action_t*  scene_action_create(ActionType type, const char* record)
 {
@@ -83,7 +86,7 @@ void       scene_action_del_environment(action_t* action, const char* name)
     }
 }
 
-action_t*  scene_action_create_old(struct json_object* record)
+/*action_t*  scene_action_create_old(struct json_object* record)
 {
     action_t* new_action = (action_t*)malloc(sizeof(action_t));
     new_action->environment = stack_create();
@@ -129,7 +132,7 @@ action_t*  scene_action_create_old(struct json_object* record)
     }
 
     return new_action;
-}
+}*/
 
 void  scene_action_exec(action_t* action)
 {
@@ -201,12 +204,46 @@ void scene_action_exec_command(action_t* action)
 
     if(isOk)
     {
+        if(action->environment->count > 0)
+        {
+            // Compile all environment and prepare token table
+            hash_table_t*   token_table = variant_hash_init();
+            stack_for_each(action->environment, env_variant)
+            {
+                env_t* env = (env_t*)variant_get_ptr(env_variant);
+                bool isOk;
+                variant_stack_t* compiled_value = command_parser_compile_expression(env->value, &isOk);
+        
+                if(!isOk)
+                {
+                    LOG_ERROR(Scene, "Error compiling environment value: %s", env->value);
+                }
+                else
+                {
+                    variant_t* env_value = command_parser_execute_expression(compiled_value);
+                    
+                    if(NULL != env_value)
+                    {
+                        uint32_t key = crc32(0, env->name, strlen(env->name));
+                        //printf("Inserting value with name %s and key %u, and val: %s\n", env->name, key, variant_get_string(env_value));
+
+                        variant_hash_insert(token_table, key, env_value);
+                    }
+                }
+            }
+    
+            builtin_service_stack_create("Expression.ProcessTemplate");
+            builtin_service_stack_add("Expression.ProcessTemplate", variant_create_ptr(DT_PTR, token_table, variant_hash_free_void));
+        }
+
         variant_t* result = command_parser_execute_expression(compiled);
 
         if(NULL != result)
         {
             variant_free(result);
         }
+
+        builtin_service_stack_clear("Expression.ProcessTemplate");
     }
 
     stack_free(compiled);

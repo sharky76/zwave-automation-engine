@@ -10,7 +10,7 @@
 #include "logger.h"
 #include "cli_commands.h"
 #include "cli_auth.h"
-#include "vty.h"
+#include "vty_io.h"
 #include <signal.h>
 #include <setjmp.h>
 #include <readline/readline.h>
@@ -27,6 +27,7 @@
 #include <dirent.h>
 #include "user_manager.h"
 #include "http_server.h"
+#include "builtin_service_manager.h"
 
 #define DEFAULT_PORT 9231
 
@@ -232,6 +233,7 @@ int main (int argc, char *argv[])
         scene_manager_init();
         event_manager_init();
         user_manager_init();
+        builtin_service_manager_init();
 
         cli_load_config();
         
@@ -341,9 +343,10 @@ int main (int argc, char *argv[])
                         .desc.io_pair[1] = stdout
                     };
     
-                    vty_sock = vty_create(VTY_STD, &vty_data);
+                    vty_sock = vty_io_create(VTY_STD, &vty_data);
                     cli_set_vty(vty_sock);
-        
+                    vty_display_banner(vty_sock);
+
                     if(user_manager_get_count() > 0)
                     {
                         cmd_enter_auth_node(vty_sock);
@@ -371,7 +374,7 @@ int main (int argc, char *argv[])
                         .desc.socket = session_sock
                     };
 
-                    vty_sock = vty_create(VTY_HTTP, &vty_data);
+                    vty_sock = vty_io_create(VTY_HTTP, &vty_data);
                     char* str = vty_read(vty_sock);
                     cli_command_exec(vty_sock, str);
                 }

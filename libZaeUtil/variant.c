@@ -90,6 +90,7 @@ variant_t*  variant_create(VariantDataType type, void* data)
         new_variant->delete_cb = &variant_delete_default;
         break;
     default:
+        new_variant->storage.ptr_data = data;
         break;
     }
 
@@ -204,7 +205,7 @@ float       variant_get_float(variant_t* variant)
 
 const char* variant_get_string(const variant_t* variant)
 {
-    return (const char*)variant->storage.string_data;
+    return (NULL != variant)? (const char*)variant->storage.string_data : NULL;
 }
 
 void*       variant_get_ptr(variant_t* variant)
@@ -305,6 +306,66 @@ bool variant_to_string(variant_t* variant, char** string)
     }
 
     return retVal;
+}
+
+variant_t*  variant_add(variant_t* arg1, variant_t* arg2)
+{
+    if(arg1->type == DT_STRING || arg2->type == DT_STRING)
+    {
+        char* str1 = NULL;
+        char* str2 = NULL;
+        if(variant_to_string(arg1, &str1) && variant_to_string(arg2, &str2))
+        {
+            char* str_res = calloc(strlen(str1) + strlen(str2) + 1, sizeof(char));
+            if(NULL != str_res)
+            {
+                strcat(str_res, str1);
+                strcat(str_res, str2);
+                free(str1);
+                free(str2);
+                return variant_create_string(str_res);
+            }
+        }
+
+        free(str1);
+        free(str2);
+        return NULL;
+    }
+
+    switch(arg1->type)
+    {
+    case DT_INT8:
+        return variant_create_byte(DT_INT8, variant_get_byte(arg1) + variant_get_byte(arg2));
+        break;
+    case DT_INT32:
+    case DT_INT64:
+        return variant_create_int32(DT_INT32, variant_get_int(arg1) + variant_get_int(arg2));
+        break;
+    case DT_FLOAT:
+        return variant_create_float(variant_get_float(arg1) + variant_get_float(arg2));
+        break;
+    default:
+        return NULL;
+    }
+}
+
+variant_t*  variant_subtract(variant_t* arg1, variant_t* arg2)
+{
+switch(arg1->type)
+    {
+    case DT_INT8:
+        return variant_create_byte(DT_INT8, variant_get_byte(arg1) - variant_get_byte(arg2));
+        break;
+    case DT_INT32:
+    case DT_INT64:
+        return variant_create_int32(DT_INT32, variant_get_int(arg1) - variant_get_int(arg2));
+        break;
+    case DT_FLOAT:
+        return variant_create_float(variant_get_float(arg1) - variant_get_float(arg2));
+        break;
+    default:
+        return NULL;
+    }
 }
 
 int variant_get_next_user_type()

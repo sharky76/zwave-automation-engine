@@ -13,6 +13,8 @@ typedef enum OperatorType_e
     OP_SERVICE_METHOD,
     OP_LEFT_PARETHESIS,
     OP_RIGHT_PARETHESIS,
+    OP_PLUS,
+    OP_MINUS,
     OP_LESS,
     OP_MORE,
     OP_CMP,

@@ -11,6 +11,8 @@ variant_t*   op_less(operator_t* op, ...);
 variant_t*   op_more(operator_t* op, ...);
 variant_t*   op_and(operator_t* op, ...);
 variant_t*   op_or(operator_t* op, ...);
+variant_t*   op_plus(operator_t* op, ...);
+variant_t*   op_minus(operator_t* op, ...);
 variant_t*   op_device_function(operator_t* op, ...);
 variant_t*   op_service_method(operator_t* op, ...);
 
@@ -28,7 +30,9 @@ static operator_t   operator_list[] = {
     {OP_MORE,     NULL, &binary_argument_count, &op_more},
     {OP_CMP,      NULL, &binary_argument_count, &op_equal},
     {OP_AND,      NULL, &binary_argument_count, &op_and},
-    {OP_OR,       NULL, &binary_argument_count, &op_or}
+    {OP_OR,       NULL, &binary_argument_count, &op_or},
+    {OP_PLUS,     NULL, &binary_argument_count, &op_plus},
+    {OP_MINUS,    NULL, &binary_argument_count, &op_minus},
 };
 
 operator_t* operator_create(OperatorType type, void* operator_data)
@@ -115,8 +119,28 @@ variant_t*   op_or(operator_t* op, ...)
     return variant_create_bool(variant_get_bool(arg1) || variant_get_bool(arg2));
 }
 
-#define FUNC_CALL(_op_data, ...)    \
-    _op_data->command_class->command_impl(_op_data->command_method, _op_data->instance_id, __VA_ARGS__)
+variant_t*   op_plus(operator_t* op, ...)
+{
+    va_list args;
+    va_start(args, op);
+
+    variant_t* arg1 = va_arg(args, variant_t*);
+    variant_t* arg2 = va_arg(args, variant_t*);
+
+    return variant_add(arg1, arg2);
+}
+
+variant_t*   op_minus(operator_t* op, ...)
+{
+    va_list args;
+    va_start(args, op);
+
+    variant_t* arg1 = va_arg(args, variant_t*);
+    variant_t* arg2 = va_arg(args, variant_t*);
+
+    return variant_subtract(arg1, arg2);
+}
+
 
 variant_t*   op_device_function(operator_t* op, ...)
 {

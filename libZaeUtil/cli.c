@@ -47,6 +47,10 @@ node_data_t*    cmd_create_node_data(const char* cmd_part, cli_command_t* cmd)
         }
 
     }
+    else if(strcmp(cmd_part, "CHAR") == 0)
+    {
+        data->type = TYPE_CHAR;
+    }
     else
     {
         data->type = TYPE_CMD_PART;

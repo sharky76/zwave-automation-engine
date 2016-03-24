@@ -1,3 +1,4 @@
+#pragma once
 #include "stack.h"
 #include <stdint.h>
 
@@ -40,11 +41,16 @@ typedef struct hash_iterator_t
 
 hash_table_t*   variant_hash_init();
 void            variant_hash_free(hash_table_t* hash_table);
+void            variant_hash_free_void(void* hash_table);
+
 void            variant_hash_insert(hash_table_t* hash_table, uint32_t key, variant_t* item);
 variant_t*      variant_hash_get(hash_table_t* hash_table, uint32_t key);
 void            variant_hash_remove(hash_table_t* hash_table, uint32_t key);
 void            variant_hash_for_each(hash_table_t* hash_table, void (*visitor)(hash_node_data_t*, void*), void* arg);
 //void            variant_hash_for_each_value(hash_table_t* hash_table, void (*visitor)(variant_t*, void*), void* arg);
+
+// For debugging
+void            variant_hash_print(hash_table_t* hash_table);
 
 hash_iterator_t*    variant_hash_begin(hash_table_t* hash_table);
 hash_iterator_t*    variant_hash_end(hash_table_t* hash_table);

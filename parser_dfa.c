@@ -12,6 +12,8 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_START,   A_COMMA,       STATE_COMMA},
     {STATE_START,   A_AND,         STATE_AND},
     {STATE_START,   A_OR,          STATE_OR},
+    {STATE_START,   A_PLUS,        STATE_PLUS},
+    {STATE_START,   A_MINUS,       STATE_MINUS},
     {STATE_START,   A_CMP,         STATE_CMP},
     {STATE_START,   A_LESS,        STATE_LESS},
     {STATE_START,   A_MORE,        STATE_MORE},
@@ -27,6 +29,8 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_ALPHA,   A_COMMA,        STATE_COMMA},
     {STATE_ALPHA,   A_AND,          STATE_AND},
     {STATE_ALPHA,   A_OR,           STATE_OR},
+    {STATE_ALPHA,   A_PLUS,         STATE_PLUS},
+    {STATE_ALPHA,   A_MINUS,        STATE_MINUS},
     {STATE_ALPHA,   A_CMP,          STATE_CMP},
     {STATE_ALPHA,   A_LESS,         STATE_LESS},
     {STATE_ALPHA,   A_MORE,         STATE_MORE},
@@ -40,6 +44,8 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_DIGIT,   A_COMMA,        STATE_COMMA},
     {STATE_DIGIT,   A_AND,          STATE_AND},
     {STATE_DIGIT,   A_OR,           STATE_OR},
+    {STATE_DIGIT,   A_PLUS,         STATE_PLUS},
+    {STATE_DIGIT,   A_MINUS,        STATE_MINUS},
     {STATE_DIGIT,   A_CMP,          STATE_CMP},
     {STATE_DIGIT,   A_LESS,         STATE_LESS},
     {STATE_DIGIT,   A_MORE,         STATE_MORE},
@@ -60,6 +66,8 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_RIGHT_PAREN,   A_COMMA,        STATE_COMMA},
     {STATE_RIGHT_PAREN,   A_AND,          STATE_AND},
     {STATE_RIGHT_PAREN,   A_OR,           STATE_OR},
+    {STATE_RIGHT_PAREN,   A_PLUS,         STATE_PLUS},
+    {STATE_RIGHT_PAREN,   A_MINUS,        STATE_MINUS},
     {STATE_RIGHT_PAREN,   A_CMP,          STATE_CMP},
     {STATE_RIGHT_PAREN,   A_LESS,         STATE_LESS},
     {STATE_RIGHT_PAREN,   A_MORE,         STATE_MORE},
@@ -83,6 +91,18 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_OR,   A_DIGIT,        STATE_DIGIT},
     {STATE_OR,   A_LEFT_PAREN,   STATE_LEFT_PAREN},
     {STATE_OR,   A_SPACE,        STATE_START},
+
+    // From PLUS
+    {STATE_PLUS, A_ALPHA,        STATE_ALPHA},
+    {STATE_PLUS, A_DIGIT,        STATE_DIGIT},
+    {STATE_PLUS, A_LEFT_PAREN,   STATE_LEFT_PAREN},
+    {STATE_PLUS, A_SPACE,        STATE_START},
+
+    // From MINUS
+    {STATE_MINUS, A_ALPHA,        STATE_ALPHA},
+    {STATE_MINUS, A_DIGIT,        STATE_DIGIT},
+    {STATE_MINUS, A_LEFT_PAREN,   STATE_LEFT_PAREN},
+    {STATE_MINUS, A_SPACE,        STATE_START},
 
     // From CMP
     {STATE_CMP,   A_ALPHA,        STATE_ALPHA},
@@ -110,6 +130,8 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_CAPTURE_STRING,   A_COMMA,        STATE_CAPTURE_STRING},
     {STATE_CAPTURE_STRING,   A_AND,          STATE_CAPTURE_STRING},
     {STATE_CAPTURE_STRING,   A_OR,           STATE_CAPTURE_STRING},
+    {STATE_CAPTURE_STRING,   A_PLUS,         STATE_CAPTURE_STRING},
+    {STATE_CAPTURE_STRING,   A_MINUS,        STATE_CAPTURE_STRING},
     {STATE_CAPTURE_STRING,   A_CMP,          STATE_CAPTURE_STRING},
     {STATE_CAPTURE_STRING,   A_LESS,         STATE_CAPTURE_STRING},
     {STATE_CAPTURE_STRING,   A_MORE,         STATE_CAPTURE_STRING},
@@ -125,6 +147,8 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_ERROR,   A_COMMA,        STATE_END},
     {STATE_ERROR,   A_AND,          STATE_END},
     {STATE_ERROR,   A_OR,           STATE_END},
+    {STATE_ERROR,   A_PLUS,         STATE_END},
+    {STATE_ERROR,   A_MINUS,        STATE_END},
     {STATE_ERROR,   A_CMP,          STATE_END},
     {STATE_ERROR,   A_LESS,         STATE_END},
     {STATE_ERROR,   A_MORE,         STATE_END},
@@ -157,7 +181,7 @@ State           parser_dfa_next_state(State source_state, AlphabetToken token)
 
 AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
 {
-    if(isalpha(*str))
+    if(isalpha(*str) || *str == '$')
     {
         return A_ALPHA;
     }
@@ -200,6 +224,14 @@ AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
     else if(*str == '\'')
     {
         return A_QUOTE;
+    }
+    else if(*str == '+')
+    {
+        return A_PLUS;
+    }
+    else if(*str == '-')
+    {
+        return A_MINUS;
     }
     else if(strlen(str) == 2)
     {

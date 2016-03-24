@@ -74,4 +74,7 @@ int         variant_compare(variant_t* v1, variant_t* v2);
 
 int         variant_get_next_user_type();
 
+variant_t*  variant_add(variant_t* arg1, variant_t* arg2);
+variant_t*  variant_subtract(variant_t* arg1, variant_t* arg2);
+
 #endif // VARIANT_H

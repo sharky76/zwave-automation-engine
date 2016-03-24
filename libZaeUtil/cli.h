@@ -26,6 +26,7 @@ typedef enum
     TYPE_WORD,
     TYPE_LINE,
     TYPE_INT,
+    TYPE_CHAR,
     TYPE_TERM
 } NodeType;
 

@@ -156,7 +156,7 @@
 				RunFromDir="%rw">
 				<Exec
 					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -O2 %~other -o "%o" %objs'
-					OtherOptions="-LlibZaeUtil/Release -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl"/>
+					OtherOptions="-LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -262,6 +262,12 @@
 		</Folder>
 	</CustomFolders>
 	<Files AutoFolders="DirectoryView">
+		<Folder Name="BuiltinServices">
+			<F N="BuiltinServices/Conditional.c"/>
+			<F N="BuiltinServices/Conditional.h"/>
+			<F N="BuiltinServices/Expression.c"/>
+			<F N="BuiltinServices/Expression.h"/>
+		</Folder>
 		<Folder Name="../../../pidev">
 			<Folder Name="pitools">
 				<Folder Name="arm-bcm2708">
@@ -318,6 +324,10 @@
 				<F N="../z-way-devel/include/ZXmlLookup.h"/>
 			</Folder>
 		</Folder>
+		<F N="builtin_service.c"/>
+		<F N="builtin_service.h"/>
+		<F N="builtin_service_manager.c"/>
+		<F N="builtin_service_manager.h"/>
 		<F N="callback_descriptor.json"/>
 		<F N="cli_auth.c"/>
 		<F N="cli_auth.h"/>
@@ -372,8 +382,8 @@
 		<F N="user_manager.c"/>
 		<F N="user_manager.h"/>
 		<F N="variant_types.h"/>
-		<F N="vty.c"/>
-		<F N="vty.h"/>
+		<F N="vty_io.c"/>
+		<F N="vty_io.h"/>
 		<F N="zwave-automation-engine.c"/>
 	</Files>
 </Project>

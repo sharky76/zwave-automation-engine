@@ -40,11 +40,11 @@
 #define MAX_COMMAND_ARGUMENTS   3
 #define MAX_METHOD_LEN          32
 
-typedef enum OperandType_e
+/*typedef enum OperandType_e
 {
     DEVICE,
     RESERVED_WORD
-} OperandType;
+} OperandType;*/
 
 
 
@@ -67,8 +67,6 @@ typedef struct reserved_word_st
     char  word[10];
     int   value;
 } reserved_word_t;
-
-// For now lets allow only logical operators!
 
 variant_stack_t*    command_parser_compile_expression(const char* expression, bool* isOk);
 variant_t*          command_parser_execute_expression(variant_stack_t* compiled_expression);

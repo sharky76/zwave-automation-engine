@@ -9,9 +9,11 @@ cli_node_t*     scene_node;
 //extern cli_command_t   scene_action_command_list[];
 cli_node_t*     scene_action_node;
 
+cli_node_t*     scene_template_token_node;
 
 extern bool    cmd_exit_node(vty_t* vty, variant_stack_t* params);
 extern bool    cmd_enter_node(vty_t* vty, variant_stack_t* params);
+extern bool    cmd_enter_node_by_name(vty_t* vty, const char* node_name);
 
 bool cmd_enter_scene_node(vty_t* vty, variant_stack_t* params);
 bool cmd_del_scene(vty_t* vty, variant_stack_t* params);
@@ -45,6 +47,7 @@ bool cmd_scene_disable(vty_t* vty, variant_stack_t* params);
 void    show_scene_helper(scene_t* scene, void* arg);
 void    show_scene_action_helper(action_t* action, void* arg);
 void    show_scene_action_env_helper(env_t* env, void* arg);
+void    show_scene_action_token_helper(env_t* env, void* arg);
 
 USING_LOGGER(Scene);
 
@@ -84,13 +87,22 @@ cli_command_t   scene_action_command_list[] = {
     //{"end",                             cmd_exit_node,                  "Exit environment configuration"},
     {NULL,                          NULL,                       NULL}
 };
+
+cli_command_t   scene_template_command_list[] = {
+    {"token WORD value LINE",     cmd_add_action_environment,     "Add token value to command action"},
+    {"no token WORD",             cmd_delete_action_environment,  "Remove token value from command action"},
+    //{"end",                             cmd_exit_node,                  "Exit environment configuration"},
+    {NULL,                          NULL,                       NULL}
+};
+
 //cli_node_t* scene_action_node;
 
 void    cli_scene_init(cli_node_t* parent_node)
 {
     cli_append_to_node(parent_node, scene_root_list);
     cli_install_node(&scene_node, parent_node, scene_command_list, "scene", "scene");
-    cli_install_node(&scene_action_node, scene_node, scene_action_command_list, "action", "action");
+    cli_install_node(&scene_action_node, scene_node, scene_action_command_list, "action-environment", "action");
+    cli_install_node(&scene_template_token_node, scene_node, scene_template_command_list, "action-template", "action");
 }
 
 bool cmd_enter_scene_node(vty_t* vty, variant_stack_t* params)
@@ -155,7 +167,7 @@ bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params)
  
 bool cmd_config_scene_action_script(vty_t* vty, variant_stack_t* params)
 {
-    cmd_enter_node(vty, params);
+    cmd_enter_node_by_name(vty, "action-environment");
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* new_action = scene_get_action(scene, variant_get_string(stack_peek_at(params, 2)));
@@ -187,6 +199,7 @@ bool cmd_config_scene_action_scene(vty_t* vty, variant_stack_t* params)
 
 bool cmd_config_scene_action_command(vty_t* vty, variant_stack_t* params)
 {
+    cmd_enter_node_by_name(vty, "action-template");
     char command[1024] = {0};
     cli_assemble_line(params, 2, command);
     scene_t* scene = scene_manager_get_scene(scene_node->context);
@@ -197,6 +210,8 @@ bool cmd_config_scene_action_command(vty_t* vty, variant_stack_t* params)
         new_action = scene_action_create(A_COMMAND, command);
         scene_add_action(scene, new_action);
     }
+
+    scene_action_node->context = strdup(new_action->path);
 }
 
 bool cmd_add_action_environment(vty_t* vty, variant_stack_t* params)
@@ -373,6 +388,8 @@ void    show_scene_action_helper(action_t* action, void* arg)
         break;
     case A_COMMAND:
         vty_write(vty, " action command %s\n", action->path);
+        scene_action_for_each_environment(action, show_scene_action_token_helper, vty);
+        vty_write(vty, " !\n");
         break;
     case A_SCENE:
         vty_write(vty, " action scene %s\n", action->path);
@@ -395,4 +412,10 @@ void    show_scene_action_env_helper(env_t* env, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
     vty_write(vty, "  environment %s value %s\n", env->name, env->value);
+}
+
+void show_scene_action_token_helper(env_t* env, void* arg)
+{
+    vty_t* vty = (vty_t*)arg;
+    vty_write(vty, "  token %s value %s\n", env->name, env->value);
 }

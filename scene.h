@@ -1,7 +1,7 @@
 #pragma once
 
 // This file holds the scene instance loaded from the JSON file
-#include <json-c/json.h>
+//#include <json-c/json.h>
 #include <ZPlatform.h>
 #include "stack.h"
 #include "resolver.h"
@@ -27,7 +27,7 @@ action_t*   scene_get_action(scene_t* scene, const char* action_path);
 
 action_t*   scene_get_action_with_type(scene_t* scene, const char* action_path, ActionType type);
 
-scene_t*    scene_load(struct json_object* scene_obj);
+//scene_t*    scene_load(struct json_object* scene_obj);
 void        scene_exec(scene_t* scene);
 void        scene_delete(void* arg);
 void        scene_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg);

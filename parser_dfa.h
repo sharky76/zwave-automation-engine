@@ -161,6 +161,8 @@ typedef enum AlphabetToken_e
     A_SPACE,
     A_QUOTE,
     A_DOT,
+    A_PLUS,
+    A_MINUS,
     A_INVALID
 } AlphabetToken;
 
@@ -177,6 +179,8 @@ typedef enum State_e
     STATE_CMP,
     STATE_LESS,
     STATE_MORE,
+    STATE_PLUS,
+    STATE_MINUS,
     STATE_CAPTURE_STRING,
     STATE_ERROR,
     STATE_END,

@@ -126,7 +126,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
         struct timespec tp;
         clock_gettime(CLOCK_MONOTONIC, &tp);
        
-        unsigned long time_msec = tp.tv_sec * 1000 + (unsigned long)tp.tv_nsec / 1000000L;
+        unsigned long time_msec = tp.tv_sec * 1000 + tp.tv_nsec / 1000000L;
 
         LOG_DEBUG(DataCallback, "Value changed for device %s time: %lu, old time: %lu", event_data->device_name, time_msec, event_data->last_update_time);
 

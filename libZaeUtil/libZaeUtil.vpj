@@ -219,6 +219,7 @@
 			<F N="service.h"/>
 			<F N="stack.h"/>
 			<F N="variant.h"/>
+			<F N="vty.h"/>
 		</Folder>
 		<Folder
 			Name="Other Files"
@@ -240,6 +241,7 @@
 			<F N="service.c"/>
 			<F N="stack.c"/>
 			<F N="variant.c"/>
+			<F N="vty.c"/>
 		</Folder>
 		<F N="crc32.c"/>
 		<F N="crc32.h"/>

@@ -2,6 +2,7 @@
 #include "resolver.h"
 #include "parser_dfa.h"
 #include "service_manager.h"
+#include "builtin_service_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -45,6 +46,7 @@ static reserved_word_t  reserved_words[] = {
 bool process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 void process_string_operand(const char* ch, variant_stack_t* operand_queue);
 bool process_service_method_operator(const char* ch, variant_stack_t* operator_stack);
+bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_stack);
 bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack);
 void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
@@ -81,6 +83,8 @@ State    state_left_paren(state_context_t* state_context, void* priv);
 State    state_comma(state_context_t* state_context, void* priv);
 State    state_and(state_context_t* state_context, void* priv);
 State    state_or(state_context_t* state_context, void* priv);
+State    state_plus(state_context_t* state_context, void* priv);
+State    state_minus(state_context_t* state_context, void* priv);
 State    state_cmp(state_context_t* state_context, void* priv);
 State    state_less(state_context_t* state_context, void* priv);
 State    state_more(state_context_t* state_context, void* priv);
@@ -106,6 +110,8 @@ static state_descriptor_t state_map[] = {
     {STATE_COMMA,   &state_comma},
     {STATE_AND,     &state_and},
     {STATE_OR,      &state_or},
+    {STATE_PLUS,    &state_plus},
+    {STATE_MINUS,   &state_minus},
     {STATE_CMP,     &state_cmp},
     {STATE_LESS,    &state_less},
     {STATE_MORE,    &state_more},
@@ -156,6 +162,12 @@ bool process_state_transition(State current_state, state_context_t* state_contex
             break;
         case STATE_OR:
             process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_OR);
+            break;
+        case STATE_PLUS:
+            process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_PLUS);
+            break;
+        case STATE_MINUS:
+            process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_MINUS);
             break;
         case STATE_CMP:
             process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_CMP);
@@ -266,6 +278,20 @@ State    state_or(state_context_t* state_context, void* priv)
     return (process_state_transition(STATE_OR, state_context, priv))?
             parser_dfa_next_state(STATE_OR, parser_dfa_read_next_token(state_context)) :
             STATE_ERROR;
+}
+
+State    state_plus(state_context_t* state_context, void* priv)
+{
+    return (process_state_transition(STATE_PLUS, state_context, priv))?
+            parser_dfa_next_state(STATE_PLUS, parser_dfa_read_next_token(state_context)) :
+            STATE_ERROR;
+}
+
+State    state_minus(state_context_t* state_context, void* priv)
+{
+    return (process_state_transition(STATE_MINUS, state_context, priv))?
+                parser_dfa_next_state(STATE_MINUS, parser_dfa_read_next_token(state_context)) :
+                STATE_ERROR;
 }
 
 State    state_cmp(state_context_t* state_context, void* priv)
@@ -526,6 +552,10 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
             {
                 retVal = process_service_method_operator(function_string, operator_stack);
             }
+            else if(builtin_service_manager_is_class_exists(tok))
+            {
+                retVal = process_builtin_method_operator(function_string, operator_stack);
+            }
             else
             {
                 // Well, this might be the only token in expression, save it as string
@@ -628,6 +658,48 @@ bool  process_service_method_operator(const char* ch, variant_stack_t* operator_
 
     return retVal;
 }
+
+bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_stack)
+{
+    char* function_string = (char*)ch;
+    char* tok = strtok(function_string, ".");
+    int tok_count = 0;
+    bool    retVal = true;
+
+    char* service_class;
+    char* name;
+
+    while(NULL != tok)
+    {
+        switch(tok_count++)
+        {
+        case 0:
+            service_class = tok;
+            break;
+        case 1:
+            name = tok;
+            break;
+        }
+    
+        tok = strtok(NULL, ".");
+    }
+
+    service_method_t* service_method = builtin_service_manager_get_method(service_class, name);
+
+    if(NULL != service_method)
+    {
+        operator_t* service_method_operator = operator_create(OP_SERVICE_METHOD, service_method);
+        stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, service_method_operator, &operator_delete_service_method_operator));
+    }
+    else
+    {
+        LOG_ERROR(Parser, "Method not defined: %s.%s", service_class, name);
+        retVal = false;
+    }
+
+    return retVal;
+}
+
 
 void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue)
 {

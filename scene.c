@@ -44,7 +44,7 @@ bool        scene_add_action(scene_t* scene, action_t* action)
     return true;
 }
 
-scene_t*    scene_load(struct json_object* scene_obj)
+/*scene_t*    scene_load(struct json_object* scene_obj)
 {
     scene_t* new_scene = NULL;
 
@@ -90,7 +90,7 @@ scene_t*    scene_load(struct json_object* scene_obj)
     }
 
     return new_scene;
-}
+}*/
 
 void        scene_del_action(scene_t* scene, action_t* action)
 {

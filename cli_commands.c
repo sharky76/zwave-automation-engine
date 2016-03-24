@@ -23,9 +23,13 @@
 #include <setjmp.h>
 #include "config.h"
 #include "command_parser.h"
+#include "vty_io.h"
 
 extern sigjmp_buf jmpbuf;
 extern int keep_running;
+
+static char    banner_stop_char;
+static char*   banner;
 
 // Forward declaration of commands
 bool    cmd_controller_reset(vty_t* vty, variant_stack_t* params);
@@ -39,7 +43,10 @@ bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
 
 
 bool    cmd_help(vty_t* vty, variant_stack_t* params);
-bool    cmd_set_prompt(vty_t* vty, variant_stack_t* params);
+bool    cmd_set_banner(vty_t* vty, variant_stack_t* params);
+bool    cmd_show_banner(vty_t* vty, variant_stack_t* params);
+bool    cmd_clear_banner(vty_t* vty, variant_stack_t* params);
+bool    cmd_enter_node_by_name(vty_t* vty, const char* node_name);
 bool    cmd_enter_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_exit_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_close_session(vty_t* vty, variant_stack_t* params);
@@ -63,7 +70,9 @@ cli_command_t root_command_list[] = {
     {"show controller queue",       cmd_show_controller_queue,   "Display the contents of controller job queue"},
     {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
     {"help",                 cmd_help,                      "(module) Display help for module"},
-    {"prompt LINE",          cmd_set_prompt,                "Set new prompt"},
+    {"banner CHAR",          cmd_set_banner,                "Set new banner"},
+    {"no banner",            cmd_clear_banner,              "Clear banner"},
+    {"show banner",          cmd_show_banner,               "Show banner"},
     {"show running-config",  cmd_show_running_config,       "Show running configuration"},
     {"copy running-config startup-config", cmd_save_running_config, "Save running config into startup config"},
     {"copy running-config file WORD", cmd_copy_running_config, "Save running config into custom location"},
@@ -74,243 +83,19 @@ cli_command_t root_command_list[] = {
     {NULL,                   NULL,                          NULL}
 };
 
-/*typedef enum
-{
-    TYPE_CMD_PART,
-    TYPE_WORD,
-    TYPE_LINE,
-    TYPE_INT,
-    TYPE_TERM
-} NodeType;
-
-typedef enum
-{
-    CMD_FULL_MATCH,
-    CMD_PARTIAL_MATCH,
-    CMD_NO_MATCH
-} CmdMatchStatus;
-
-typedef struct node_data_t
-{
-    NodeType    type;
-    //bool        is_term;
-    char*       name;
-    cli_command_t*  command;
-} node_data_t;
-
-typedef struct cmd_tree_node_t
-{
-    node_data_t*        data;
-    variant_stack_t*    children;
-} cmd_tree_node_t;
-*/
-
 cli_node_t*         current_node;
 extern ZWay         zway;
-//variant_stack_t*    cli_node_list;
-//struct vty_t*   vty;
 
 void    cli_set_vty(vty_t* new_vty)
 {
     //vty_t* vty = new_vty;
     vty_set_prompt(new_vty, "(%s)# ", root_node->prompt);
 
+    if(banner != NULL)
+    {
+        vty_set_banner(new_vty, banner);
+    }
 }
-
-/*node_data_t*    cmd_create_node_data(const char* cmd_part, cli_command_t* cmd)
-{
-    node_data_t* data = malloc(sizeof(node_data_t));
-
-    data->name = strdup(cmd_part);
-    //data->is_term = false;
-    data->command = cmd;
-
-    if(strcmp(cmd_part, "WORD") == 0)
-    {
-        data->type = TYPE_WORD;
-    }
-    else if(strcmp(cmd_part, "LINE") == 0)
-    {
-        data->type = TYPE_LINE;
-    }
-    else if(strcmp(cmd_part, "INT") == 0)
-    {
-        data->type = TYPE_INT;
-    }
-    else
-    {
-        data->type = TYPE_CMD_PART;
-    }
-
-    return data;
-}
-
-node_data_t*    cmd_create_final_node_data(cli_command_t* cmd)
-{
-    node_data_t* data = malloc(sizeof(node_data_t));
-    
-    data->name = strdup("<cr>");
-    //data->is_term = true;
-    data->command = cmd;
-    data->type = TYPE_TERM;
-    return data;
-}
-
-void    cmd_tree_node_delete(void* arg)
-{
-    cmd_tree_node_t* node = (cmd_tree_node_t*)arg;
-    free(node->data->name);
-    free(node->data);
-    stack_free(node->children);
-    free(node);
-}
-
-variant_stack_t*    create_cmd_vec(const char* cmdline)
-{
-    variant_stack_t* cmd_vec = stack_create();
-    int index = 0;
-    int cmd_index = 0;
-    char ch;
-    char cmd_part[128] = {0};
-
-    if(*cmdline == 0)
-    {
-        return cmd_vec;
-    }
-
-    while(ch = cmdline[index++])
-    {
-        if(ch == ' ')
-        {
-            if(cmd_index > 0)
-            {
-                cmd_part[cmd_index] = 0;
-                stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
-                cmd_index = 0;
-            }
-        }
-        else if(ch == '!') // The exclamation point is an alias for "end" command
-        {
-            cmd_part[cmd_index] = 0;
-            stack_push_back(cmd_vec, variant_create_string(strdup("end")));
-            cmd_index = 0;
-        }
-        else if(ch != '\n')
-        {
-            cmd_part[cmd_index++] = ch;
-        }
-    }
-
-    if(cmdline[index-1] != ' ')
-    {
-        cmd_part[cmd_index] = 0;
-        stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
-    }
-
-    return cmd_vec;
-}
-
-cmd_tree_node_t*    cmd_find_node(variant_stack_t* root, const char* cmd_part)
-{
-    for(int i = 0; i < root->count; i++)
-    {
-        cmd_tree_node_t* child_node = (cmd_tree_node_t*)variant_get_ptr(stack_peek_at(root, i));
-        if(strcmp(child_node->data->name, cmd_part) == 0)
-        {
-            return child_node;
-        }
-    }
-
-    return NULL;
-}
-
-void cmd_create_tree(cli_command_t* cmd, variant_stack_t* command_tree)
-{
-    variant_stack_t*    cmd_vec = create_cmd_vec(cmd->name);
-    variant_stack_t*    command_tree_root = command_tree;
-
-    // For each part of the command create a special node and attach it to 
-    // a parent or root of the tree
-    for(int i = 0; i < cmd_vec->count; i++)
-    {
-        const char* cmd_part = variant_get_string(stack_peek_at(cmd_vec, i));
-        
-        // Find the node matching command or, find the last node to which we will append child
-        cmd_tree_node_t* node = cmd_find_node(command_tree_root, cmd_part);
-
-        if(NULL == node)
-        {
-            // Append new node to root
-            cmd_tree_node_t* new_node = malloc(sizeof(cmd_tree_node_t));
-            new_node->data = cmd_create_node_data(cmd_part, cmd);
-            new_node->children = stack_create();
-            stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)new_node, &cmd_tree_node_delete));
-            command_tree_root = new_node->children;
-
-            // Special case for terminator nodes
-            if(cmd_vec->count-1 == i)
-            {
-                cmd_tree_node_t* term_node = malloc(sizeof(cmd_tree_node_t));
-                term_node->data = cmd_create_final_node_data(cmd);
-                term_node->children = stack_create();
-                stack_push_back(command_tree_root, variant_create_ptr(DT_CMD_NODE, (void*)term_node, &cmd_tree_node_delete));
-            }
-        }
-        else
-        {
-            // Matching node was found - continue search its children
-            command_tree_root = node->children;
-        }
-    }
-
-    stack_free(cmd_vec);
-}
-
-void  cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt)
-{
-    *node = (cli_node_t*)calloc(1, sizeof(cli_node_t));
-    (*node)->command_tree = stack_create();
-    (*node)->name = strdup(name);
-    (*node)->prompt = strdup(prompt);
-    (*node)->parent = parent;
-    (*node)->context = NULL;
-
-    //for(int i = 0; i < sizeof(*command_list)/sizeof(cli_command_t); i++)
-    cli_command_t* cmd;
-    int i = 0;
-    while(cmd = &(command_list[i++]))
-    {
-        //cli_command_t* cmd = &(command_list[i]);
-
-        if(NULL != cmd->name)
-        {
-            cmd_create_tree(cmd, (*node)->command_tree);
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    stack_push_back(cli_node_list, variant_create_ptr(DT_CLI_NODE, (*node), variant_delete_none));
-}
-
-void  cli_append_to_node(cli_node_t* node, cli_command_t command_list[])
-{
-    cli_command_t* cmd;
-    int i = 0;
-    while(cmd = &(command_list[i++]))
-    {
-        if(NULL != cmd->name)
-        {
-            cmd_create_tree(cmd, node->command_tree);
-        }
-        else
-        {
-            break;
-        }
-    }
-}*/
 
 void    cli_init()
 {
@@ -341,7 +126,7 @@ void    cli_load_config()
 
     if(NULL != file_data.desc.file)
     {
-        vty_t* file_vty = vty_create(VTY_FILE, &file_data);
+        vty_t* file_vty = vty_io_create(VTY_FILE, &file_data);
         vty_set_prompt(file_vty, "(%s)# ", root_node->prompt);
         char* str;
 
@@ -408,7 +193,7 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
                     }
                 }
             }
-            else if((node->data->type == TYPE_TERM && *cmd_part_str == 0) || node->data->type == TYPE_WORD || node->data->type == TYPE_LINE ||
+            else if((node->data->type == TYPE_TERM && *cmd_part_str == 0) || node->data->type == TYPE_WORD || node->data->type == TYPE_LINE || node->data->type == TYPE_CHAR ||
                (node->data->type == TYPE_CMD_PART && strstr(node->data->name, cmd_part_str) == node->data->name))
             {
                 stack_push_back(matches, command_tree_node_variant);
@@ -596,6 +381,7 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
                         break;
                     case TYPE_WORD:
                     case TYPE_LINE:
+                    case TYPE_CHAR:
                         stack_push_back(*complete_cmd_vec, variant_create_string(strdup(cmd_part_str)));
                         break;
                     case TYPE_INT:
@@ -635,12 +421,42 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
             }
             else 
             {
+                bool exact_match_found = false;
+
+                // Can happen that more than one partial match found and 
+                // one exact match found too
+                while(matches->count > 0 && !exact_match_found)
+                {
+                    variant_t* matched_node_variant = stack_pop_front(matches);
+                    cmd_tree_node_t* node = variant_get_ptr(matched_node_variant);
+
+                    if(node->data->type == TYPE_CMD_PART && strcmp(node->data->name, cmd_part_str) == 0)
+                    {
+                        stack_push_back(*complete_cmd_vec, variant_create_string(strdup(node->data->name)));
+                        
+                        // Now lets see if this is the terminal node. Terminal nodes has only one child - <cr>
+                        stack_for_each(node->children, term_node_variant)
+                        {
+                            cmd_tree_node_t* term_node = variant_get_ptr(term_node_variant);
+                            if(term_node->data->type == TYPE_TERM)
+                            {
+                                match_status = CMD_FULL_MATCH;
+                                *cmd_node = term_node;
+                                exact_match_found = true;
+                            }
+                        }
+                    }
+                }
+
                 while(matches->count > 0)
                 {
                     stack_pop_front(matches);
                 }
 
-                match_status = CMD_PARTIAL_MATCH;
+                if(!exact_match_found)
+                {
+                    match_status = CMD_PARTIAL_MATCH;
+                }
                 
                 break;
             }
@@ -801,24 +617,45 @@ bool    cmd_help(vty_t* vty, variant_stack_t* params)
 {
 }
 
-bool    cmd_set_prompt(vty_t* vty, variant_stack_t* params)
+bool    cmd_set_banner(vty_t* vty, variant_stack_t* params)
 {
-    char prompt[256] = {0};
-    for(int i = 1; i < params->count; i++)
+    banner_stop_char = *variant_get_string(stack_peek_at(params, 1));
+    vty_write(vty, "Enter banner text ending with '%c'\n", banner_stop_char);
+
+    free(banner);
+    banner = NULL;
+
+    vty_set_multiline(vty, true, banner_stop_char);
+    char* buf = vty_read(vty);
+    vty_set_multiline(vty, false, banner_stop_char);
+
+    if(NULL != buf)
     {
-        strcat(prompt, variant_get_string(stack_peek_at(params, i)));
-        strcat(prompt, " ");
+        banner = strdup(buf);
     }
 
-    free(root_node->prompt);
-    root_node->prompt = strdup(prompt);
+    vty_write(vty, "\n");
+}
 
-    int last_char = strlen(prompt)-1;
-    prompt[last_char++] = '#';
-    prompt[last_char++] = ' ';
-    prompt[last_char++] = 0;
+bool    cmd_show_banner(vty_t* vty, variant_stack_t* params)
+{
+    if(0 != banner_stop_char && NULL != banner)
+    {
+        vty_write(vty, "banner %c\n", banner_stop_char);
+        vty_write(vty, "%s%c\n", banner, banner_stop_char);
+    }
+    else
+    {
+        vty_write(vty, "no banner\n");
+    }
+}
 
-    vty_set_prompt(vty, prompt);
+bool    cmd_clear_banner(vty_t* vty, variant_stack_t* params)
+{
+    banner_stop_char = 0;
+    vty->banner = NULL;
+    free(banner);
+    banner = NULL;
 }
 
 void    cmd_enter_root_node(vty_t* vty)
@@ -841,6 +678,11 @@ void    cmd_enter_root_node(vty_t* vty)
 bool    cmd_enter_node(vty_t* vty, variant_stack_t* params)
 {
     const char* node_name = variant_get_string(stack_peek_at(params, 0));
+    cmd_enter_node_by_name(vty, node_name);
+}
+
+bool    cmd_enter_node_by_name(vty_t* vty, const char* node_name)
+{
     stack_for_each(cli_node_list, cli_node_variant)
     {
         
@@ -911,6 +753,8 @@ bool    cmd_close_session(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
 {
+    cli_command_exec(vty, "show banner");
+    vty_write(vty, "!\n");
     cli_command_exec(vty, "show user");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show logging");
@@ -927,11 +771,18 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
     char config_loc[512] = {0};
     snprintf(config_loc, 511, "%s/startup-config", global_config.config_location);
 
+    char backup_loc[512] = {0};
+    snprintf(backup_loc, 511, "%s/startup-config.backup", global_config.config_location);
+
+    // First rename current startup config to backup
+    rename(config_loc, backup_loc);
+
     vty_data_t file_vty_data = {
         .desc.file = fopen(config_loc, "w")
     };
 
-    vty_t* file_vty = vty_create(VTY_FILE, &file_vty_data);
+    vty_t* file_vty = vty_io_create(VTY_FILE, &file_vty_data);
+    vty_set_banner(file_vty, vty->banner);
     cmd_show_running_config(file_vty, NULL);
 
     vty_free(file_vty);

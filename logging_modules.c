@@ -14,4 +14,5 @@ void logging_modules_init()
     REGISTER_LOGGER(ServiceManager)
     REGISTER_LOGGER(User)
     REGISTER_LOGGER(HTTPServer)
+    REGISTER_LOGGER(BuiltinService)
 }
