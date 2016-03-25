@@ -161,8 +161,11 @@ static unsigned int DEFAULT_HASH_SIZE = 7; //89; //5003;
 
 void delete_node_data(hash_node_data_t* node_data)
 {
-    variant_free(node_data->data);
-    free(node_data);
+    if(NULL != node_data)
+    {
+        variant_free(node_data->data);
+        free(node_data);
+    }
 }
 
 hash_node_data_t*   create_node_data(uint32_t key, variant_t* data)

@@ -230,6 +230,8 @@ void scene_action_exec_command(action_t* action)
                         variant_hash_insert(token_table, key, env_value);
                     }
                 }
+
+                stack_free(compiled_value);
             }
     
             builtin_service_stack_create("Expression.ProcessTemplate");

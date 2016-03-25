@@ -55,7 +55,7 @@ bool cmd_enter_service_node(vty_t* vty, variant_stack_t* params)
     if(service_manager_is_class_exists(service_name))
     {
         cmd_enter_node(vty, params);
-        service_node->context = strdup(service_name);
+        //service_node->context = strdup(service_name);
     }
     else
     {

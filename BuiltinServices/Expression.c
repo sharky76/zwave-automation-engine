@@ -23,7 +23,7 @@ variant_t*  eval_impl(struct service_method_t* method, va_list args)
     {
         bool isOk;
         variant_stack_t* compiled = command_parser_compile_expression(expression, &isOk);
-    
+        free(expression);
         if(isOk)
         {
             return command_parser_execute_expression(compiled);
@@ -42,7 +42,8 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
 
     if(NULL != service_stack)
     {
-        hash_table_t*   token_table = (hash_table_t*)variant_get_ptr(stack_pop_front(service_stack->stack));
+        variant_t* token_table_var = stack_pop_front(service_stack->stack);
+        hash_table_t*   token_table = (hash_table_t*)variant_get_ptr(token_table_var);
 
         // Replace all tokens starting with "$" with matching values from token table
         char* template = (char*)variant_get_string(template_var);
@@ -109,6 +110,8 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
     
             ++tokens;
         }
+
+        variant_free(token_table_var);
     }
 
     // Remove last space...

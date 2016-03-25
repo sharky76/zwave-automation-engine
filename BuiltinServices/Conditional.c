@@ -19,20 +19,20 @@ variant_t*  if_impl(struct service_method_t* method, va_list args)
     variant_t* true_case = va_arg(args, variant_t*);
     variant_t* false_case = va_arg(args, variant_t*);
 
-    char* expression;
-    if(variant_to_string(condition_expr, &expression))
+    //char* expression;
+    //if(variant_to_string(condition_expr, &expression))
     {
         bool isOk;
-        variant_stack_t* compiled = command_parser_compile_expression(expression, &isOk);
+        //variant_stack_t* compiled = command_parser_compile_expression(expression, &isOk);
     
-        if(isOk)
+        //if(isOk)
         {
-            variant_t* res = command_parser_execute_expression(compiled);
+            //variant_t* res = command_parser_execute_expression(compiled);
             
-            if(res->type == DT_BOOL)
+            if(condition_expr->type == DT_BOOL)
             {
                 char* case_expression;
-                if(variant_get_bool(res))
+                if(variant_get_bool(condition_expr))
                 {
                     if(variant_to_string(true_case, &case_expression))
                     {

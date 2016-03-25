@@ -437,7 +437,9 @@ const char*   sms_data_get_sms_gw(const char* country_code, const char* carrier)
             {
                 struct json_object* gw_data;
                 gw_data = json_object_array_get_idx(sms_gw, 1);
-                return json_object_get_string(gw_data);
+
+                const char* sms_gw_email = json_object_get_string(gw_data);
+                return strchr(sms_gw_email, '@');
             }
         }
     }
