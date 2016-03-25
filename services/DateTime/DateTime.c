@@ -41,7 +41,7 @@ variant_t*  datetime_get_time_string(service_method_t* method, va_list args)
 
     strftime(timebuf, 10, datetime_time_format, p_tm);
 
-    return variant_create(DT_STRING, timebuf);
+    return variant_create_string(timebuf);
 }
 
 variant_t*  datetime_get_timestamp(service_method_t* method, va_list args)
@@ -107,6 +107,6 @@ variant_t*  datetime_get_date_string(service_method_t* method, va_list args)
 
     strftime(datebuf, 10, datetime_date_format, p_tm);
 
-    return variant_create(DT_STRING, datebuf);
+    return variant_create_string(datebuf);
 }
 

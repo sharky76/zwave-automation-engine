@@ -827,6 +827,7 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
     char expression[512] = {0};
     cli_assemble_line(params, 1, expression);
     variant_stack_t* compiled_value = command_parser_compile_expression(expression, &isOk);
+    bool retVal = false;
 
     if(isOk)
     {
@@ -838,13 +839,20 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
             {
                 vty_write(vty, "%% %s\n", str_result);
                 free(str_result);
-                return true;
+                variant_free(result);
+                retVal = true;
             }
         }
     }
 
     stack_free(compiled_value);
-    vty_error(vty, "Error evaluating expression\n");
+
+    if(!retVal)
+    {
+        vty_error(vty, "Error evaluating expression\n");
+    }
+
+    return retVal;
 }
 
 void    show_command_class_helper(command_class_t* command_class, void* arg)
