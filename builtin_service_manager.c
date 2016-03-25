@@ -48,3 +48,30 @@ bool              builtin_service_manager_is_class_exists(const char* service_cl
     return (NULL != service_var);
 }
 
+builtin_service_t* builtin_service_manager_get_class(const char* service_class)
+{
+    uint32_t key = crc32(0, service_class, strlen(service_class));
+    variant_t* retVal = variant_hash_get(builtin_service_table, key);
+
+    return (NULL == retVal)? NULL : (builtin_service_t*)variant_get_ptr(retVal);
+}
+
+void              builtin_service_manager_for_each_class(void (*visitor)(builtin_service_t*, void*), void* arg)
+{
+    variant_hash_for_each_value(builtin_service_table, builtin_service_t*, visitor, arg)
+}
+
+void              builtin_service_manager_for_each_method(const char* service_class, void (*visitor)(service_method_t*, void*), void* arg)
+{
+    builtin_service_t* service = builtin_service_manager_get_class(service_class);
+
+    if(NULL != service)
+    {
+        stack_for_each(service->service_methods, method_variant)
+        {
+            service_method_t* method = (service_method_t*)variant_get_ptr(method_variant);
+            visitor(method, arg);
+        }
+    }
+}
+

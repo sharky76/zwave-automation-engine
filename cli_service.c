@@ -1,5 +1,6 @@
 #include "cli_service.h"
 #include "service_manager.h"
+#include "builtin_service_manager.h"
 #include "vty.h"
 
 cli_node_t*     service_node;
@@ -13,6 +14,8 @@ bool cmd_show_service_methods(vty_t* vty, variant_stack_t* params);
 bool cmd_show_service_config(vty_t* vty, variant_stack_t* params);
 
 void show_service_helper(service_t* service, void* arg);
+void show_builtin_service_helper(builtin_service_t* service, void* arg);
+
 void show_service_method_helper(service_method_t* method, void* arg);
 void show_service_config_helper(service_t* service, void* arg);
 
@@ -67,12 +70,15 @@ bool cmd_list_service_classes(vty_t* vty, variant_stack_t* params)
 {
     vty_write(vty, "%-20s%s\n", "Name", "Description");
     service_manager_for_each_class(show_service_helper, vty);
+    builtin_service_manager_for_each_class(show_builtin_service_helper, vty);
 }
 
 bool cmd_show_service_methods(vty_t* vty, variant_stack_t* params)
 {
     vty_write(vty, "%-20s%s\n", "Name", "Description");
+
     service_manager_for_each_method(variant_get_string(stack_peek_at(params, 3)), show_service_method_helper, vty);
+    builtin_service_manager_for_each_method(variant_get_string(stack_peek_at(params, 3)), show_service_method_helper, vty);
 }
 
 bool cmd_show_service_config(vty_t* vty, variant_stack_t* params)
@@ -81,6 +87,13 @@ bool cmd_show_service_config(vty_t* vty, variant_stack_t* params)
 }
 
 void show_service_helper(service_t* service, void* arg)
+{
+    vty_t* vty = (vty_t*)arg;
+
+    vty_write(vty, "%-20s%s\n", service->service_name, service->description);
+}
+
+void show_builtin_service_helper(builtin_service_t* service, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
