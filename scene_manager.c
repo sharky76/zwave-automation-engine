@@ -88,6 +88,10 @@ void scene_manager_on_event(event_t* event)
                 {
                     LOG_DEBUG(Scene, "Scene event from service: %s with data: %s", calling_service->service_name, scene_name);
                 }
+                else
+                {
+                    break;
+                }
 
                 if(NULL != scene_name)
                 {

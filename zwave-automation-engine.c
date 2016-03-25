@@ -64,7 +64,7 @@ void sigtstp (int sig)
   siglongjmp (jmpbuf, 1);
 }
 
-/* SIGINT handler.  This function care user's ^Z input.  */
+/* SIGINT handler.  This function care user's ^C input.  */
 void
 sigint (int sig)
 {

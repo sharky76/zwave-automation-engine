@@ -251,6 +251,14 @@ variant_t*  mail_get_template(service_method_t* method, va_list args)
     
     template_t* template = mail_data_get_template(variant_get_string(template_name));
 
-    return variant_create_string(strdup(template->template));
+    if(NULL != template)
+    {
+        return variant_create_string(strdup(template->template));
+    }
+    else
+    {
+        LOG_ERROR(DT_MAIL, "Error retireving tempate %s", variant_get_string(template_name));
+        return variant_create_string(strdup(""));
+    }
 }
 

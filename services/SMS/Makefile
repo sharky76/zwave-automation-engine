@@ -31,7 +31,7 @@ ALL_OBJ=$(OUTDIR)/SMS.o $(OUTDIR)/sms_cli.o $(OUTDIR)/sms_data.o \
 	-ljson-c 
 
 COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -o "$(OUTFILE)" $(ALL_OBJ)
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -L../../libZaeUtil/Release -lZaeUtil -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -75,8 +75,8 @@ ALL_OBJ=$(OUTDIR)/SMS.o $(OUTDIR)/sms_cli.o $(OUTDIR)/sms_data.o \
 	-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib \
 	-ljson-c 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -shared -fPIC -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -O2 -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -O2 -shared -fPIC -L../../libZaeUtil/Release -lZaeUtil -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c

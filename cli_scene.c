@@ -91,8 +91,8 @@ cli_command_t   scene_action_command_list[] = {
 };
 
 cli_command_t   scene_template_command_list[] = {
-    {"token WORD value LINE",     cmd_add_action_token,     "Add token value to command action"},
-    {"no token WORD",             cmd_del_action_token,     "Remove token value from command action"},
+    {"template-token WORD value LINE",     cmd_add_action_token,     "Add token value to command action"},
+    {"no template-token WORD",             cmd_del_action_token,     "Remove token value from command action"},
     //{"end",                             cmd_exit_node,                  "Exit environment configuration"},
     {NULL,                          NULL,                       NULL}
 };
@@ -438,5 +438,5 @@ void    show_scene_action_env_helper(env_t* env, void* arg)
 void show_scene_action_token_helper(env_t* env, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "  token %s value %s\n", env->name, env->value);
+    vty_write(vty, "  template-token %s value %s\n", env->name, env->value);
 }

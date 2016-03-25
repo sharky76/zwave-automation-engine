@@ -66,15 +66,18 @@ OUTDIR=Release
 OUTFILE=$(OUTDIR)/Mail.so
 CFG_INC=-I../../libZaeUtil \
 	-I../../../../../pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/curl 
-CFG_LIB=
+CFG_LIB=-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib \
+	-lcurl -ljson-c 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/Mail.o $(OUTDIR)/mail_cli.o \
 	$(OUTDIR)/mail_data.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/Mail.o $(OUTDIR)/mail_cli.o $(OUTDIR)/mail_data.o 
+ALL_OBJ=$(OUTDIR)/Mail.o $(OUTDIR)/mail_cli.o $(OUTDIR)/mail_data.o \
+	-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib \
+	-lcurl -ljson-c 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  "-D_GNU_SOURCE" -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -shared -fPIC -L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c -o "$(OUTFILE)" $(ALL_OBJ)
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -O2 -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -O2 -shared -fPIC -L../../libZaeUtil/Release -lZaeUtil -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c

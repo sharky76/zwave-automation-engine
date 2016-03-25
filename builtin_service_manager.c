@@ -11,7 +11,7 @@ hash_table_t*   builtin_service_table;
 
 void              builtin_service_manager_init()
 {
-    LOG_INFO(BuiltinService, "Initializing built-in services\n");
+    LOG_INFO(BuiltinService, "Initializing built-in services");
     builtin_service_table = variant_hash_init();
 
     expression_service_create(builtin_service_table);

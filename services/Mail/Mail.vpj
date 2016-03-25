@@ -125,7 +125,7 @@
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
 				<Exec
-					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup %defd -fPIC %~other -o "%bd%n%oe" %i %f'
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -O2 -fPIC %~other -o "%bd%n%oe" %i %f'
 					OtherOptions="-std=c99"/>
 			</Target>
 			<Target
@@ -138,8 +138,8 @@
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
 				<Exec
-					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -shared -fPIC %~other -o "%o" %objs'
-					OtherOptions="-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c"/>
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -O2 -shared -fPIC %~other -o "%o" %objs'
+					OtherOptions="-L../../libZaeUtil/Release -lZaeUtil"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -202,7 +202,11 @@
 			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
 			<Include Dir="/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/include/curl/"/>
 		</Includes>
-		<Libs PreObjects="0"/>
+		<Libs PreObjects="0">
+			<Lib File="-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib"/>
+			<Lib File="-lcurl"/>
+			<Lib File="-ljson-c"/>
+		</Libs>
 		<PostBuildCommands>
 			<Exec CmdLine="scp %bdMail.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/services/"/>
 		</PostBuildCommands>
