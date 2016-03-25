@@ -317,6 +317,11 @@ variant_t*      variant_hash_get(hash_table_t* hash_table, uint32_t key)
 
 void            variant_hash_remove(hash_table_t* hash_table, uint32_t key)
 {
+    if(NULL == hash_table)
+    {
+        return;
+    }
+
     int hash_index = key % hash_table->hash_size;
 
     if(NULL != hash_table->node_array[hash_index])
