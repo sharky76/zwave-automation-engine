@@ -843,6 +843,7 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
         }
     }
 
+    stack_free(compiled_value);
     vty_error(vty, "Error evaluating expression\n");
 }
 

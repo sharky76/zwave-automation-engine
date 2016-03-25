@@ -36,6 +36,7 @@ variant_t*  if_impl(struct service_method_t* method, va_list args)
                 {
                     if(variant_to_string(true_case, &case_expression))
                     {
+                        free(case_expression);
                         return variant_create_string(case_expression);
                     }
                 }
@@ -43,6 +44,7 @@ variant_t*  if_impl(struct service_method_t* method, va_list args)
                 {
                     if(variant_to_string(false_case, &case_expression))
                     {
+                        free(case_expression);
                         return variant_create_string(case_expression);
                     }
                 }
