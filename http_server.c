@@ -105,24 +105,10 @@ char* http_server_read_request(int client_socket)
         }
     }
 
-    char* auth_start = strstr(buffer, "Authorization: Basic");
-    if(NULL == auth_start && user_manager_get_count() > 0)
+    if(user_manager_get_count() > 0)
     {
-        LOG_ERROR(HTTPServer, "Access denied");
-        http_server_error_response(DENIED, client_socket);
-        return NULL;
-    }
-    else
-    {
-        char user_pass[256] = {0};
-        sscanf(auth_start, "Authorization: Basic %s", user_pass);
-
-        char user_pass_decoded[256] = {0};
-        Base64decode(user_pass_decoded, user_pass);
-
-        char* user_tok = strtok(user_pass_decoded, ":");
-        char* pass_tok = strtok(NULL, ":");
-        if(!user_manager_authenticate(user_tok, pass_tok))
+        char* auth_start = strstr(buffer, "Authorization: Basic");
+        if(NULL == auth_start)
         {
             LOG_ERROR(HTTPServer, "Access denied");
             http_server_error_response(DENIED, client_socket);
@@ -130,7 +116,24 @@ char* http_server_read_request(int client_socket)
         }
         else
         {
-            LOG_INFO(HTTPServer, "Authentication success for %s\n", user_tok);
+            char user_pass[256] = {0};
+            sscanf(auth_start, "Authorization: Basic %s", user_pass);
+    
+            char user_pass_decoded[256] = {0};
+            Base64decode(user_pass_decoded, user_pass);
+    
+            char* user_tok = strtok(user_pass_decoded, ":");
+            char* pass_tok = strtok(NULL, ":");
+            if(!user_manager_authenticate(user_tok, pass_tok))
+            {
+                LOG_ERROR(HTTPServer, "Access denied");
+                http_server_error_response(DENIED, client_socket);
+                return NULL;
+            }
+            else
+            {
+                LOG_INFO(HTTPServer, "Authentication success for %s\n", user_tok);
+            }
         }
     }
 

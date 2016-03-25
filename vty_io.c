@@ -67,8 +67,8 @@ char*   file_read_cb(vty_t* vty)
     if(vty->multi_line)
     {
         char ch = 0;
+        memset(vty->buffer, 0, vty->buf_size);
         vty->buf_size = 0;
-        *vty->buffer = 0;
         while(true)
         {
             // Read multiple lines of input into buffer until \n.\n is found
@@ -146,8 +146,8 @@ char*   std_read_cb(vty_t* vty)
     else if(vty->multi_line)
     {
         int ch = 0;
+        memset(vty->buffer, 0, vty->buf_size);
         vty->buf_size = 0;
-        *vty->buffer = 0;
         while(true)
         {
             // Read multiple lines of input into buffer until \n.\n is found

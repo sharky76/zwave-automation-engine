@@ -66,7 +66,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
                 ++tokens;
                 char   token_buf[128] = {0};
                 int    buf_idx = 0;
-                while(isalpha(*tokens) && buf_idx < 128)
+                while(isalnum(*tokens) && buf_idx < 128)
                 {
                     token_buf[buf_idx] = *tokens;
                     ++buf_idx;
