@@ -419,3 +419,9 @@ variant_t*          variant_hash_iterator_value(hash_iterator_t* it)
 {
     return it->hash_table->node_array[it->index]->data;
 }
+
+uint32_t   variant_hash_iterator_key(hash_iterator_t* it)
+{
+    return it->hash_table->node_array[it->index]->key;
+}
+

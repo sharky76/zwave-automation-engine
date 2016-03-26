@@ -351,8 +351,6 @@
 		<F N="data_callbacks.h"/>
 		<F N="device_callbacks.c"/>
 		<F N="device_callbacks.h"/>
-		<F N="event_manager.c"/>
-		<F N="event_manager.h"/>
 		<F N="http_server.c"/>
 		<F N="http_server.h"/>
 		<F N="logging_modules.c"/>

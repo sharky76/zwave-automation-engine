@@ -6,7 +6,7 @@
 #include "command_parser.h"
 #include "scene_manager.h"
 #include "service_manager.h"
-#include "event_manager.h"
+//#include "event_manager.h"
 #include "logger.h"
 #include "cli_commands.h"
 #include "cli_auth.h"
@@ -28,6 +28,7 @@
 #include "user_manager.h"
 #include "http_server.h"
 #include "builtin_service_manager.h"
+#include <event.h>
 
 #define DEFAULT_PORT 9231
 
@@ -226,12 +227,12 @@ int main (int argc, char *argv[])
     if(r == NoError)
     {
         LOG_ADVANCED(General, "Zway API initialized");
+        event_manager_init();
         resolver_init();
         cli_init();
 
         service_manager_init(global_config.services_prefix);
         scene_manager_init();
-        event_manager_init();
         user_manager_init();
         builtin_service_manager_init();
 

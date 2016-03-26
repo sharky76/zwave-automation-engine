@@ -27,6 +27,8 @@ typedef struct service_event_data_t
     char*   data;
 } service_event_data_t;
 
+void        event_manager_init();
+void        event_register_handler(void (*event_handler)(event_t*));
 event_t*    event_create(int source_id, variant_t* data);
 void        event_delete(event_t* event);
 void        event_post(event_t* event);

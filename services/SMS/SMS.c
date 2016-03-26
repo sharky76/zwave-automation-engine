@@ -33,7 +33,9 @@ void send_sms_visitor(const char* phone, void* arg)
 
     char sms_address[128] = {0};
     snprintf(sms_address, 127, "%s%s", phone, data->sms_gw);
-    variant_t* ret = service_call_method("Mail", "SendTo", data->message, variant_create_string(sms_address));
+    variant_t* sms_addr_var = variant_create_string(sms_address);
+    variant_t* ret = service_call_method("Mail", "SendTo", data->message, sms_addr_var);
+    free(sms_addr_var);
     variant_free(ret);
 }
 

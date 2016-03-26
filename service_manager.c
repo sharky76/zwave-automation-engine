@@ -9,6 +9,7 @@
 #include "variant_types.h"
 #include "cli_logger.h"
 #include "cli_service.h"
+#include <event.h>
 #include <hash.h>
 #include <crc32.h>
 
@@ -84,6 +85,8 @@ void    service_manager_init(const char* service_dir)
 
         closedir(dp);
         LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
+
+        event_register_handler(service_manager_on_event);
     }
     else
     {

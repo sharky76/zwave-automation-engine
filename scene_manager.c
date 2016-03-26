@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "variant_types.h"
 #include "service_manager.h"
+#include <event.h>
 #include <hash.h>
 #include <crc32.h>
 
@@ -20,6 +21,7 @@ void scene_manager_init()
     LOG_ADVANCED(Scene, "Initializing scene manager");
     //scene_list = stack_create();
     scene_table = variant_hash_init();
+    event_register_handler(scene_manager_on_event);
 }
 
 void scene_manager_add_scene(const char* name)

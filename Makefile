@@ -30,10 +30,10 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
+	$(OUTDIR)/device_callbacks.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o 
@@ -45,10 +45,10 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
+	$(OUTDIR)/device_callbacks.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
@@ -107,10 +107,10 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
+	$(OUTDIR)/device_callbacks.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o 
@@ -122,10 +122,10 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/event_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o \
-	$(OUTDIR)/scene.o $(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
+	$(OUTDIR)/device_callbacks.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/service_manager.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \

@@ -49,7 +49,7 @@ bool cmd_scene_disable(vty_t* vty, variant_stack_t* params);
 void    show_scene_helper(scene_t* scene, void* arg);
 void    show_scene_action_helper(action_t* action, void* arg);
 void    show_scene_action_env_helper(env_t* env, void* arg);
-void    show_scene_action_token_helper(env_t* env, void* arg);
+void    show_scene_action_token_helper(method_stack_item_t* env, void* arg);
 
 USING_LOGGER(Scene);
 
@@ -91,8 +91,8 @@ cli_command_t   scene_action_command_list[] = {
 };
 
 cli_command_t   scene_template_command_list[] = {
-    {"template-token WORD value LINE",     cmd_add_action_token,     "Add token value to command action"},
-    {"no template-token WORD",             cmd_del_action_token,     "Remove token value from command action"},
+    {"argument class WORD name WORD value LINE",     cmd_add_action_token,     "Add argument to command action"},
+    {"no argument class WORD name WORD",             cmd_del_action_token,     "Remove argument from command action"},
     //{"end",                             cmd_exit_node,                  "Exit environment configuration"},
     {NULL,                          NULL,                       NULL}
 };
@@ -230,11 +230,11 @@ bool cmd_add_action_environment(vty_t* vty, variant_stack_t* params)
 bool cmd_add_action_token(vty_t* vty, variant_stack_t* params)
 {
     char command[1024] = {0};
-    cli_assemble_line(params, 3, command);
+    cli_assemble_line(params, 6, command);
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action(scene, scene_template_token_node->context);
-    scene_action_add_environment(action,
-                                 variant_get_string(stack_peek_at(params, 1)),
+    scene_action_add_method_stack_item(action, variant_get_string(stack_peek_at(params, 2)),
+                                 variant_get_string(stack_peek_at(params, 4)),
                                  command);
 }
 
@@ -243,7 +243,7 @@ bool cmd_del_action_token(vty_t* vty, variant_stack_t* params)
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action(scene, scene_template_token_node->context);
 
-    scene_action_del_environment(action, variant_get_string(stack_peek_at(params, 2)));
+    scene_action_del_method_stack_item(action, variant_get_string(stack_peek_at(params, 3)), variant_get_string(stack_peek_at(params, 5)));
 }
 
 bool cmd_delete_scene_action_script(vty_t* vty, variant_stack_t* params)
@@ -409,7 +409,7 @@ void    show_scene_action_helper(action_t* action, void* arg)
         break;
     case A_COMMAND:
         vty_write(vty, " action command %s\n", action->path);
-        scene_action_for_each_environment(action, show_scene_action_token_helper, vty);
+        scene_action_for_each_method_stack_item(action, show_scene_action_token_helper, vty);
         vty_write(vty, " !\n");
         break;
     case A_SCENE:
@@ -435,8 +435,8 @@ void    show_scene_action_env_helper(env_t* env, void* arg)
     vty_write(vty, "  environment %s value %s\n", env->name, env->value);
 }
 
-void show_scene_action_token_helper(env_t* env, void* arg)
+void show_scene_action_token_helper(method_stack_item_t* env, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "  template-token %s value %s\n", env->name, env->value);
+    vty_write(vty, "  argument class %s name %s value %s\n", env->stack_name, env->name, env->value);
 }

@@ -24,6 +24,16 @@ void environment_delete(void* arg)
     free(env);
 }
 
+void method_stack_delete(void* arg)
+{
+    method_stack_item_t* item = (method_stack_item_t*)arg;
+
+    free(item->stack_name);
+    free(item->name);
+    free(item->value);
+    free(item);
+}
+
 /*env_t*      create_environment(struct json_object* record)
 {
     env_t* new_env = (env_t*)malloc(sizeof(env_t));
@@ -86,53 +96,38 @@ void       scene_action_del_environment(action_t* action, const char* name)
     }
 }
 
-/*action_t*  scene_action_create_old(struct json_object* record)
+void       scene_action_add_method_stack_item(action_t* action, const char* stack_name, const char* name, const char* value)
 {
-    action_t* new_action = (action_t*)malloc(sizeof(action_t));
-    new_action->environment = stack_create();
-
-    json_object_object_foreach(record, key, val)
+    stack_for_each(action->environment, env_variant)
     {
-        if(strcmp(key, "url") == 0)
+        method_stack_item_t* env = (method_stack_item_t*)variant_get_ptr(env_variant);
+        if(strcmp(env->name, name) == 0 && strcmp(env->stack_name, stack_name) == 0)
         {
-            LOG_DEBUG(Scene, "New_action URL: %s", json_object_get_string(val));
-            new_action->url = strdup(json_object_get_string(val));
-
-            char scheme[10] = {0};
-            char path[100] = {0};
-
-            // cut the schema part from thw path
-            sscanf(new_action->url, "%9[^:]://%99[^:]", scheme, path);
-            new_action->path = strdup(path);
-
-            if(strcmp(scheme, "file") == 0)
-            {
-                new_action->type = A_SCRIPT;
-            }
-            else if(strcmp(scheme, "scene") == 0)
-            {
-                new_action->type = A_SCENE;
-            }
-            else if(strcmp(scheme, "cmd") == 0)
-            {
-                new_action->type = A_COMMAND;
-            }
-        }
-        else if(strcmp(key, "environment") == 0)
-        {
-            int num_environment = json_object_array_length(val);
-
-            for(int i = 0; i < num_environment; i++)
-            {
-                struct json_object* record = json_object_array_get_idx(val, i);
-                env_t* new_env = create_environment(record);
-                stack_push_back(new_action->environment, variant_create_ptr(DT_PTR, new_env, &environment_delete));
-            }
+            stack_remove(action->environment, env_variant);
+            break;
         }
     }
 
-    return new_action;
-}*/
+    method_stack_item_t* new_env = (method_stack_item_t*)malloc(sizeof(method_stack_item_t));
+    new_env->stack_name = strdup(stack_name);
+    new_env->name = strdup(name);
+    new_env->value = strdup(value);
+    stack_push_back(action->environment, variant_create_ptr(DT_PTR, new_env, &method_stack_delete));
+}
+
+void       scene_action_del_method_stack_item(action_t* action, const char* stack_name, const char* name)
+{
+    stack_for_each(action->environment, env_variant)
+    {
+        method_stack_item_t* env = (method_stack_item_t*)variant_get_ptr(env_variant);
+        if(strcmp(env->name, name) == 0 && strcmp(env->stack_name, stack_name) == 0)
+        {
+            stack_remove(action->environment, env_variant);
+            variant_free(env_variant);
+            break;
+        }
+    }
+}
 
 void  scene_action_exec(action_t* action)
 {
@@ -207,10 +202,12 @@ void scene_action_exec_command(action_t* action)
         if(action->environment->count > 0)
         {
             // Compile all environment and prepare token table
-            hash_table_t*   token_table = variant_hash_init();
+            //hash_table_t*   token_table = variant_hash_init();
             stack_for_each(action->environment, env_variant)
             {
-                env_t* env = (env_t*)variant_get_ptr(env_variant);
+                method_stack_item_t* env = (method_stack_item_t*)variant_get_ptr(env_variant);
+                builtin_service_stack_create(env->stack_name);
+
                 bool isOk;
                 variant_stack_t* compiled_value = command_parser_compile_expression(env->value, &isOk);
         
@@ -226,16 +223,15 @@ void scene_action_exec_command(action_t* action)
                     {
                         uint32_t key = crc32(0, env->name, strlen(env->name));
                         //printf("Inserting value with name %s and key %u, and val: %s\n", env->name, key, variant_get_string(env_value));
-
-                        variant_hash_insert(token_table, key, env_value);
+                        builtin_service_stack_add(env->stack_name, key, env_value);
                     }
                 }
 
                 stack_free(compiled_value);
             }
     
-            builtin_service_stack_create("Expression.ProcessTemplate");
-            builtin_service_stack_add("Expression.ProcessTemplate", variant_create_ptr(DT_PTR, token_table, variant_hash_free_void));
+            //builtin_service_stack_create("Expression.ProcessTemplate");
+            //builtin_service_stack_add("Expression.ProcessTemplate", variant_create_ptr(DT_PTR, token_table, variant_hash_free_void));
         }
 
         variant_t* result = command_parser_execute_expression(compiled);
@@ -245,7 +241,7 @@ void scene_action_exec_command(action_t* action)
             variant_free(result);
         }
 
-        builtin_service_stack_clear("Expression.ProcessTemplate");
+        builtin_service_stack_clear();
     }
 
     stack_free(compiled);
@@ -306,6 +302,15 @@ void    scene_action_for_each_environment(action_t* action, void (*visitor)(env_
     stack_for_each(action->environment, env_variant)
     {
         env_t* env = (env_t*)variant_get_ptr(env_variant);
+        visitor(env, arg);
+    }
+}
+
+void    scene_action_for_each_method_stack_item(action_t* action, void (*visitor)(method_stack_item_t*, void*), void* arg)
+{
+    stack_for_each(action->environment, env_variant)
+    {
+        method_stack_item_t* env = (method_stack_item_t*)variant_get_ptr(env_variant);
         visitor(env, arg);
     }
 }

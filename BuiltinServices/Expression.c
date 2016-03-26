@@ -42,8 +42,8 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
 
     if(NULL != service_stack)
     {
-        variant_t* token_table_var = stack_pop_front(service_stack->stack);
-        hash_table_t*   token_table = (hash_table_t*)variant_get_ptr(token_table_var);
+        //variant_t* token_table_var = stack_pop_front(service_stack->stack);
+        hash_table_t*   token_table = (hash_table_t*)service_stack->data_storage;//variant_get_ptr(token_table_var);
 
         // Replace all tokens starting with "$" with matching values from token table
         char* template = (char*)variant_get_string(template_var);
@@ -111,7 +111,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
             ++tokens;
         }
 
-        variant_free(token_table_var);
+        //variant_free(token_table_var);
     }
 
     // Remove last space...

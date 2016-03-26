@@ -57,3 +57,5 @@ hash_iterator_t*    variant_hash_end(hash_table_t* hash_table);
 bool                variant_hash_iterator_is_end(hash_iterator_t* it);
 hash_iterator_t*    variant_hash_iterator_next(hash_iterator_t* it);
 variant_t*          variant_hash_iterator_value(hash_iterator_t* it);
+uint32_t            variant_hash_iterator_key(hash_iterator_t* it);
+

@@ -20,7 +20,7 @@ void event_received(int sig);
 
 //pthread_cond_t  event_received_condition;
 //pthread_mutex_t event_received_cond_mutex;
-sem_t   event_semaphore;
+extern sem_t   event_semaphore;
 
 DECLARE_LOGGER(Event)
 
