@@ -111,7 +111,7 @@ void process_query_response(const json_object* obj)
     }
 }
 
-// http://192.168.1.77:5000/webapi/auth.cgi?api=SYNO.API.Auth&method=Login&version=2&account=admin&passwd=qwerty&session=SurveillanceStation&format=sid
+// http://192.168.1.77:5000/webapi/auth.cgi?api=SYNO.API.Auth&method=Login&version=2&account=XXXX&passwd=XXXXX&session=SurveillanceStation&format=sid
 // Reply: {"data":  {"sid":"FFWEaNWGizqE.BCK3N02417"},
 //         "success":true
 //        }
