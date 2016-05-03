@@ -20,6 +20,8 @@ typedef enum VariantDataType
     DT_SENSOR,
     DT_SENSOR_EVENT_DATA,
     DT_SERVICE_EVENT_DATA,
+    DT_VDEV,
+    DT_VDEV_EVENT_DATA,
     DT_NULL,
 
     DT_USER,

@@ -9,6 +9,7 @@
 #define MAX_COMMAND_CLASSES     256
 #define MAX_COMMAND_NAME_LEN    32
 
+
 typedef struct command_method_t
 {
     char* name;

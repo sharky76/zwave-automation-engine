@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <logger.h>
+#include "vdev_manager.h"
 
 /*
 While there are tokens to be read:
@@ -596,7 +597,16 @@ bool process_device_function_operator(const char* ch, variant_stack_t* operator_
                 if(NULL != record)
                 {
                     op_data->device_record = record;
-                    op_data->command_class = get_command_class_by_id(record->commandId);
+
+                    switch(record->devtype)
+                    {
+                    case ZWAVE:
+                        op_data->command_class = get_command_class_by_id(record->commandId);
+                        break;
+                    case VDEV:
+                        op_data->command_class = vdev_manager_get_command_class_by_id(record->nodeId, record->commandId);
+                        break;
+                    }
                 }
                 else 
                 {

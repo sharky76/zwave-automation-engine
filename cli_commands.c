@@ -24,6 +24,7 @@
 #include "config.h"
 #include "command_parser.h"
 #include "vty_io.h"
+#include "cli_vdev.h"
 
 extern sigjmp_buf jmpbuf;
 extern int keep_running;
@@ -108,6 +109,7 @@ void    cli_init()
     cli_scene_init(root_node);
     cli_resolver_init(root_node);
     cli_sensor_init(root_node);
+    cli_vdev_init(root_node);
     cli_service_init(root_node);
     cli_logger_init(root_node);
     cli_auth_init(root_node);
@@ -762,6 +764,8 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
     cli_command_exec(vty, "show resolver");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show service");
+    vty_write(vty, "!\n");
+    cli_command_exec(vty, "show virtual-device");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show scene");
 }

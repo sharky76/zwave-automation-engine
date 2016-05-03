@@ -8,12 +8,14 @@ cli_node_t*     resolver_node;
 
 bool    cmd_list_resolver(vty_t* vty, variant_stack_t* params);
 bool    cmd_add_resolver_entry(vty_t* vty, variant_stack_t* params);
+bool    cmd_add_vdev_resolver_entry(vty_t* vty, variant_stack_t* params);
 bool    cmd_del_resolver_entry(vty_t* vty, variant_stack_t* params);
 void    show_resolver_helper(device_record_t* record, void* arg);
 
 cli_command_t   resolver_root_list[] = {
     {"show resolver",          cmd_list_resolver,              "Show resolver configuration"},
     {"resolver WORD node-id INT instance INT command-class INT",      cmd_add_resolver_entry, "Add resolver entry"},
+    {"resolver WORD vdev-id INT command-class INT",      cmd_add_vdev_resolver_entry, "Add resolver entry"}, // no need for command class!!!
     {"no resolver WORD",   cmd_del_resolver_entry, "Delete resolver entry"},
     {NULL,                     NULL,                            NULL}
 };
@@ -35,10 +37,22 @@ bool    cmd_add_resolver_entry(vty_t* vty, variant_stack_t* params)
 {
     const char* device_name = variant_get_string(stack_peek_at(params, 1));
 
-    resolver_add_entry(variant_get_string(stack_peek_at(params, 1)),
+    resolver_add_entry(ZWAVE, variant_get_string(stack_peek_at(params, 1)),
                        variant_get_int(stack_peek_at(params, 3)),
                        variant_get_int(stack_peek_at(params, 5)),
                        variant_get_int(stack_peek_at(params, 7)));
+
+    return true;
+}
+
+bool    cmd_add_vdev_resolver_entry(vty_t* vty, variant_stack_t* params)
+{
+    const char* device_name = variant_get_string(stack_peek_at(params, 1));
+
+    resolver_add_entry(VDEV, variant_get_string(stack_peek_at(params, 1)),
+                       variant_get_int(stack_peek_at(params, 3)),
+                       0,
+                       variant_get_int(stack_peek_at(params, 5)));
 
     return true;
 }
@@ -56,5 +70,13 @@ bool    cmd_list_resolver(vty_t* vty, variant_stack_t* params)
 void    show_resolver_helper(device_record_t* record, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "resolver %s node-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
+
+    if(record->devtype == ZWAVE)
+    {
+        vty_write(vty, "resolver %s node-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
+    }
+    else
+    {
+        vty_write(vty, "resolver %s vdev-id %d command-class %d\n", record->deviceName, record->nodeId, record->commandId);
+    }
 }

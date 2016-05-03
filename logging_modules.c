@@ -15,4 +15,5 @@ void logging_modules_init()
     REGISTER_LOGGER(User)
     REGISTER_LOGGER(HTTPServer)
     REGISTER_LOGGER(BuiltinService)
+    REGISTER_LOGGER(VDevManager)
 }

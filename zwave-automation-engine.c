@@ -29,6 +29,7 @@
 #include "http_server.h"
 #include "builtin_service_manager.h"
 #include <event.h>
+#include "vdev_manager.h"
 
 #define DEFAULT_PORT 9231
 
@@ -232,12 +233,14 @@ int main (int argc, char *argv[])
         cli_init();
 
         service_manager_init(global_config.services_prefix);
+        vdev_manager_init(global_config.vdev_prefix);
         scene_manager_init();
         user_manager_init();
         builtin_service_manager_init();
 
         cli_load_config();
         
+        vdev_manager_start_devices();
         zway_device_add_callback(zway, DeviceAdded, device_added_callback, NULL);
         zway_device_add_callback(zway, CommandAdded, command_added_callback, NULL);
         zway_device_add_callback(zway, DeviceRemoved, command_removed_callback, NULL);

@@ -10,8 +10,8 @@
 		Type="gnuc"
 		DebugCallbackName="gdb"
 		Version="1"
-		OutputFile="%bdlibZaeUtil.so"
-		CompilerConfigName="Raspberry Pi Cross Compiler"
+		OutputFile="%bdSurveillanceStation.so"
+		CompilerConfigName="Latest Version"
 		Defines='"/D_GNU_SOURCE"'>
 		<Menu>
 			<Target
@@ -36,7 +36,9 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g -shared -fPIC -o "%o" %objs'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g -shared -fPIC %~other -o "%o" %objs'
+					OtherOptions="-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -45,7 +47,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" CFG=%b'/>
 			</Target>
 			<Target
 				Name="Rebuild"
@@ -54,7 +56,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make rebuild CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" rebuild CFG=%b'/>
 			</Target>
 			<Target
 				Name="Debug"
@@ -96,15 +98,11 @@
 			</Target>
 		</Menu>
 		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
 		</Includes>
-		<Libs PreObjects="0">
-			<Lib File="-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf"/>
-			<Lib File="-lpthread"/>
-			<Lib File="-lcurl"/>
-			<Lib File="-ljson-c"/>
-		</Libs>
+		<Libs PreObjects="0"/>
 		<PostBuildCommands>
-			<Exec CmdLine="scp %bdlibZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
+			<Exec CmdLine="scp %bdSurveillanceStation.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/vdev"/>
 		</PostBuildCommands>
 	</Config>
 	<Config
@@ -112,8 +110,8 @@
 		Type="gnuc"
 		DebugCallbackName="gdb"
 		Version="1"
-		OutputFile="%bdlibZaeUtil.so"
-		CompilerConfigName="Raspberry Pi Cross Compiler"
+		OutputFile="%bdSurveillanceStation.so"
+		CompilerConfigName="Latest Version"
 		Defines='"/D_GNU_SOURCE"'>
 		<Menu>
 			<Target
@@ -126,7 +124,7 @@
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
 				<Exec
-					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -O2 -fPIC %~other -o "%bd%n%oe" %i %f'
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -fPIC %~other -o "%bd%n%oe" %i %f'
 					OtherOptions="-std=c99"/>
 			</Target>
 			<Target
@@ -138,7 +136,9 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -O2 -shared -fPIC -o "%o" %objs'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -shared -fPIC %~other -o "%o" %objs'
+					OtherOptions="-L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -147,7 +147,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" CFG=%b'/>
 			</Target>
 			<Target
 				Name="Rebuild"
@@ -156,7 +156,7 @@
 				Deletable="0"
 				SaveOption="SaveWorkspaceFiles"
 				RunFromDir="%rw">
-				<Exec CmdLine="make rebuild CFG=%b"/>
+				<Exec CmdLine='make -f"Makefile" rebuild CFG=%b'/>
 			</Target>
 			<Target
 				Name="Debug"
@@ -198,35 +198,34 @@
 			</Target>
 		</Menu>
 		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/zwave-automation-engine/libZaeUtil/"/>
 		</Includes>
-		<Libs PreObjects="0">
-			<Lib File="-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf"/>
-			<Lib File="-lpthread"/>
-			<Lib File="-lcurl"/>
-			<Lib File="-ljson-c"/>
-		</Libs>
+		<Libs PreObjects="0"/>
 		<PostBuildCommands>
-			<Exec CmdLine="scp %bdlibZaeUtil.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/"/>
+			<Exec CmdLine="scp %bdSurveillanceStation.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/vdev"/>
 		</PostBuildCommands>
 	</Config>
 	<Files>
 		<Folder
-			Name="Bitmaps"
-			Filters="*.bmp"/>
+			Name="Source Files"
+			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
+			<F N="SS_api.c"/>
+			<F N="SurveillanceStation.c"/>
+			<F N="SurveillanceStation_cli.c"/>
+		</Folder>
 		<Folder
 			Name="Header Files"
 			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
-			<F N="base64.h"/>
-			<F N="cli.h"/>
-			<F N="curl_util.h"/>
-			<F N="event.h"/>
-			<F N="logger.h"/>
-			<F N="service.h"/>
-			<F N="stack.h"/>
-			<F N="variant.h"/>
-			<F N="vdev.h"/>
-			<F N="vty.h"/>
+			<F N="SS_api.h"/>
+			<F N="SS_config.h"/>
+			<F N="SurveillanceStation_cli.h"/>
 		</Folder>
+		<Folder
+			Name="Resource Files"
+			Filters="*.ico;*.cur;*.dlg"/>
+		<Folder
+			Name="Bitmaps"
+			Filters="*.bmp"/>
 		<Folder
 			Name="Other Files"
 			Filters="">
@@ -234,26 +233,5 @@
 				N="Makefile"
 				Type="Makefile"/>
 		</Folder>
-		<Folder
-			Name="Resource Files"
-			Filters="*.ico;*.cur;*.dlg"/>
-		<Folder
-			Name="Source Files"
-			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
-			<F N="base64.c"/>
-			<F N="cli.c"/>
-			<F N="curl_util.c"/>
-			<F N="event.c"/>
-			<F N="logger.c"/>
-			<F N="service.c"/>
-			<F N="stack.c"/>
-			<F N="variant.c"/>
-			<F N="vdev.c"/>
-			<F N="vty.c"/>
-		</Folder>
-		<F N="crc32.c"/>
-		<F N="crc32.h"/>
-		<F N="hash.c"/>
-		<F N="hash.h"/>
 	</Files>
 </Project>

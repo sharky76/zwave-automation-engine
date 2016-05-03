@@ -100,6 +100,7 @@ void    weather_cache_refresh()
         LOG_DEBUG(DT_WEATHER, "%lu bytes retrieved", (long)chunk.size);
         struct json_object* weather_response_obj = json_tokener_parse(chunk.memory);
         weather_cache_parse_response(weather_response_obj);
+        json_object_put(weather_response_obj);
     }
     
     /* cleanup curl stuff */ 

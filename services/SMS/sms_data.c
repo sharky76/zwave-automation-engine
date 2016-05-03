@@ -419,8 +419,10 @@ const char**  sms_data_get_carrier_list(const char* country_code)
                 ++idx;
             }
         }
+        json_object_put(carriers_by_country);
     }
 
+    json_object_put(carriers);
     return carrier_array;
 }
 

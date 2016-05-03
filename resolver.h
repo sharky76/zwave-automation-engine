@@ -13,12 +13,19 @@
 
 #define MAX_DEVICE_NAME_LEN 128
 
+typedef enum DeviceType
+{
+    ZWAVE,
+    VDEV
+} DeviceType;
+
 typedef struct device_record_t
 {
-    ZWBYTE  nodeId;
+    DeviceType devtype;
+    char    deviceName[MAX_DEVICE_NAME_LEN];
+    int  nodeId;
     ZWBYTE  instanceId;
     ZWBYTE  commandId;
-    char    deviceName[MAX_DEVICE_NAME_LEN];
 } device_record_t;
 
 //#define resolver_for_each(_resolver_, _device_record_)  \
@@ -26,7 +33,7 @@ typedef struct device_record_t
 //for(int _device_record_##i = 0; _device_record_##i < _resolver_->size; _device_record_##i++, _device_record_ = &(_resolver_->device_record_list[_device_record_##i]))
 
 void                    resolver_init();
-void                    resolver_add_entry(const char* name, ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId);
+void                    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, ZWBYTE instanceId, ZWBYTE commandId);
 void                    resolver_remove_entry(const char* name);
 bool                    resolver_has_name(const char* name);
 const char*             resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId);

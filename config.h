@@ -10,6 +10,7 @@ typedef struct config_t
     char*   device;
     char*   api_prefix;
     char*   services_prefix;
+    char*   vdev_prefix;
     char*   config_location;
     int     client_port;
 } config_t;

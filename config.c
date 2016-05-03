@@ -58,6 +58,14 @@ bool    config_load(const char* file)
     }
     global_config.services_prefix = strdup(json_object_get_string(services_object));
 
+    struct json_object* vdev_object;
+    json_object_object_get_ex(config_object, "virtual_devices", &vdev_object);
+    if(NULL == vdev_object)
+    {
+        return false;
+    }
+    global_config.vdev_prefix = strdup(json_object_get_string(vdev_object));
+
     struct json_object* config_loc_object;
     json_object_object_get_ex(config_object, "config_location", &config_loc_object);
     if(NULL == config_loc_object)
@@ -76,5 +84,6 @@ bool    config_load(const char* file)
     }
     global_config.client_port = json_object_get_int(port_object);
 
+    json_object_put(config_object);
     return true;
 }

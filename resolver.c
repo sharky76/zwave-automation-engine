@@ -116,12 +116,13 @@ device_record_t*    resolver_get_device_record(const char* name)
     return NULL;
 }
 
-void    resolver_add_entry(const char* name, ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId)
+void    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, ZWBYTE instanceId, ZWBYTE commandId)
 {
     device_record_t* record = resolver_get_device_record(name);
     if(record == NULL)
     {
         device_record_t* new_record = (device_record_t*)calloc(1, sizeof(device_record_t));
+        new_record->devtype = devtype;
         new_record->nodeId = nodeId;
         new_record->instanceId = instanceId;
         new_record->commandId = commandId;
@@ -135,7 +136,7 @@ void    resolver_add_entry(const char* name, ZWBYTE nodeId, ZWBYTE instanceId, Z
     else 
     {
         resolver_remove_entry(name);
-        resolver_add_entry(name, nodeId, instanceId, commandId);
+        resolver_add_entry(devtype, name, nodeId, instanceId, commandId);
     }
 }
 
