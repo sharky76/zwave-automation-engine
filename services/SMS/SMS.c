@@ -3,9 +3,12 @@
 #include "sms_data.h"
 #include <hash.h>
 #include <stdio.h>
+#include <logger.h>
 
 variant_t* sms_send(service_method_t* method, va_list args);
 extern hash_table_t*    phone_table;
+
+int DT_SMS;
 
 void service_create(service_t** service, int service_id)
 {
@@ -13,6 +16,7 @@ void service_create(service_t** service, int service_id)
     SERVICE_ADD_METHOD(Send, sms_send, 1, "Send SMS message");
     (*service)->get_config_callback = sms_cli_get_config;
 
+    DT_SMS = service_id;
     sms_data_load();
 }
 
@@ -43,6 +47,8 @@ variant_t* sms_send(service_method_t* method, va_list args)
 {
     variant_t* message_variant = va_arg(args, variant_t*);
     //const char* sms_message = variant_get_string(message_variant);
+
+    LOG_DEBUG(DT_SMS, "Sending text %s", variant_get_string(message_variant));
 
     carrier_data_t* carrier = sms_data_get_carrier();
     const char* sms_gw = sms_data_get_sms_gw(carrier->country_code, carrier->carrier);

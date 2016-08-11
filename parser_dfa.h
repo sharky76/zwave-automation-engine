@@ -163,7 +163,8 @@ typedef enum AlphabetToken_e
     A_DOT,
     A_PLUS,
     A_MINUS,
-    A_INVALID
+    A_SLASH,
+    A_INVALID,
 } AlphabetToken;
 
 typedef enum State_e

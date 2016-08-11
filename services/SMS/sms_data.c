@@ -418,11 +418,12 @@ const char**  sms_data_get_carrier_list(const char* country_code)
                 carrier_array[idx] = key;
                 ++idx;
             }
+
+            //json_object_put(carriers_by_country);
         }
-        json_object_put(carriers_by_country);
+        //json_object_put(carriers);
     }
 
-    json_object_put(carriers);
     return carrier_array;
 }
 

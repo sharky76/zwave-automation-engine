@@ -170,7 +170,6 @@ void scene_manager_on_event(event_t* event)
         }
     case DT_VDEV_EVENT_DATA:
         {
-            const char* scene_source = NULL;
             vdev_event_data_t* event_data = (vdev_event_data_t*)variant_get_ptr(event->data);
             vdev_t* vdev = vdev_manager_get_vdev_by_id(event_data->vdev_id);
 
@@ -178,22 +177,18 @@ void scene_manager_on_event(event_t* event)
             {
                 LOG_DEBUG(Scene, "Scene event from virtual device: %s with command: 0x%x", vdev->name, event_data->command_id);
         
-                command_class_t* command_class = vdev_manager_get_command_class_by_id(vdev->vdev_id, event_data->command_id);
-                if(NULL != command_class)
+                //command_class_t* command_class = vdev_manager_get_command_class_by_id(vdev->vdev_id, event_data->command_id);
+                const char* vdev_resolved_name = resolver_name_from_id(event_data->vdev_id, 0, event_data->command_id);
+                if(NULL != vdev_resolved_name)
                 {
-                    LOG_DEBUG(Scene, "Matching command-class %s found for virtual device %s", command_class->command_name, vdev->name);
-    
-                }
-                scene_source = vdev->name;
-    
-                if(NULL != scene_source)
-                {
+                    LOG_DEBUG(Scene, "Matching command-class %s found for virtual device %s", vdev_resolved_name, vdev->name);
+                    
                     hash_iterator_t* it = variant_hash_begin(scene_table);
         
                     while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
                     {
                         scene_t* scene = (scene_t*)variant_get_ptr(variant_hash_iterator_value(it));
-                        if(NULL != scene->source && strcmp(scene->source, scene_source) == 0)
+                        if(NULL != scene->source && strcmp(scene->source, vdev_resolved_name) == 0)
                         {
                             LOG_ADVANCED(Scene, "Scene event from virtual device %s for scene %s", vdev->name, scene->name);
                             scene_exec(scene);
@@ -206,6 +201,7 @@ void scene_manager_on_event(event_t* event)
                 {
                     LOG_DEBUG(Scene, "Scene not registered");
                 }
+
             }
         }
         break;

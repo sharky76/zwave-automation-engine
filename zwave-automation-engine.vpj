@@ -267,6 +267,8 @@
 			<F N="BuiltinServices/Conditional.h"/>
 			<F N="BuiltinServices/Expression.c"/>
 			<F N="BuiltinServices/Expression.h"/>
+			<F N="BuiltinServices/List.c"/>
+			<F N="BuiltinServices/List.h"/>
 		</Folder>
 		<Folder Name="../../../pidev">
 			<Folder Name="pitools">

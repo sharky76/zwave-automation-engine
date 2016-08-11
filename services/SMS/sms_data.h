@@ -1,3 +1,4 @@
+extern int DT_SMS;
 
 typedef struct carrier_data_t
 {

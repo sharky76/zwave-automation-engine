@@ -19,6 +19,7 @@ variant_t*  if_impl(struct service_method_t* method, va_list args)
     variant_t* true_case = va_arg(args, variant_t*);
     variant_t* false_case = va_arg(args, variant_t*);
 
+    variant_t* retVal = NULL;
     //char* expression;
     //if(variant_to_string(condition_expr, &expression))
     {
@@ -34,22 +35,37 @@ variant_t*  if_impl(struct service_method_t* method, va_list args)
                 char* case_expression;
                 if(variant_get_bool(condition_expr))
                 {
-                    if(variant_to_string(true_case, &case_expression))
+                    variant_stack_t* compiled = command_parser_compile_expression(variant_get_string(true_case), &isOk);
+                    if(isOk)
                     {
-                        return variant_create_string(case_expression);
+                        variant_t* true_expr = command_parser_execute_expression(compiled);
+                        if(variant_to_string(true_expr, &case_expression))
+                        {
+                            variant_free(true_expr);
+                            retVal = variant_create_string(case_expression);
+                        }
                     }
+                    stack_free(compiled);
                 }
                 else
                 {
-                    if(variant_to_string(false_case, &case_expression))
+                    printf("Compiling %s\n", variant_get_string(false_case));
+                    variant_stack_t* compiled = command_parser_compile_expression(variant_get_string(false_case), &isOk);
+                    if(isOk)
                     {
-                        return variant_create_string(case_expression);
+                        variant_t* false_expr = command_parser_execute_expression(compiled);
+                        if(false_expr && variant_to_string(false_expr, &case_expression))
+                        {
+                            variant_free(false_expr);
+                            retVal = variant_create_string(case_expression);
+                        }
                     }
+                    stack_free(compiled);
                 }
             }
         }
     }
 
-    return NULL;
+    return retVal;
 }
 

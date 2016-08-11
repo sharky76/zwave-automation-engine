@@ -78,6 +78,13 @@ void    vdev_manager_init(const char* vdev_dir)
                     {
                         (*vdev_cli_create)(root_node);
                     }
+
+                    // Create command class pointer for each supported method
+                    stack_for_each(vdev->supported_method_list, method_variant)
+                    {
+                        vdev_command_t* method = (vdev_command_t*)variant_get_ptr(method_variant);
+                        method->command_class_ptr = vdev_manager_create_command_class(vdev, method->command_id);
+                    }
                 }
             }
 
@@ -136,7 +143,15 @@ command_class_t* vdev_manager_get_command_class_by_id(int vdev_id, ZWBYTE comman
 {
     vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_get(vdev_table, vdev_id));
 
-    return vdev_manager_create_command_class(vdev, command_id);
+    stack_for_each(vdev->supported_method_list, vdev_method_variant)
+    {
+        vdev_command_t* cmd = (vdev_command_t*)variant_get_ptr(vdev_method_variant);
+        if(cmd->command_id == command_id)
+        {
+            return (command_class_t*)cmd->command_class_ptr;
+        }
+    }
+    return NULL;
 }
 
 vdev_t* vdev_manager_get_vdev_by_id(int vdev_id)
@@ -149,7 +164,8 @@ command_class_t*    vdev_manager_create_command_class(vdev_t* vdev, ZWBYTE comma
     command_class_t* cmd_class = calloc(1, sizeof(command_class_t));
     cmd_class->command_id = command_id;
     cmd_class->command_name = vdev->name;
-    cmd_class->command_impl = vdev_call_method;
+    cmd_class->command_impl = vdev_call_method; 
+     
 
     int index = 0;
     stack_for_each(vdev->supported_method_list, method_variant)

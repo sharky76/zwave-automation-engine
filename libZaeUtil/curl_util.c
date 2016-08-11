@@ -53,6 +53,7 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
     field, so we provide one */ 
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
     
+    //curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 4L);
     /* get it! */ 
     res = curl_easy_perform(curl_handle);
     
@@ -63,7 +64,12 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
     else 
     {
         struct json_object* response_obj = json_tokener_parse(chunk.memory);
-        response_parser(response_obj);
+
+        if(NULL != response_parser)
+        {
+            response_parser(response_obj);
+        }
+
         json_object_put(response_obj);
     }
     

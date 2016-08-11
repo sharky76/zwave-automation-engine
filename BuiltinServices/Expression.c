@@ -6,12 +6,15 @@
 
 variant_t*  eval_impl(struct service_method_t* method, va_list args);
 variant_t*  process_template_impl(struct service_method_t* method, va_list args);
+variant_t*  unescape_impl(struct service_method_t* method, va_list args);
 
 builtin_service_t*  expression_service_create(hash_table_t* service_table)
 {
     builtin_service_t*   service = builtin_service_create(service_table, "Expression", "Expression management methods");
     builtin_service_add_method(service, "Eval", "Evaluate string expression", 1, eval_impl);
     builtin_service_add_method(service, "ProcessTemplate", "Process template string", 1, process_template_impl);
+    builtin_service_add_method(service, "Unescape", "Unescape expression string", 1, unescape_impl);
+
     return service;
 }
 
@@ -79,7 +82,15 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
                 {
                     //stack_push_back(result_stack, variant_create_string(strdup(variant_to_string(value_var))));
                     char* replacement;
-                    variant_to_string(value_var, &replacement);
+                    /*if(value_var->type == DT_STRING)
+                    {
+                        replacement = calloc(2 + strlen(variant_get_string(value_var)), sizeof(char));
+                        sprintf(replacement, "'%s'", variant_get_string(value_var));
+                    }
+                    else*/
+                    {
+                        variant_to_string(value_var, &replacement);
+                    }
 
                     int replacement_len = strlen(replacement);
                     if(result_size + replacement_len + 1 >= expected_size)
@@ -116,6 +127,24 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
 
     // Remove last space...
     //result_string[strlen(result_string)] = 0;
+    return variant_create_string(result_string);
+}
+
+variant_t*  unescape_impl(struct service_method_t* method, va_list args)
+{
+    variant_t*  expression_var = va_arg(args, variant_t*);
+    const char* escaped_string = variant_get_string(expression_var);
+    char* result_string = calloc(strlen(escaped_string), sizeof(char));
+
+    int j = 0;
+    for(int i = 0; i < strlen(escaped_string); i++)
+    {
+        if(escaped_string[i] != '\\')
+        {
+            result_string[j++] = escaped_string[i];
+        }
+    }
+
     return variant_create_string(result_string);
 }
 

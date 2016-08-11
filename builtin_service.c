@@ -73,6 +73,18 @@ void                 builtin_service_stack_add(const char* service_name, uint32_
     }
 }
 
+void                 builtin_service_stack_remove(const char* service_name, uint32_t value_key)
+{
+    uint32_t key = crc32(0, service_name, strlen(service_name));
+    variant_t* stack_var = variant_hash_get(service_stack_table, key);
+
+    if(NULL != stack_var)
+    {
+        service_stack_t* s = (service_stack_t*)variant_get_ptr(stack_var);
+        variant_hash_remove(s->data_storage, value_key);
+    }
+}
+
 service_stack_t*     builtin_service_stack_get(const char* service_name)
 {
     uint32_t key = crc32(0, service_name, strlen(service_name));

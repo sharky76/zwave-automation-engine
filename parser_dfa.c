@@ -85,7 +85,7 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_AND,   A_DIGIT,        STATE_DIGIT},
     {STATE_AND,   A_LEFT_PAREN,   STATE_LEFT_PAREN},
     {STATE_AND,   A_SPACE,        STATE_START},
-
+    
     // From OR
     {STATE_OR,   A_ALPHA,        STATE_ALPHA},
     {STATE_OR,   A_DIGIT,        STATE_DIGIT},
@@ -247,6 +247,14 @@ AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
         {
             return A_CMP;
         }
+        else if(strcmp(str, "\\\'") == 0)
+        {
+            return A_ALPHA;
+        }
+    }
+    else if(*str == '\\')
+    {
+        return A_INVALID;
     }
 
     if(source_state == STATE_CAPTURE_STRING)
@@ -265,6 +273,8 @@ AlphabetToken   parser_dfa_read_next_token(state_context_t* state_context)
 
     if(state_context->token_parsing_state == PS_NONE)
     {
+        memset(state_context->parsed_token, 0, MAX_TOKEN_LEN);
+
         state_context->token_parsing_state = PS_STARTED;
         state_context->parse_cycle = 0;
         state_context->parsed_token[state_context->parse_cycle++] = ch;
@@ -295,7 +305,6 @@ AlphabetToken   parser_dfa_read_next_token(state_context_t* state_context)
     {
         state_context->token_parsing_state = PS_COMPLETED;
         state_context->current_token = token;
-
         /*if(token == A_ALPHA || token == A_DIGIT || token == A_DOT)
         {
             strncat(state_context->current_data_buf, state_context->parsed_token, state_context->parse_cycle);
