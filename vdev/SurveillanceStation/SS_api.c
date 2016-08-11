@@ -4,7 +4,7 @@
 #include <crc32.h>
 #include <logger.h>
 
-// API Query: http://192.168.1.77:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
+// API Query: http://xxxxxx:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
 // Reply: 
 // {"data": {"SYNO.API.Auth": {"maxVersion":4,
 //                             "minVersion":1,
