@@ -16,8 +16,9 @@ typedef struct device_record_t device_record_t;
 typedef struct vdev_event_data_t
 {
     uint8_t  vdev_id;
-    uint8_t  command_id;
-    char*    data;
+    uint8_t  event_id;
+    uint8_t  instance_id;
+    void*    data;
 } vdev_event_data_t;
 
 typedef struct vdev_command_t
@@ -27,7 +28,6 @@ typedef struct vdev_command_t
     int   nargs;
     char* help;
     variant_t*   (*command_impl)(va_list);
-    void* command_class_ptr;
 } vdev_command_t;
 
 typedef struct vdev_t
@@ -38,6 +38,7 @@ typedef struct vdev_t
     char**      (*get_config_callback)(void);
     variant_stack_t*  supported_method_list;
     variant_stack_t*  event_subscriptions;
+    void* command_class_ptr;    // For compatibility with ZWAVE device function operators
 } vdev_t;
 
 #define VDEV_INIT(_name, _start)  \
@@ -72,4 +73,4 @@ stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, 
 
 void    vdev_create(vdev_t** vdev, int vdev_id);
 void    vdev_cli_create(cli_node_t* parent_node);
-void    vdev_post_event(int vdev_id, int command_id, const char* data);
+void    vdev_post_event(int vdev_id, int event_id, int instance_id, void* data);

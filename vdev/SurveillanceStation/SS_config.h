@@ -18,6 +18,7 @@ extern int   SS_camera_count;
 
 typedef struct SS_event_keeper_t
 {
+    int     camera_id;
     char*   camera_name;
     int     event_count;
     int     old_event_count;

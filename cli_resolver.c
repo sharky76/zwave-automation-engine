@@ -15,7 +15,7 @@ void    show_resolver_helper(device_record_t* record, void* arg);
 cli_command_t   resolver_root_list[] = {
     {"show resolver",          cmd_list_resolver,              "Show resolver configuration"},
     {"resolver WORD node-id INT instance INT command-class INT",      cmd_add_resolver_entry, "Add resolver entry"},
-    {"resolver WORD vdev-id INT command-class INT",      cmd_add_vdev_resolver_entry, "Add resolver entry"}, // no need for command class!!!
+    {"resolver WORD vdev-id INT instance INT command-class INT",      cmd_add_vdev_resolver_entry, "Add resolver entry"}, // no need for command class!!!???
     {"no resolver WORD",   cmd_del_resolver_entry, "Delete resolver entry"},
     {NULL,                     NULL,                            NULL}
 };
@@ -51,8 +51,8 @@ bool    cmd_add_vdev_resolver_entry(vty_t* vty, variant_stack_t* params)
 
     resolver_add_entry(VDEV, variant_get_string(stack_peek_at(params, 1)),
                        variant_get_int(stack_peek_at(params, 3)),
-                       0,
-                       variant_get_int(stack_peek_at(params, 5)));
+                       variant_get_int(stack_peek_at(params, 5)),
+                       variant_get_int(stack_peek_at(params, 7)));
 
     return true;
 }
@@ -77,6 +77,6 @@ void    show_resolver_helper(device_record_t* record, void* arg)
     }
     else
     {
-        vty_write(vty, "resolver %s vdev-id %d command-class %d\n", record->deviceName, record->nodeId, record->commandId);
+        vty_write(vty, "resolver %s vdev-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
     }
 }

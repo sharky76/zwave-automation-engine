@@ -22,6 +22,7 @@ typedef enum VariantDataType
     DT_SERVICE_EVENT_DATA,
     DT_VDEV,
     DT_VDEV_EVENT_DATA,
+    DT_LIST,
     DT_NULL,
 
     DT_USER,

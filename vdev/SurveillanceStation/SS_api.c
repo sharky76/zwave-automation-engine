@@ -3,8 +3,9 @@
 #include "SS_config.h"
 #include <crc32.h>
 #include <logger.h>
+#include <ctype.h>
 
-// API Query: http://xxxxxx:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
+// API Query: http://192.168.1.77:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
 // Reply: 
 // {"data": {"SYNO.API.Auth": {"maxVersion":4,
 //                             "minVersion":1,
@@ -223,6 +224,30 @@ void    process_get_info_response(const json_object* obj)
 //           "total":49},
 //  "success":true}
 void process_motion_events_response(const json_object* obj);
+
+void get_camera_id(SS_camera_info_t* cam_info, SS_event_keeper_t* ss_event)
+{
+    //printf("%s looking for cam  = %s, compare with %s\n", __FUNCTION__, cam_info->name, ss_event->camera_name);
+
+    char* trimmed_name = ss_event->camera_name;
+    int index = 0;
+
+    while(isdigit(trimmed_name[index]))
+    {
+        index++;
+    }
+
+    // Skip "-" sign
+    index++;
+    trimmed_name = ss_event->camera_name + index;
+
+    if(strcmp(cam_info->name, trimmed_name) == 0)
+    {
+        //printf("%s found cam id = %d\n", __FUNCTION__, cam_info->id);
+        ss_event->camera_id = cam_info->id;
+    }
+}
+
 void  SS_api_get_motion_events()
 {
     char motion_events_req_buf[512] = {0};
@@ -256,10 +281,11 @@ void process_motion_events_response(const json_object* obj)
                                     int event_count = json_object_get_int(event_count_object);
                                     uint32_t crc = crc32(0, cam_name, strlen(cam_name));
                                     variant_t* ss_event_variant = variant_hash_get(SS_event_keeper_table, crc);
+                                    SS_event_keeper_t* ss_event = NULL;
 
                                     if(NULL == ss_event_variant)
                                     {
-                                        SS_event_keeper_t* ss_event = calloc(1, sizeof(SS_event_keeper_t));
+                                        ss_event = calloc(1, sizeof(SS_event_keeper_t));
                                         ss_event->camera_name = strdup(cam_name);
                                         ss_event->event_count = event_count;
                                         ss_event->old_event_count = 0;
@@ -267,9 +293,17 @@ void process_motion_events_response(const json_object* obj)
                                     }
                                     else
                                     {
-                                        SS_event_keeper_t* ss_event = (SS_event_keeper_t*)variant_get_ptr(ss_event_variant);
+                                        ss_event = (SS_event_keeper_t*)variant_get_ptr(ss_event_variant);
                                         ss_event->event_count = event_count;
                                     }
+
+                                    if(NULL != ss_event && ss_event->camera_id == 0)
+                                    {
+                                        // Lets find the camera ID:
+                                        variant_hash_for_each_value(SS_camera_info_table, SS_camera_info_t*, get_camera_id, ss_event);
+                                        //printf("%s CAMERA_ID = %d\n", __FUNCTION__, ss_event->camera_id);
+                                    }
+
                                 }
                             }
                         }

@@ -128,7 +128,7 @@ variant_t*  get_camera_list(va_list args)
     variant_hash_for_each(SS_camera_info_table, process_camera_info_table, cam_list);
 
     //cam_list[data_context.index] = NULL;
-    return variant_create_ptr(DT_PTR, cam_list, delete_camera_list);
+    return variant_create_ptr(DT_LIST, cam_list, delete_camera_list);
 }
 
 void    device_start()
@@ -137,6 +137,8 @@ void    device_start()
     SS_api_query();
     SS_api_get_sid();
     SS_api_get_info();
+    SS_api_get_camera_list();
+    SS_api_logout();
     LOG_INFO(DT_SURVEILLANCE_STATION, "Surveillance Station device started");
     SS_device_started = true;
 }
@@ -149,7 +151,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     if(ev->event_count > ev->old_event_count)
     {
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s", ev->camera_name);
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_name);
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, (void*)ev);
     }
 
     ev->old_event_count = ev->event_count;

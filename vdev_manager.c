@@ -15,7 +15,7 @@
 DECLARE_LOGGER(VDevManager)
 
 hash_table_t* vdev_table;
-command_class_t*    vdev_manager_create_command_class(vdev_t* vdev, ZWBYTE command_id);
+command_class_t*    vdev_manager_create_command_class(vdev_t* vdev);
 variant_t*   vdev_call_method(const char* method, device_record_t* vdev, va_list args);
 
 void    vdev_manager_init(const char* vdev_dir)
@@ -60,7 +60,9 @@ void    vdev_manager_init(const char* vdev_dir)
                 else
                 {
                     vdev_t* vdev;
-                    (*vdev_create)(&vdev, variant_get_next_user_type());
+                    int vdev_id = variant_get_next_user_type();
+                    //printf("VDEV_ID = %d\n", vdev_id);
+                    (*vdev_create)(&vdev, vdev_id);
                     logger_register_service_with_id(vdev->vdev_id, vdev->name);
 
                     cli_add_logging_class(vdev->name);
@@ -79,12 +81,9 @@ void    vdev_manager_init(const char* vdev_dir)
                         (*vdev_cli_create)(root_node);
                     }
 
-                    // Create command class pointer for each supported method
-                    stack_for_each(vdev->supported_method_list, method_variant)
-                    {
-                        vdev_command_t* method = (vdev_command_t*)variant_get_ptr(method_variant);
-                        method->command_class_ptr = vdev_manager_create_command_class(vdev, method->command_id);
-                    }
+
+                    // Create command class pointer 
+                    vdev->command_class_ptr = vdev_manager_create_command_class(vdev);
                 }
             }
 
@@ -139,18 +138,15 @@ void vdev_manager_start_devices()
     free(it);
 }
 
-command_class_t* vdev_manager_get_command_class_by_id(int vdev_id, ZWBYTE command_id)
+command_class_t* vdev_manager_get_command_class(int vdev_id)
 {
     vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_get(vdev_table, vdev_id));
 
-    stack_for_each(vdev->supported_method_list, vdev_method_variant)
+    if(NULL != vdev)
     {
-        vdev_command_t* cmd = (vdev_command_t*)variant_get_ptr(vdev_method_variant);
-        if(cmd->command_id == command_id)
-        {
-            return (command_class_t*)cmd->command_class_ptr;
-        }
+        return (command_class_t*)vdev->command_class_ptr;
     }
+
     return NULL;
 }
 
@@ -159,10 +155,10 @@ vdev_t* vdev_manager_get_vdev_by_id(int vdev_id)
     return (vdev_t*)variant_get_ptr(variant_hash_get(vdev_table, vdev_id));
 }
 
-command_class_t*    vdev_manager_create_command_class(vdev_t* vdev, ZWBYTE command_id)
+command_class_t*    vdev_manager_create_command_class(vdev_t* vdev)
 {
     command_class_t* cmd_class = calloc(1, sizeof(command_class_t));
-    cmd_class->command_id = command_id;
+    cmd_class->command_id = vdev->vdev_id;
     cmd_class->command_name = vdev->name;
     cmd_class->command_impl = vdev_call_method; 
      
@@ -181,6 +177,22 @@ command_class_t*    vdev_manager_create_command_class(vdev_t* vdev, ZWBYTE comma
         }
     }
     return cmd_class;
+}
+
+device_record_t*    vdev_manager_create_device_record(const char* vdev_name)
+{
+    vdev_t* vdev = vdev_manager_get_vdev(vdev_name);
+    device_record_t* record = NULL;
+
+    if(NULL != vdev)
+    {
+        record = calloc(1, sizeof(device_record_t));
+        strncpy(record->deviceName, vdev->name, 127);
+        record->nodeId = vdev->vdev_id;
+        record->devtype = VDEV;
+    }
+
+    return record;
 }
 
 void    vdev_manager_for_each(void (*visitor)(vdev_t*, void*), void* arg)
@@ -205,6 +217,8 @@ void    vdev_manager_for_each_method(const char* vdev_name, void (*visitor)(vdev
 variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, va_list args)
 {
     vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_get(vdev_table, vdev_record->nodeId));
+
+    free(vdev_record);
 
     stack_for_each(vdev->supported_method_list, vdev_method_variant)
     {

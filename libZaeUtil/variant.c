@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "stack.h"
 
 static int  auto_inc_data_type = DT_USER+1;
 
@@ -299,6 +300,21 @@ bool variant_to_string(variant_t* variant, char** string)
         {
             *string = (char*)calloc(6, sizeof(char));
             snprintf(*string, 5, "%f", variant_get_float(variant));
+        }
+        break;
+    case DT_LIST:
+        {
+            variant_stack_t* list = (variant_stack_t*)variant_get_ptr(variant);
+            *string = (char*)calloc(list->count * 128, sizeof(char));
+
+            char br = '\n';
+
+            stack_for_each(list, list_entry_variant)
+            {
+                const char* string_entry = variant_get_string(list_entry_variant);
+                strcat(*string, string_entry);
+                strncat(*string, &br, 1);
+            }
         }
         break;
     default:

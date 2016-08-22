@@ -49,6 +49,7 @@ void process_string_operand(const char* ch, variant_stack_t* operand_queue);
 bool process_service_method_operator(const char* ch, variant_stack_t* operator_stack);
 bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_stack);
 bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack);
+bool process_vdev_method_operator(const char* ch, variant_stack_t* operator_stack);
 void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
 void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
@@ -557,6 +558,10 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
             {
                 retVal = process_builtin_method_operator(function_string, operator_stack);
             }
+            else if(vdev_manager_is_vdev_exists(tok))
+            {
+                retVal = process_vdev_method_operator(function_string, operator_stack);
+            }
             else
             {
                 // Well, this might be the only token in expression, save it as string
@@ -598,20 +603,54 @@ bool process_device_function_operator(const char* ch, variant_stack_t* operator_
                 {
                     op_data->device_record = record;
 
-                    switch(record->devtype)
-                    {
-                    case ZWAVE:
-                        op_data->command_class = get_command_class_by_id(record->commandId);
-                        break;
-                    case VDEV:
-                        op_data->command_class = vdev_manager_get_command_class_by_id(record->nodeId, record->commandId);
-                        break;
-                    }
+                    op_data->command_class = get_command_class_by_id(record->commandId);
                 }
                 else 
                 {
                     // Error!
                     LOG_ERROR(Parser, "Unresolved device %s", tok);
+                    retVal = false;
+                }
+            }
+            break;
+        case 1: // Command and arguments
+            strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
+            break;
+        }
+
+        tok = strtok(NULL, ".");
+    }
+
+    stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
+    return retVal;
+}
+
+bool process_vdev_method_operator(const char* ch, variant_stack_t* operator_stack)
+{
+    function_operator_data_t* op_data = (function_operator_data_t*)calloc(1, sizeof(function_operator_data_t));
+    operator_t* function_operator = operator_create(OP_DEVICE_FUNCTION, op_data);
+    bool    retVal = true;
+
+    char* function_string = (char*)ch;
+    char* tok = strtok(function_string, ".");
+    int tok_count = 0;
+    while(NULL != tok)
+    {
+        // First argument is device name
+        switch(tok_count++)
+        {
+        case 0: // Device name
+            {
+                device_record_t*    record = vdev_manager_create_device_record(tok);
+                if(NULL != record)
+                {
+                    op_data->device_record = record;
+                    op_data->command_class = vdev_manager_get_command_class(record->nodeId);
+                }
+                else 
+                {
+                    // Error!
+                    LOG_ERROR(Parser, "Unresolved virtual device %s", tok);
                     retVal = false;
                 }
             }
