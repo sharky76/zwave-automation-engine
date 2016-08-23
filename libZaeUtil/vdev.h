@@ -23,7 +23,7 @@ typedef struct vdev_event_data_t
 
 typedef struct vdev_command_t
 {
-    int   command_id;
+    //int   command_id;
     char* name;
     int   nargs;
     char* help;
@@ -49,10 +49,9 @@ typedef struct vdev_t
 (*vdev)->supported_method_list = stack_create();    \
 (*vdev)->event_subscriptions = stack_create();
 
-#define VDEV_ADD_COMMAND(_id, _name, _nargs, _callback, _help)  \
+#define VDEV_ADD_COMMAND(_name, _nargs, _callback, _help)  \
 {   \
 vdev_command_t* cmd = (vdev_command_t*)calloc(1, sizeof(vdev_command_t));  \
-cmd->command_id = _id;    \
 cmd->name = strdup(_name);  \
 cmd->nargs = _nargs;  \
 cmd->help = strdup(_help);    \

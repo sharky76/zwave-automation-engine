@@ -23,6 +23,7 @@ bool SS_device_started;
 static int timer_tick_counter;
 variant_t*  get_motion_events(va_list args);
 variant_t*  get_camera_list(va_list args);
+variant_t*  get_camera_name_by_id(va_list args);
 
 void        device_start(); 
 void        timer_tick_handler(const char* event_name, event_t* pevent);
@@ -30,8 +31,9 @@ void        timer_tick_handler(const char* event_name, event_t* pevent);
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
     VDEV_INIT("SurveillanceStation", device_start)
-    VDEV_ADD_COMMAND(COMMAND_CLASS_MOTION_EVENTS, "GetEvents", 1, get_motion_events, "Get Event status")
-    VDEV_ADD_COMMAND(COMMAND_CLASS_MOTION_EVENTS+1, "GetCameraList", 0, get_camera_list, "Get Camera list")
+    VDEV_ADD_COMMAND("GetEvents", 1, get_motion_events, "Get Motion event count (arg: id)")
+    VDEV_ADD_COMMAND("GetCameraName", 1, get_camera_name_by_id, "Get Camera name (arg: id)")
+    VDEV_ADD_COMMAND("GetCameraList", 0, get_camera_list, "Get Camera list")
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
     VDEV_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_handler);
 
@@ -58,19 +60,43 @@ void    vdev_cli_create(cli_node_t* parent_node)
 
 variant_t*  get_motion_events(va_list args)
 {
-    variant_t* camera_name_var = va_arg(args, variant_t*);
-    const char* camera_name = variant_get_string(camera_name_var);
+    variant_t* camera_id_var = va_arg(args, variant_t*);
+    int cam_id = variant_get_int(camera_id_var);
 
-    uint32_t key = crc32(0, camera_name, strlen(camera_name));
-    variant_t* keeper_var = variant_hash_get(SS_event_keeper_table, key);
+    variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, cam_id);
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
 
-    if(NULL != keeper_var)
+    if(cam_info != NULL)
     {
-        SS_event_keeper_t* keeper = (SS_event_keeper_t*)variant_get_ptr(keeper_var);
-        return variant_create_int32(DT_INT32, keeper->event_count);
+        uint32_t key = crc32(0, cam_info->name, strlen(cam_info->name));
+        variant_t* keeper_var = variant_hash_get(SS_event_keeper_table, key);
+    
+        if(NULL != keeper_var)
+        {
+            SS_event_keeper_t* keeper = (SS_event_keeper_t*)variant_get_ptr(keeper_var);
+            return variant_create_int32(DT_INT32, keeper->event_count);
+        }
     }
 
     return variant_create_int32(DT_INT32, 0);
+}
+
+variant_t*  get_camera_name_by_id(va_list args)
+{
+    variant_t* camera_id_var = va_arg(args, variant_t*);
+    int cam_id = variant_get_int(camera_id_var);
+
+    variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, cam_id);
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
+
+    if(cam_info != NULL)
+    {
+        return variant_create_string(strdup(cam_info->name));
+    }
+    else
+    {
+        return variant_create_string(strdup(""));
+    }
 }
 
 /*typedef struct camera_info_context_t
@@ -86,7 +112,7 @@ void process_camera_info_table(hash_node_data_t* node_data, void* arg)
     char cam_name_buf[256] = {0};
     SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(node_data->data);
 
-    snprintf(cam_name_buf, 255, "%d-%s", cam_info->id, cam_info->name);
+    snprintf(cam_name_buf, 255, "%d: %s", cam_info->id, cam_info->name);
 
     //ctx->list[ctx->index++] = strdup(cam_name_buf);
     stack_push_back(cam_list, variant_create_string(strdup(cam_name_buf)));
@@ -139,6 +165,7 @@ void    device_start()
     SS_api_get_info();
     SS_api_get_camera_list();
     SS_api_logout();
+
     LOG_INFO(DT_SURVEILLANCE_STATION, "Surveillance Station device started");
     SS_device_started = true;
 }
