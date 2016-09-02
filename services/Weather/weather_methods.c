@@ -16,6 +16,12 @@ variant_t*  weather_get_windspeed(service_method_t* method, va_list args)
 variant_t*  weather_get_precipitation(service_method_t* method, va_list args)
 {
     weather_cache_refresh();
+
+    if(NULL == weather_cache.precipitation)
+    {
+        return variant_create_string(strdup("no data"));
+    }
+
     return variant_create_string(strdup(weather_cache.precipitation));
 }
 
