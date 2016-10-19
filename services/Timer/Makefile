@@ -30,7 +30,7 @@ ALL_OBJ=$(OUTDIR)/Timer.o $(OUTDIR)/timer_cli.o \
 	-L../../libZaeUtil/Debug -lZaeUtil \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -rdynamic -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
 LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules

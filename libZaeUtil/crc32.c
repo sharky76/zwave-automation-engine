@@ -98,5 +98,5 @@ crc32(uint32_t crc, const void *buf, size_t size)
 	while (size--)
 		crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
 
-	return crc ^ ~0U;
+    return crc ^ ~0U;
 }

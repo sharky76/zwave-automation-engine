@@ -30,6 +30,7 @@
 #include "builtin_service_manager.h"
 #include <event.h>
 #include "vdev_manager.h"
+#include <execinfo.h>
 
 #define DEFAULT_PORT 9231
 
@@ -86,6 +87,21 @@ void sigpipe(int sig)
     //siglongjmp (jmpbuf, 1);
 }
 
+void sigsegv(int sig) {
+  void *array[100];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 100);
+
+  // print out all the frames to stderr
+  //FILE* btfile = fopen("/tmp/zaebt", "w+");
+  printf("Error: signal %d, btsize %d:\n", sig, size);
+  backtrace_symbols_fd(array, size, 1);
+  //fclose(btfile);
+  exit(1);
+}
+
 /* Signale wrapper for vtysh. We don't use sigevent because
  * vtysh doesn't use threads. TODO */
 void
@@ -111,6 +127,7 @@ void signal_init()
   //main_signal_set (SIGINT, sigint);
   //main_signal_set (SIGTSTP, sigtstp);
   main_signal_set (SIGPIPE, sigpipe);
+  //signal(SIGSEGV, sigsegv);
 }
 
 char* null_function(const char *ignore, int key)

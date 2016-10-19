@@ -25,7 +25,7 @@
 				RunFromDir="%rw">
 				<Exec
 					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -g -fPIC %~other -o "%bd%n%oe" %i %f'
-					OtherOptions="-std=c99"/>
+					OtherOptions="-std=c99 -rdynamic"/>
 			</Target>
 			<Target
 				Name="Link"
@@ -125,7 +125,7 @@
 				RunFromDir="%rw">
 				<Exec
 					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup -x c %defd -fPIC %~other -o "%bd%n%oe" %i %f'
-					OtherOptions="-std=c99"/>
+					OtherOptions="-std=c99 -rdynamic"/>
 			</Target>
 			<Target
 				Name="Link"

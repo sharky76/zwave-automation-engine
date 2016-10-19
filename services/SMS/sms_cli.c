@@ -56,15 +56,19 @@ char** sms_cli_get_config()
 
     char buf[128] = {0};
     carrier_data_t* carrier_data = sms_data_get_carrier();
-    snprintf(buf, 127, "country-code %s carrier %s", carrier_data->country_code, carrier_data->carrier);
-    config_list[0] = strdup(buf);
 
-    phone_table_visitor_t data = {
-        .config_list = config_list,
-        .start_index = 1
-    };
-
-    variant_hash_for_each_value(phone_table, const char*, add_to_config_list_visitor, &data);
+    if(carrier_data->carrier != NULL)
+    {
+        snprintf(buf, 127, "country-code %s carrier %s", carrier_data->country_code, carrier_data->carrier);
+        config_list[0] = strdup(buf);
+    
+        phone_table_visitor_t data = {
+            .config_list = config_list,
+            .start_index = 1
+        };
+    
+        variant_hash_for_each_value(phone_table, const char*, add_to_config_list_visitor, &data);
+    }
 
     return config_list;
 }

@@ -46,10 +46,10 @@ void process_query_response(const json_object* obj)
                         free(SS_auth_path);
                         SS_auth_path = strdup(json_object_get_string(auth_path_data));
                         LOG_DEBUG(DT_SURVEILLANCE_STATION, "SYNO.Api.Auth path = %s", SS_auth_path);
-                        json_object_put(auth_path_data);
+                        //json_object_put(auth_path_data);
                     }
 
-                    json_object_put(auth_data);
+                    //json_object_put(auth_data);
                 }
 
                 struct json_object* event_data;
@@ -63,11 +63,10 @@ void process_query_response(const json_object* obj)
                         free(SS_event_path);
                         SS_event_path = strdup(json_object_get_string(event_path_data));
                         LOG_DEBUG(DT_SURVEILLANCE_STATION, "SYNO.SurveillanceStation.Event path = %s", SS_event_path);
-
-                        json_object_put(event_path_data);
+                        //json_object_put(event_path_data);
                     }
 
-                    json_object_put(event_data);
+                    //json_object_put(event_data);
                 }
 
                 struct json_object* camera_data;
@@ -81,10 +80,10 @@ void process_query_response(const json_object* obj)
                         free(SS_camera_path);
                         SS_camera_path = strdup(json_object_get_string(camera_path_data));
                         LOG_DEBUG(DT_SURVEILLANCE_STATION, "SYNO.SurveillanceStation.Camera path = %s", SS_camera_path);
-                        json_object_put(camera_path_data);
+                        //json_object_put(camera_path_data);
                     }
 
-                    json_object_put(camera_data);
+                    //json_object_put(camera_data);
                 }
 
                 struct json_object* info_data;
@@ -98,17 +97,17 @@ void process_query_response(const json_object* obj)
                         free(SS_info_path);
                         SS_info_path = strdup(json_object_get_string(info_path_data));
                         LOG_DEBUG(DT_SURVEILLANCE_STATION, "SYNO.SurveillanceStation.Info path = %s", SS_info_path);
-                        json_object_put(info_path_data);
+                        //json_object_put(info_path_data);
                     }
 
-                    json_object_put(info_data);
+                    //json_object_put(info_data);
                 }
 
-                json_object_put(query_data_array);
+                //json_object_put(query_data_array);
             }
         }
 
-        json_object_put(success_response);
+        //json_object_put(success_response);
     }
 }
 
@@ -141,13 +140,13 @@ void process_auth_response(const json_object* obj)
                     free(SS_auth_sid);
                     SS_auth_sid = strdup(json_object_get_string(sid_value));
                     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Auth SID = %s", SS_auth_sid);
-                    json_object_put(sid_value);
+                    //json_object_put(sid_value);
                 }
             }
-            json_object_put(sid_object);
+            //json_object_put(sid_object);
         }
 
-        json_object_put(success_response);
+        //json_object_put(success_response);
     }
 }
 
@@ -203,13 +202,13 @@ void    process_get_info_response(const json_object* obj)
                 if(TRUE == json_object_object_get_ex(data_object, "cameraNumber", &camera_num))
                 {
                     SS_camera_count = json_object_get_int(camera_num);
-                    json_object_put(camera_num);
+                    //json_object_put(camera_num);
                 }
-                json_object_put(data_object);
+                //json_object_put(data_object);
             }
         }
 
-        json_object_put(success_response);
+        //json_object_put(success_response);
     }
 }
 // http://192.168.1.77:5000/webapi/_______________________________________________________entry.cgi?api=SYNO.SurveillanceStation.Event&method=CountByCategory&reason=2,7&fromTime=1461931670&version=4&_sid=6f.rB6ZDs.i9QBCK3N02417
@@ -308,13 +307,13 @@ void process_motion_events_response(const json_object* obj)
                             }
                         }
                     }
-                    json_object_put(evt_cam_object);
+                    //json_object_put(evt_cam_object);
                 }
-                json_object_put(data_object);
+                //json_object_put(data_object);
             }
         }
 
-        json_object_put(success_response);
+        //json_object_put(success_response);
     }
 }
 
@@ -407,7 +406,7 @@ struct json_object* success_response;
                         if(TRUE == json_object_object_get_ex(camera_entry, "id", &camera_id_object))
                         {
                             cam_id = json_object_get_int(camera_id_object);
-                            json_object_put(camera_id_object);
+                            //json_object_put(camera_id_object);
                         }
 
                         struct json_object* camera_name_object;
@@ -432,15 +431,15 @@ struct json_object* success_response;
                                 }
                             }
 
-                            json_object_put(camera_name_object);
+                            //json_object_put(camera_name_object);
                         }
                     }
-                    json_object_put(camera_array);
+                    //json_object_put(camera_array);
                 }
-                json_object_put(data_object);
+                //json_object_put(data_object);
             }
         }
 
-        json_object_put(success_response);
+        //json_object_put(success_response);
     }
 }
