@@ -1,6 +1,7 @@
 #pragma once
 
 #include "variant.h"
+#include <sys/param.h>
 // This is the basic stack implementation for holding operands and operators
 
 typedef struct stack_item_t
@@ -21,6 +22,11 @@ typedef struct variant_stack_t
 int __i__;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
 for(__i__ = 0; __i__ < _stack->count; __i__++, _value = stack_peek_at(_stack, __i__))   \
+
+#define stack_for_each_range(_stack, _from, _to, _value)  \
+int __i__;  \
+variant_t* _value = stack_peek_at(_stack, 0);  \
+for(__i__ = _from; __i__ <= MIN(_stack->count-1, _to); __i__++, _value = stack_peek_at(_stack, __i__))   \
 
 variant_stack_t*        stack_create();
 void            stack_free(variant_stack_t* stack);

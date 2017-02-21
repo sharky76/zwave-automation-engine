@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include "http_server.h"
 
-#define BUFSIZE 8096
+#define BUFSIZE 64000
 
 void    file_write_cb(vty_t* vty, const char* format, va_list args);
 char*   file_read_cb(vty_t* vty);
