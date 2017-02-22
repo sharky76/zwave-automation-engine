@@ -117,7 +117,7 @@ void  timer_tick_event(const char* name, event_t* pevent)
 {
     service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
 
-    if(++timer_tick_counter > 60 && strcmp(timer_event_data->data, "tick") == 0)
+    if(strcmp(timer_event_data->data, "tick") == 0 && ++timer_tick_counter > 59)
     {
         timer_tick_counter = 0;
         LOG_DEBUG(DT_CRON, "Event %s tick", name);
@@ -131,6 +131,8 @@ void  timer_tick_event(const char* name, event_t* pevent)
         ADD_DAY(job_time, p_tm->tm_mday);
         ADD_MONTH(job_time, p_tm->tm_mon);
         ADD_WEEKDAY(job_time, p_tm->tm_wday);
+
+        //printf("Cron Event %d %d %d %d %d\n", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
 
         variant_stack_t* scene_list = crontab_get_scene(job_time);
 
