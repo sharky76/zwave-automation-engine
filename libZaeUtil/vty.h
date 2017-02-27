@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdbool.h>
+#include "stack.h"
 
 typedef enum vty_type_e
 {
@@ -12,6 +13,7 @@ typedef enum vty_type_e
 
 #define IN  0
 #define OUT 1
+#define BUFSIZE 64000
 
 typedef FILE* iopair[2];
 
@@ -33,6 +35,8 @@ typedef struct vty_t
     void    (*write_cb)(struct vty_t*, const char*, va_list);
     char*   (*read_cb)(struct vty_t*);
     void    (*flush_cb)(struct vty_t*);
+    void    (*erase_char_cb)(struct vty_t*); // erase last char
+    void    (*erase_line_cb)(struct vty_t*);
     vty_data_t* data;
     char*   prompt;
     bool    echo;
@@ -41,6 +45,10 @@ typedef struct vty_t
     char*   buffer;
     char*   banner;
     int     buf_size;
+    bool    error;
+    variant_stack_t*    history;
+    int     history_size;
+    int     history_index;  // 0 - most recent entry
 } vty_t;
 
 void    vty_signal_init();
@@ -51,6 +59,19 @@ void    vty_set_banner(vty_t* vty, char* banner);
 void    vty_display_banner(vty_t* vty);
 void    vty_free(vty_t* vty);
 void    vty_set_prompt(vty_t* vty, const char* format, ...);
+void    vty_display_prompt(vty_t* vty);
 void    vty_write(vty_t* vty, const char* format, ...);
 char*   vty_read(vty_t* vty);
 void    vty_error(vty_t* vty, const char* format, ...);
+void    vty_flush(vty_t* vty);
+void    vty_set_error(vty_t* vty, bool is_error);
+bool    vty_is_error(vty_t* vty);
+void    vty_add_history(vty_t* vty);
+const char*   vty_get_history(vty_t* vty, bool direction); // true - to newest, false - to oldest
+void    vty_set_history_size(vty_t* vty, int size);
+void    vty_append_char(vty_t* vty, char ch);
+void    vty_append_string(vty_t* vty, const char* str);
+void    vty_erase_char(vty_t* vty);
+void    vty_redisplay(vty_t* vty, const char* new_buffer);
+void    vty_clear_buffer(vty_t* vty);
+

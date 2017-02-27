@@ -79,8 +79,14 @@ variant_t*  command_class_read_data(device_record_t* record, const char* path)
     ZWDataType type;
     zdata_get_type(dh, &type);
 
+    //printf("Found zdata type %d\n", type);
     switch(type)
     {
+    case Empty:
+        {
+            ret_val = variant_create_string(strdup("Empty"));
+        }
+        break;
     case Integer:
         {
             int int_val;
@@ -181,7 +187,8 @@ variant_t*   command_class_eval_alarm(const char* method, device_record_t* recor
     if(strcmp(method, "Get") == 0)
     {
         variant_t* arg1 = va_arg(args, variant_t*);
-        ret_val - command_class_read_data(record, variant_get_string(arg1));
+        //printf("eval alarm with arg: %s\n", variant_get_string(arg1));
+        ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)
     {
@@ -200,7 +207,7 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
 
     if(strcmp(method, "Get") == 0)
     {
-        ret_val - command_class_read_data(record, variant_get_string(arg1));
+        ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)
     {

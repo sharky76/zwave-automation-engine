@@ -41,7 +41,7 @@ bool    cmd_controller_factory_reset(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params);
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
-
+bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params);
 
 bool    cmd_help(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_banner(vty_t* vty, variant_stack_t* params);
@@ -57,6 +57,7 @@ bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_quit(vty_t* vty, variant_stack_t* params);
 bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params);
+bool    cmd_set_history(vty_t* vty, variant_stack_t* params);
 
 void    show_command_class_helper(command_class_t* command_class, void* arg);
 
@@ -68,6 +69,8 @@ cli_command_t root_command_list[] = {
     {"controller reset",          cmd_controller_reset,          "Reset zwave controller"},
     {"controller factory-reset",     cmd_controller_factory_reset,          "Reset zwave controller to factory defaults"},
     {"controller remove-failed node-id INT", cmd_controller_remove_failed_node, "Remove failed node from the controller"},
+    {"controller learn-mode start|stop|start-nwi",            cmd_controller_set_learn_mode, "Start learn mode"},
+    //{"controller learn-mode stop",            cmd_controller_set_learn_mode, "Stop learn mode"},
     {"show controller queue",       cmd_show_controller_queue,   "Display the contents of controller job queue"},
     {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
     {"help",                 cmd_help,                      "(module) Display help for module"},
@@ -77,7 +80,9 @@ cli_command_t root_command_list[] = {
     {"show running-config",  cmd_show_running_config,       "Show running configuration"},
     {"copy running-config startup-config", cmd_save_running_config, "Save running config into startup config"},
     {"copy running-config file WORD", cmd_copy_running_config, "Save running config into custom location"},
-    {"show history",                       cmd_show_history,    "Show command history"},
+    {"list history",                       cmd_show_history,    "List command history"},
+    {"show history",                       cmd_show_history,    "Show command history size"},
+    {"history INT",                        cmd_set_history, "Set command history size"},
     {"eval LINE",            cmd_eval_expression,       "Evaluate expression"},
     {"end",                  cmd_exit_node,             "End configuration session"},
     {"exit",                 cmd_quit,                  "Exit the application"},
@@ -86,6 +91,7 @@ cli_command_t root_command_list[] = {
 
 cli_node_t*         current_node;
 extern ZWay         zway;
+vty_t*              default_vty;
 
 void    cli_set_vty(vty_t* new_vty)
 {
@@ -96,6 +102,8 @@ void    cli_set_vty(vty_t* new_vty)
     {
         vty_set_banner(new_vty, banner);
     }
+
+    default_vty = new_vty;
 }
 
 void    cli_init()
@@ -338,6 +346,39 @@ char**   cli_command_completer(const char* text, int start, int stop)
     return matches;
 }
 
+char**  cli_command_completer_norl(const char* text, int size)
+{
+    static char** matched;
+    static variant_stack_t* matches = NULL;
+
+    variant_stack_t* cmd_vec;
+
+    char* cmd_name;
+
+    stack_free(matches);
+    matches = stack_create();
+
+    //printf("Buffer: %s\n", rl_line_buffer);
+
+    cmd_vec = create_cmd_vec(text);
+
+    if(cmd_vec->count == 0 || rl_end && isspace((int)text[size - 1]))
+    {
+        stack_push_back(cmd_vec, variant_create_string(NULL));
+    }
+    
+    int status;
+    matched = cmd_find_matches(cmd_vec, matches, &status);
+    stack_free(cmd_vec);
+
+    if (matched && matched[0])
+    {
+        return matched;
+    }
+
+    return NULL;
+}
+
 CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {
     CmdMatchStatus match_status = CMD_NO_MATCH;
@@ -500,15 +541,20 @@ int     cli_command_quit(int count, int key)
     siglongjmp(jmpbuf, 1);
 }
 
-bool    cli_command_exec(vty_t* vty, const char* line)
+bool    cli_command_exec(vty_t* vty, char* line)
 {
     cmd_tree_node_t* cmd_node;
 
-    if(line == 0 || *line == 0)
+    if(line == 0 || *line == 0 || *line == '\n')
     {
         return false;
     }
     
+    if(isspace(line[strlen(line) - 1]))
+    {
+        line[strlen(line) - 1] = 0;
+    }
+
     variant_stack_t* params;
     CmdMatchStatus match_status = cli_get_command(line, &cmd_node, &params);
 
@@ -534,7 +580,7 @@ bool    cli_command_exec(vty_t* vty, const char* line)
 
 void    cli_command_exec_default(char* line)
 {
-    //cli_command_exec(vty, line);
+    cli_command_exec(default_vty, line);
 }
 
 /*void    cli_assemble_line(variant_stack_t* params, int start, char* out_line)
@@ -557,11 +603,13 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
     if(strcmp(mode, "start") == 0)
     {
         err = zway_controller_add_node_to_network(zway, TRUE);
+        vty_write(vty, "%% Inclusion started\n");
         //err = zway_fc_add_node_to_network(zway, TRUE, TRUE, NULL, NULL, NULL);
     }
     else
     {
         err = zway_controller_add_node_to_network(zway, FALSE);
+        vty_write(vty, "%% Inclusion stopped\n");
         //err = zway_fc_add_node_to_network(zway, FALSE, TRUE, NULL, NULL, NULL);
     }
 
@@ -576,12 +624,36 @@ bool    cmd_controller_exclusion_mode(vty_t* vty, variant_stack_t* params)
     if(strcmp(mode, "start") == 0)
     {
         err = zway_controller_remove_node_from_network(zway, TRUE);
+        vty_write(vty, "%% Exclusion started\n");
         //err = zway_fc_remove_node_from_network(zway, TRUE, TRUE, NULL, NULL, NULL);
     }
     else
     {
         err = zway_controller_remove_node_from_network(zway, FALSE);
+        vty_write(vty, "%% Exclusion stopped\n");
+
         //err = zway_fc_remove_node_from_network(zway, FALSE, FALSE, NULL, NULL, NULL);
+    }
+
+    return (err == 0);
+}
+
+bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params)
+{
+    const char* mode = variant_get_string(stack_peek_at(params, 2));
+    ZWError err;
+
+    if(strcmp(mode, "start") == 0)
+    {
+        err = zway_controller_set_learn_mode(zway, 1);
+    }
+    else if(strcmp(mode, "start-nwi") == 0)
+    {
+        err = zway_controller_set_learn_mode(zway, 2);
+    }
+    else if(strcmp(mode, "stop") == 0)
+    {
+        err = zway_controller_set_learn_mode(zway, 0);
     }
 
     return (err == 0);
@@ -606,7 +678,11 @@ bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params)
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)
 {
     vty_write(vty, "Status: D - done, W - waiting for wakeup of the device, S - waiting for security session\n");
-    zway_queue_inspect(zway, vty->data->desc.io_pair[1]);
+
+    char queuebuf[65000] = {0};
+    FILE* queue_out = fmemopen(queuebuf, 65000, "w+");
+    zway_queue_inspect(zway, queue_out);
+    vty_write(vty, queuebuf);
 }
 
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params)
@@ -759,6 +835,8 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show user");
     vty_write(vty, "!\n");
+    cli_command_exec(vty, "show history");
+    vty_write(vty, "!\n");
     cli_command_exec(vty, "show logging");
     vty_write(vty, "!\n");
     cli_command_exec(vty, "show resolver");
@@ -811,13 +889,31 @@ bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
 {
-    HIST_ENTRY** history_entry = history_list();
+    const char* mode = variant_get_string(stack_peek_at(params, 0));
 
-    while(*history_entry)
+    if(strcmp(mode, "list") == 0)
     {
-        vty_write(vty, "%s\n", (*history_entry)->line);
-        history_entry++;
+        HIST_ENTRY** history_entry = history_list();
+        if(NULL != history_entry)
+        {
+            while(*history_entry)
+            {
+                vty_write(vty, "%s\n", (*history_entry)->line);
+                history_entry++;
+            }
+        }
     }
+    else if(strcmp(mode, "show") == 0)
+    {
+        vty_write(vty, "history %d\n", vty->history_size);
+    }
+}
+
+bool    cmd_set_history(vty_t* vty, variant_stack_t* params)
+{
+    int hist_size = variant_get_int(stack_peek_at(params, 1));
+
+    vty_set_history_size(vty, hist_size);
 }
 
 bool    cmd_quit(vty_t* vty, variant_stack_t* params)

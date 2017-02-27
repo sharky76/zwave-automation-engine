@@ -13,6 +13,7 @@ typedef struct config_t
     char*   vdev_prefix;
     char*   config_location;
     int     client_port;
+    int     api_debug_level;
 } config_t;
 
 extern config_t    global_config;

@@ -381,6 +381,8 @@
 		<F N="script_action_handler.h"/>
 		<F N="service_manager.c"/>
 		<F N="service_manager.h"/>
+		<F N="socket_io.c"/>
+		<F N="socket_io.h"/>
 		<F N="user_manager.c"/>
 		<F N="user_manager.h"/>
 		<F N="variant_types.h"/>

@@ -419,6 +419,7 @@ struct json_object* success_response;
                                 SS_camera_info_t* cam_info = calloc(1, sizeof(SS_camera_info_t));
                                 cam_info->id = cam_id;
                                 cam_info->name = strdup(json_object_get_string(camera_name_object));
+                                LOG_DEBUG(DT_SURVEILLANCE_STATION, "Found camera %d: %s", cam_info->id, cam_info->name);
                                 variant_hash_insert(SS_camera_info_table, cam_id, variant_create_ptr(DT_PTR, cam_info, NULL));
                             }
                             else

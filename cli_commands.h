@@ -27,9 +27,10 @@ typedef struct cli_node_t
 void    cli_init();
 void    cli_load_config();
 void    cli_set_vty(vty_t* vty);
-bool    cli_command_exec(vty_t* vty, const char* line);
+bool    cli_command_exec(vty_t* vty, char* line);
 void    cli_command_exec_default(char* line);
 char**  cli_command_completer(const char* text, int start, int stop);
+char**  cli_command_completer_norl(const char* text, int size);
 int     cli_command_describe();
 int     cli_command_quit(int count, int key);
 void    cmd_enter_root_node(vty_t* vty);

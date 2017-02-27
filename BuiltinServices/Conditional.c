@@ -49,7 +49,7 @@ variant_t*  if_impl(struct service_method_t* method, va_list args)
                 }
                 else
                 {
-                    printf("Compiling %s\n", variant_get_string(false_case));
+                    //printf("Compiling %s\n", variant_get_string(false_case));
                     variant_stack_t* compiled = command_parser_compile_expression(variant_get_string(false_case), &isOk);
                     if(isOk)
                     {

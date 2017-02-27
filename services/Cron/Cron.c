@@ -7,7 +7,7 @@
 
 int DT_CRON;
 
-static int timer_tick_counter;
+static int timer_tick_counter = 0;
 void  timer_tick_event(const char* name, event_t* pevent);
 
 void  service_create(service_t** service, int service_id)

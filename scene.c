@@ -34,6 +34,7 @@ bool        scene_add_action(scene_t* scene, action_t* action)
     stack_for_each(scene->actions, action_variant)
     {
         action_t* scene_action = (action_t*)variant_get_ptr(action_variant);
+        // We dont want to add action with the same path
         if(strcmp(scene_action->path, action->path) == 0)
         {
             scene_action_delete(action);

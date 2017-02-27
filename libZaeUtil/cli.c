@@ -82,6 +82,55 @@ void    cmd_tree_node_delete(void* arg)
     free(node);
 }
 
+variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size)
+{
+    variant_stack_t* cmd_vec = stack_create();
+    int index = 0;
+    int cmd_index = 0;
+    char ch;
+    char cmd_part[1024] = {0};
+
+    if(*cmdline == 0)
+    {
+        return cmd_vec;
+    }
+
+    while(index < size && (ch = cmdline[index++]))
+    {
+        if(ch == ' ')
+        {
+            if(cmd_index > 0)
+            {
+                cmd_part[cmd_index] = 0;
+                stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
+                cmd_index = 0;
+            }
+        }
+        else if(ch == '!') // The exclamation point is an alias for "end" command
+        {
+            cmd_part[cmd_index] = 0;
+            stack_push_back(cmd_vec, variant_create_string(strdup("end")));
+            cmd_index = 0;
+        }
+        else if(ch != '\n')
+        {
+            cmd_part[cmd_index++] = ch;
+            if(cmd_index >= 1024)
+            {
+                printf("Command part too long! gonna craaaaaash!\n");
+            }
+        }
+    }
+
+    if(cmdline[index-1] != ' ')
+    {
+        cmd_part[cmd_index] = 0;
+        stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
+    }
+
+    return cmd_vec;
+}
+
 variant_stack_t*    create_cmd_vec(const char* cmdline)
 {
     variant_stack_t* cmd_vec = stack_create();

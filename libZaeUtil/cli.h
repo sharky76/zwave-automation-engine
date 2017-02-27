@@ -65,5 +65,6 @@ void    cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t co
 void    cli_append_to_node(cli_node_t* node, cli_command_t command_list[]);
 void    cli_assemble_line(variant_stack_t* params, int start, char* out_line);
 variant_stack_t*    create_cmd_vec(const char* cmdline);
+variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size);
 bool    cli_exit_node(vty_t* vty, variant_stack_t* params);
 

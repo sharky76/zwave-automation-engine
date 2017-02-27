@@ -115,13 +115,13 @@ bool    cmd_sensor_show_nodes(vty_t* vty, variant_stack_t* params)
                     if(NULL != device_name)
                     {
                         device_record_t*  record = resolver_get_device_record(device_name);
-                        vty_write(vty, "%-20s%-20d%-20d (0x%x)%-11s%-20s%-10s\n", record->deviceName, record->instanceId, record->commandId, record->commandId, "",
+                        vty_write(vty, "%-20s %-20d%-20d (0x%x)%-11s%-20s%-10s\n", record->deviceName, record->instanceId, record->commandId, record->commandId, "",
                                   (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
                                   (is_failed == TRUE)? "True" : "False");
                     }
                     else
                     {
-                        vty_write(vty, "%-20s%-20d%d (0x%x)%-11s%-20s%-10s\n", "Unresolved", instances[j], commands[k], commands[k], "",
+                        vty_write(vty, "%-20s %-20d%d (0x%x)%-11s%-20s%-10s\n", "Unresolved", instances[j], commands[k], commands[k], "",
                                   (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
                                   (is_failed == TRUE)? "True" : "False");
                     }

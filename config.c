@@ -9,6 +9,7 @@
  *  
   { 
     "device": "/dev/ttyAMA0",
+    "api_debug": 4,
     "api_prefix": "/home/osmc/z-way-server",
     "services_prefix": "services",
     "config_location": "~/.zae/",
@@ -83,6 +84,14 @@ bool    config_load(const char* file)
         return false;
     }
     global_config.client_port = json_object_get_int(port_object);
+
+    struct json_object* api_debug_object;
+    json_object_object_get_ex(config_object, "api_debug", &api_debug_object);
+    if(NULL == api_debug_object)
+    {
+        return false;
+    }
+    global_config.api_debug_level = json_object_get_int(api_debug_object);
 
     json_object_put(config_object);
     return true;
