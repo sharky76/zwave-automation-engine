@@ -175,7 +175,7 @@ void scene_manager_on_event(event_t* event)
 
             if(NULL != vdev)
             {
-                LOG_DEBUG(Scene, "Scene event from virtual device: %s with command: 0x%x", vdev->name, event_data->event_id);
+                LOG_DEBUG(Scene, "Scene event from virtual device: %s vdev-id %d with command: 0x%x", vdev->name, event_data->vdev_id, event_data->event_id);
         
                 //command_class_t* command_class = vdev_manager_get_command_class_by_id(vdev->vdev_id, event_data->command_id);
                 const char* vdev_resolved_name = resolver_name_from_id(event_data->vdev_id, event_data->instance_id, event_data->event_id);

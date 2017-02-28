@@ -20,20 +20,21 @@ void  service_create(service_t** service, int service_id)
     SERVICE_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_event);
 
     // Test
-    /*crontab_time_t ee;
-    ADD_MINUTE(ee, 1);
-    ADD_HOUR(ee, 4);
-    ADD_DAY(ee, 6);
-    ADD_MONTH(ee, 8);
-    ADD_WEEKDAY(ee, 7);
+    /*
+    crontab_time_t ee;
+    ADD_MINUTE(ee, 0);
+    ADD_HOUR(ee, 6);
+    ADD_DAY(ee, -1);
+    ADD_MONTH(ee, -1);
+    ADD_WEEKDAY(ee, -1);
     crontab_add_entry(ee, "TestScene");
 
     crontab_time_t ee2;
-    ADD_MINUTE(ee2, 1);
-    ADD_HOUR(ee2, 4);
-    ADD_DAY(ee2, 6);
-    ADD_MONTH(ee2, 8);
-    ADD_WEEKDAY(ee2, 2);
+    ADD_MINUTE(ee2, 0);
+    ADD_HOUR(ee2, 6);
+    ADD_DAY(ee2, -1);
+    ADD_MONTH(ee2, -1);
+    ADD_WEEKDAY(ee2, 1);
     crontab_add_entry(ee2, "TestScene2");
 
     crontab_time_t ee3;
@@ -46,11 +47,21 @@ void  service_create(service_t** service, int service_id)
 
     variant_stack_t* scene_stack = crontab_get_scene(ee);
 
-    stack_for_each(scene_stack, scene_variant)
+        stack_for_each(scene_stack, scene_variant)
+        {
+            printf("1 Found scene: %s\n", variant_get_string(scene_variant));
+        }
+
+    scene_stack = crontab_get_scene(ee2);
+
     {
-        printf("Found scene: %s\n", variant_get_string(scene_variant));
+        stack_for_each(scene_stack, scene_variant2)
+        {
+            printf("2 Found scene: %s\n", variant_get_string(scene_variant2));
+        }
     }
 
+    
     crontab_del_entry(ee3, "TestScene33");
 
 
@@ -60,7 +71,7 @@ void  service_create(service_t** service, int service_id)
 
     stack_for_each(scene_stack2, scene_variant2)
     {
-        printf("Found scene: %s\n", variant_get_string(scene_variant2));
+        printf("3 Found scene: %s\n", variant_get_string(scene_variant2));
     }
     }
 
@@ -69,7 +80,7 @@ void  service_create(service_t** service, int service_id)
 
     stack_for_each(scene_stack2, scene_variant2)
     {
-        printf("Found scene: %s\n", variant_get_string(scene_variant2));
+        printf("4 Found scene: %s\n", variant_get_string(scene_variant2));
     }
     }
 
@@ -80,7 +91,7 @@ void  service_create(service_t** service, int service_id)
     {
     variant_stack_t* scene_stack3 = crontab_get_scene(ee3);
 
-    if(scene_stack3 == NULL)
+    if(scene_stack3 == NULL || scene_stack3->count == 0)
     {
         printf("NOT FOUND ee3\n");
     }
@@ -94,9 +105,45 @@ void  service_create(service_t** service, int service_id)
     }
 
     crontab_del_entry(ee2, "TestScene2");
+    crontab_del_entry(ee, "TestScene");
 
     printf("Adding scene to the empty tree:\n");
-    crontab_add_entry(ee, "TestScene");*/
+    //crontab_add_entry(ee, "TestScene");
+
+    variant_stack_t* scene_stack3 = crontab_get_scene(ee3);
+
+    if(NULL == scene_stack3 || scene_stack3->count == 0)
+    {
+        printf("Scene EE3 not found\n");
+    }
+    scene_stack3 = crontab_get_scene(ee2);
+
+    if(NULL == scene_stack3 || scene_stack3->count == 0)
+    {
+        printf("Scene EE2 not found\n");
+    }
+    else
+    {
+        stack_for_each(scene_stack3, scene_variant2)
+        {
+            printf("2 Found scene: %s\n", variant_get_string(scene_variant2));
+        }
+    }
+
+    scene_stack3 = crontab_get_scene(ee);
+
+    if(NULL != scene_stack3 && scene_stack3->count > 0)
+    {
+        stack_for_each(scene_stack3, scene_variant2)
+        {
+            printf("1 Found scene: %s\n", variant_get_string(scene_variant2));
+        }
+    }
+    else
+    {
+        printf("Scene EE not found\n");
+    } 
+    */ 
 
 }
 
@@ -120,7 +167,6 @@ void  timer_tick_event(const char* name, event_t* pevent)
     if(strcmp(timer_event_data->data, "tick") == 0 && ++timer_tick_counter > 59)
     {
         timer_tick_counter = 0;
-        LOG_DEBUG(DT_CRON, "Event %s tick", name);
     
         time_t t = time(NULL);
         struct tm* p_tm = localtime(&t);
@@ -132,17 +178,20 @@ void  timer_tick_event(const char* name, event_t* pevent)
         ADD_MONTH(job_time, p_tm->tm_mon);
         ADD_WEEKDAY(job_time, p_tm->tm_wday);
 
-        //printf("Cron Event %d %d %d %d %d\n", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
+        LOG_DEBUG(DT_CRON, "Cron Event %d %d %d %d %d\n", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
 
         variant_stack_t* scene_list = crontab_get_scene(job_time);
 
         if(NULL != scene_list)
         {
+            LOG_ADVANCED(DT_CRON, "Found %d matching scenes", scene_list->count);
             stack_for_each(scene_list, scene_variant)
             {
                 LOG_DEBUG(DT_CRON, "Sending event for scene %s", variant_get_string(scene_variant));
                 service_post_event(DT_CRON, variant_get_string(scene_variant));
             }
+
+            stack_free(scene_list);
         }
     }
 }

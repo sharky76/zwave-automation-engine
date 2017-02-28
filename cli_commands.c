@@ -31,6 +31,7 @@ extern int keep_running;
 
 static char    banner_stop_char;
 static char*   banner;
+static int    history_size;
 
 // Forward declaration of commands
 bool    cmd_controller_reset(vty_t* vty, variant_stack_t* params);
@@ -42,6 +43,8 @@ bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params);
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params);
+bool    cmd_controller_config_save(vty_t* vty, variant_stack_t* params);
+bool    cmd_controller_config_restore(vty_t* vty, variant_stack_t* params);
 
 bool    cmd_help(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_banner(vty_t* vty, variant_stack_t* params);
@@ -70,6 +73,8 @@ cli_command_t root_command_list[] = {
     {"controller factory-reset",     cmd_controller_factory_reset,          "Reset zwave controller to factory defaults"},
     {"controller remove-failed node-id INT", cmd_controller_remove_failed_node, "Remove failed node from the controller"},
     {"controller learn-mode start|stop|start-nwi",            cmd_controller_set_learn_mode, "Start learn mode"},
+    {"controller save-config",                                cmd_controller_config_save, "Save controller configuration"},
+    {"controller restore-config",                             cmd_controller_config_restore, "Restore controller configuration"},
     //{"controller learn-mode stop",            cmd_controller_set_learn_mode, "Stop learn mode"},
     {"show controller queue",       cmd_show_controller_queue,   "Display the contents of controller job queue"},
     {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
@@ -102,6 +107,8 @@ void    cli_set_vty(vty_t* new_vty)
     {
         vty_set_banner(new_vty, banner);
     }
+
+    vty_set_history_size(new_vty, history_size);
 
     default_vty = new_vty;
 }
@@ -511,6 +518,27 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
 
     return match_status;
 }
+
+variant_stack_t*    cli_get_command_completions(const char* buffer, size_t size)
+{
+    char** cmd_list = cli_command_completer_norl(buffer, size);
+    variant_stack_t* completions = NULL;
+
+    if(NULL != cmd_list)
+    {
+        completions = stack_create();
+
+        char** first_cmd = cmd_list;
+        while(NULL != *first_cmd)
+        {
+            stack_push_back(completions, variant_create_string(strdup(*first_cmd)));
+            first_cmd++;
+        }
+    }
+
+    return completions;
+}
+
 /*
 Show help for command
 */
@@ -532,6 +560,43 @@ int     cli_command_describe()
     else
     {
         rl_possible_completions(0, '\t');
+    }
+}
+
+int     cli_command_describe_norl(vty_t* vty)
+{
+    cmd_tree_node_t* cmd_node;
+
+    CmdMatchStatus match_status = cli_get_command(vty->buffer, &cmd_node, NULL);
+
+    if(match_status == CMD_FULL_MATCH)
+    {
+        vty_write(vty, "\n%% %s\n", cmd_node->data->command->help);
+        vty_redisplay(vty, vty->buffer);
+    }
+    else
+    {
+        variant_stack_t* completions = cli_get_command_completions(vty->buffer, vty->buf_size);
+        int word_count = 0;
+        vty_write(vty, "\n");
+
+        stack_for_each(completions, matching_command)
+        {
+            vty_write(vty, "%-20s", variant_get_string(matching_command));
+            if(word_count++ >= 3)
+            {
+                vty_write(vty, "\n");
+                word_count = 0;
+            }
+        }
+
+        if(word_count > 0)
+        {
+            vty_write(vty, "\n");
+        }
+
+        vty_redisplay(vty, vty->buffer);
+        stack_free(completions);
     }
 }
 
@@ -669,6 +734,36 @@ bool    cmd_controller_factory_reset(vty_t* vty, variant_stack_t* params)
     zway_fc_set_default(zway,NULL,NULL,NULL);
 }
 
+bool    cmd_controller_config_save(vty_t* vty, variant_stack_t* params)
+{
+    ZWBYTE* save_buffer;
+    size_t  buffer_len;
+
+    ZWError err = zway_controller_config_save(zway, &save_buffer, &buffer_len);
+
+    if(err == 0)
+    {
+        char config_loc[512] = {0};
+        snprintf(config_loc, 511, "%s/controller-backup.tgz", global_config.config_location);
+        FILE* f = fopen(config_loc, "w");
+        if(NULL != f)
+        {
+            if(1 == fwrite(save_buffer, buffer_len, 1, f))
+            {
+                fclose(f);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool    cmd_controller_config_restore(vty_t* vty, variant_stack_t* params)
+{
+
+}
+
 bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params)
 {
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 3));
@@ -680,8 +775,9 @@ bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "Status: D - done, W - waiting for wakeup of the device, S - waiting for security session\n");
 
     char queuebuf[65000] = {0};
-    FILE* queue_out = fmemopen(queuebuf, 65000, "w+");
+    FILE* queue_out = fmemopen(queuebuf, 64999, "w+");
     zway_queue_inspect(zway, queue_out);
+    fflush(queue_out);
     vty_write(vty, queuebuf);
 }
 
@@ -865,6 +961,7 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
 
     vty_t* file_vty = vty_io_create(VTY_FILE, &file_vty_data);
     vty_set_banner(file_vty, vty->banner);
+    vty_set_history_size(file_vty, vty->history_size);
     cmd_show_running_config(file_vty, NULL);
 
     vty_free(file_vty);
@@ -911,9 +1008,9 @@ bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_set_history(vty_t* vty, variant_stack_t* params)
 {
-    int hist_size = variant_get_int(stack_peek_at(params, 1));
-
-    vty_set_history_size(vty, hist_size);
+    history_size = variant_get_int(stack_peek_at(params, 1));
+    
+    vty_set_history_size(vty, history_size);
 }
 
 bool    cmd_quit(vty_t* vty, variant_stack_t* params)

@@ -18,8 +18,6 @@ DECLARE_LOGGER(SocketIO)
 #define KEY_RIGHT_ARROW 0x43
 #define KEY_LEFT_ARROW 0x44
 
-variant_stack_t*    get_command_completions(const char* buffer, size_t size);
-
 void    socket_write_cb(vty_t* vty, const char* format, va_list args)
 {
     char buf[BUFSIZE+1] = {0};
@@ -31,13 +29,50 @@ char*   socket_read_cb(vty_t* vty)
 {
     int socket = vty->data->desc.socket;
     char ch[1] = {0};
+
+    if(vty->multi_line)
+    {
+        vty_clear_buffer(vty);
+        while(true)
+        {
+            // Read multiple lines of input into buffer until \n.\n is found
+            if(recv(socket, ch, 1, 0) > 0)
+            {
+                if(ch[0] == EOF)
+                {
+                    return NULL;
+                }
+                
+                if(ch[0] == KEY_BACKSPACE) // backspace
+                {
+                    vty_erase_char(vty);
+                    continue;
+                }
+    
+                if(ch[0] == vty->multiline_stop_char)
+                {
+                    break;
+                }
+            }
+            vty_append_char(vty, ch[0]);
+        }
+        return vty->buffer;
+    }
+
+
     if(recv(socket, ch, 1, 0) > 0)
     {
         LOG_DEBUG(SocketIO, "Socket recv: %s (0x%x)", ch, ch[0]);
         
+        if(ch[0] == '?')
+        {
+            cli_command_describe_norl(vty);
+            return NULL;
+        }
+
         if(ch[0] == KEY_TAB) // tab
         {
-            variant_stack_t* completions = get_command_completions(vty->buffer, vty->buf_size);
+            variant_stack_t* completions = cli_get_command_completions(vty->buffer, vty->buf_size);
             
             if(NULL != completions)
             {
@@ -71,7 +106,6 @@ char*   socket_read_cb(vty_t* vty)
                     {
                         if(ch[0] == KEY_TAB)
                         {
-                            char help_buf[256] = {0};
                             int word_count = 0;
                             vty_write(vty, "\n");
 
@@ -90,8 +124,7 @@ char*   socket_read_cb(vty_t* vty)
                                 vty_write(vty, "\n");
                             }
 
-                            vty_display_prompt(vty);
-                            vty_write(vty, vty->buffer);
+                            vty_redisplay(vty, vty->buffer);
                             stack_free(completions);
                             return NULL;
                         }
@@ -173,26 +206,6 @@ void    socket_flush_cb(vty_t* vty)
 {
     memset(vty->buffer, 0, vty->buf_size);
     vty->buf_size = 0;
-}
-
-variant_stack_t*    get_command_completions(const char* buffer, size_t size)
-{
-    char** cmd_list = cli_command_completer_norl(buffer, size);
-    variant_stack_t* completions = NULL;
-
-    if(NULL != cmd_list)
-    {
-        completions = stack_create();
-
-        char** first_cmd = cmd_list;
-        while(NULL != *first_cmd)
-        {
-            stack_push_back(completions, variant_create_string(strdup(*first_cmd)));
-            first_cmd++;
-        }
-    }
-
-    return completions;
 }
 
 void    socket_erase_cb(vty_t* vty)

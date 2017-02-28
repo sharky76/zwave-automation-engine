@@ -1,7 +1,9 @@
 #include "crontab.h"
+#include "cron_config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <logger.h>
 
 variant_stack_t*    crontab;
 
@@ -68,7 +70,8 @@ void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
             crontab_time_entry_t* new_time_entry = malloc(sizeof(crontab_time_entry_t));
             new_time_entry->time = *time_ptr;
             time_ptr++;
-            //printf("Adding time %d\n", new_time_entry->time);
+            //printf("Adding time %d to root %p\n", new_time_entry->time, root);
+            LOG_DEBUG(DT_CRON, "Adding time %d at position %d", new_time_entry->time, i);
             new_time_entry->child_array = stack_create();
             stack_push_back(root, variant_create_ptr(DT_PTR, new_time_entry, &delete_time_entry));
             root = new_time_entry->child_array;
@@ -79,6 +82,7 @@ void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
 
     // Here root points to the last child array which must hold the command
     //printf("Adding scene %s\n", scene);
+    LOG_DEBUG(DT_CRON, "Adding scene %s", scene);
     stack_push_back(root, variant_create_string(strdup(scene)));
 }
 
@@ -96,6 +100,41 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
     }
 
     variant_stack_t* root = crontab;
+    int* time_ptr = (int*)crontab_time;
+
+    for(int i = 0; i < 5; i++)
+    {
+        stack_for_each(root, time_entry_variant)
+        {
+            //printf("Size of this level %p: %d\n", root, root->count);
+            crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
+            if(e->time == *time_ptr || e->time == -1)
+            {
+                //printf("Time %d was found, go to next\n", e->time);
+                if(i < 4)
+                {
+                    root = e->child_array;
+                    time_ptr++;
+                    break;
+                }
+                else
+                {
+                    // This is the last level - all child_arrays contains scene names!
+                    stack_for_each(e->child_array, scene_name_variant)
+                    {
+                        //printf("Pushing back %s\n", variant_get_string(scene_name_variant));
+                        if(strcmp(scene, variant_get_string(scene_name_variant)) == 0)
+                        {
+                            stack_remove(e->child_array, scene_name_variant);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    /*variant_stack_t* root = crontab;
     int* time_ptr = (int*)crontab_time;
     crontab_remove_candidate_t  remove_candidates[6] = {0};
     int remove_count = 0;
@@ -158,7 +197,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
         {
             //printf("All stack items removed\n");
         }
-    }
+    }*/
 }
 
 variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
@@ -172,21 +211,41 @@ variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
     int* time_ptr = (int*)crontab_time;
     bool node_found = false;
 
+    variant_stack_t* scene_array = stack_create();
+
     for(int i = 0; i < 5; i++)
     {
         stack_for_each(root, time_entry_variant)
         {
+            //printf("Size of this level %p: %d\n", root, root->count);
             crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
             if(e->time == *time_ptr || e->time == -1)
             {
                 //printf("Time %d was found, go to next\n", e->time);
-                root = e->child_array;
-                time_ptr++;
-                node_found = true;
-                break;
+                if(i < 4)
+                {
+                    root = e->child_array;
+                    time_ptr++;
+                    node_found = true;
+                    break;
+                }
+                else
+                {
+                    // This is the last level - all child_arrays contains scene names!
+                    stack_for_each(e->child_array, scene_name_variant)
+                    {
+                        //printf("Pushing back %s\n", variant_get_string(scene_name_variant));
+                        stack_push_back(scene_array, scene_name_variant);
+                    }
+                }
             }
-
-            node_found = false;
+            else
+            {
+                if(scene_array->count == 0)
+                {
+                    node_found = false;
+                }
+            }
         }
 
         if(!node_found)
@@ -198,10 +257,12 @@ variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
 
     if(node_found)
     {
-        return root;
+        //printf("Search found %d matches\n", scene_array->count);
+        return scene_array;
     }
     else
     {
+        stack_free(scene_array);
         return NULL;
     }
 }

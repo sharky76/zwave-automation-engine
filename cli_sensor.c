@@ -4,6 +4,7 @@
 #include <ZData.h>
 #include <ZPlatform.h>
 #include "resolver.h"
+#include "config.h"
 
 extern ZWay zway;
 
@@ -14,6 +15,7 @@ bool    cmd_sensor_guessed_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_show_node_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_force_interview(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_command_interview(vty_t* vty, variant_stack_t* params);
+bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params);
 
 // Forward declaration of utility methods
 void cli_print_data_holder(vty_t* vty, ZDataHolder dh);
@@ -27,6 +29,7 @@ cli_command_t   sensor_root_list[] = {
     {"show sensor guessed-info node-id INT",    cmd_sensor_guessed_info,   "Display guessed sensor information"},
     {"sensor interview node-id INT",            cmd_sensor_force_interview, "Force interview for a sensor"},
     {"sensor interview node-id INT instance INT command-class INT", cmd_sensor_command_interview, "Run a command interview"},
+    {"sensor set-descriptor node-id INT WORD",              cmd_sensor_set_descriptor, "Set ZDDX descriptor file for sensor"},
     {NULL,                   NULL,                          NULL}
 };
 void    cli_sensor_init(cli_node_t* parent_node)
@@ -320,4 +323,16 @@ void cli_print_data_holder(vty_t* vty, ZDataHolder data)
     }
 
     zdata_release_lock(ZDataRoot(zway));
+}
+
+bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params)
+{
+    int node_id = variant_get_int(stack_peek_at(params, 3));
+    const char* descriptor = variant_get_string(stack_peek_at(params, 4));
+
+    char file_name[256] = {0};
+    snprintf(file_name, 255, "%s.xml", descriptor);
+    ZWError err = zway_device_load_xml(zway, node_id, file_name);
+
+    return (err == 0);
 }
