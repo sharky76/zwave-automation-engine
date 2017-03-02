@@ -8,14 +8,16 @@
 #include <stdbool.h>
 #include "http_server.h"
 #include "socket_io.h"
+#include <arpa/telnet.h>
 
-void    file_write_cb(vty_t* vty, const char* format, va_list args);
+void    file_write_cb(vty_t* vty, const char* buf, size_t len);
 char*   file_read_cb(vty_t* vty);
-void    std_write_cb(vty_t* vty, const char* format, va_list args);
+void    std_write_cb(vty_t* vty, const char* buf, size_t len);
 char*   std_read_cb(vty_t* vty);
+void    std_show_history(vty_t* vty);
 
 char*   http_read_cb(vty_t* vty);
-void    http_write_cb(vty_t* vty, const char* format, va_list args);
+void    http_write_cb(vty_t* vty, const char* buf, size_t len);
 void    http_flush_cb(vty_t* vty);
 
 vty_t*  vty_io_create(vty_type type, vty_data_t* data)
@@ -42,6 +44,8 @@ void    vty_io_config(vty_t* vty)
         rl_outstream = vty->data->desc.io_pair[OUT];
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
+        vty->show_history_cb = std_show_history;
+
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_HTTP:
@@ -56,15 +60,28 @@ void    vty_io_config(vty_t* vty)
         vty->flush_cb = socket_flush_cb;
         vty->erase_char_cb = socket_erase_cb;
         vty->erase_line_cb = socket_erase_line_cb;
+        vty->cursor_left_cb = socket_cursor_left_cb;
+        vty->cursor_right_cb = socket_cursor_right_cb;
+
+        //char iac_sga_buf[3] = {255, 251, 3};
+        /*
+        unsigned char cmd_will_echo[] = { IAC, WILL, TELOPT_ECHO };
+        unsigned char cmd_will_sga[] = { IAC, WILL, TELOPT_SGA };
+        unsigned char cmd_dont_linemode[] = { IAC, DONT, TELOPT_LINEMODE };
+        
+        socket_write_cb(vty, cmd_will_echo, 3);
+        socket_write_cb(vty, cmd_will_sga, 3);
+        socket_write_cb(vty, cmd_dont_linemode, 3);
+        */
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     }
 }
 
 
-void    file_write_cb(vty_t* vty, const char* format, va_list args)
+void    file_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    vfprintf(vty->data->desc.file, format, args);
+    fprintf(vty->data->desc.file, buf);
 }
 
 char*   file_read_cb(vty_t* vty)
@@ -103,11 +120,9 @@ char*   file_read_cb(vty_t* vty)
     }
 }
 
-void    std_write_cb(vty_t* vty, const char* format, va_list args)
+void    std_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    char buf[BUFSIZE+1] = {0};
-    vsnprintf(buf, BUFSIZE, format, args);
-    write(fileno(vty->data->desc.io_pair[OUT]), buf, sizeof(buf));
+    write(fileno(vty->data->desc.io_pair[OUT]), buf, len);
 }
 
 char*   std_read_cb(vty_t* vty)
@@ -199,21 +214,31 @@ char*   std_read_cb(vty_t* vty)
     //return rl_line_buffer;
 }
 
+void    std_show_history(vty_t* vty)
+{
+    HIST_ENTRY** history_entry = history_list();
+    if(NULL != history_entry)
+    {
+        while(*history_entry)
+        {
+            vty_write(vty, "%s\n", (*history_entry)->line);
+            history_entry++;
+        }
+    }
+}
+
 char*   http_read_cb(vty_t* vty)
 {
     int socket = vty->data->desc.socket;
     return http_server_read_request(socket);
 }
 
-void    http_write_cb(vty_t* vty, const char* format, va_list args)
+void    http_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    char buf[BUFSIZE+1] = {0};
-    int size = vsnprintf(buf, BUFSIZE, format, args);
-
-    if(vty->buf_size + size < BUFSIZE)
+    if(vty->buf_size + len < BUFSIZE)
     {
-        vty->buf_size += size;
-        strncat(vty->buffer, buf, size);
+        vty->buf_size += len;
+        strncat(vty->buffer, buf, len);
     }
     else
     {

@@ -367,6 +367,11 @@ void cmd_create_tree(cli_command_t* cmd, variant_stack_t* command_tree)
 
 void  cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt)
 {
+    cli_install_custom_node(cli_node_list, node, parent, command_list, name, prompt);
+}
+
+void    cli_install_custom_node(variant_stack_t* custom_cli_node_list, cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt)
+{
     *node = (cli_node_t*)calloc(1, sizeof(cli_node_t));
     (*node)->command_tree = stack_create();
     (*node)->name = strdup(name);
@@ -406,7 +411,7 @@ void  cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t comm
         }
     }
 
-    stack_push_back(cli_node_list, variant_create_ptr(DT_CLI_NODE, (*node), variant_delete_none));
+    stack_push_back(custom_cli_node_list, variant_create_ptr(DT_CLI_NODE, (*node), variant_delete_none));
 }
 
 void  cli_append_to_node(cli_node_t* node, cli_command_t command_list[])

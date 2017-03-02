@@ -50,7 +50,7 @@ void    cmd_enter_auth_node(vty_t* vty)
             char prompt[256] = {0};
             strncpy(prompt, node->prompt, 255);
             vty_set_prompt(vty, prompt);
-            current_node = node;
+            vty->current_node = node;
             break;
         }
     }
@@ -68,7 +68,7 @@ void    cmd_enter_pass_node(vty_t* vty)
             strncpy(prompt, node->prompt, 255);
             vty_set_prompt(vty, prompt);
             vty_set_echo(vty, false);
-            current_node = node;
+            vty->current_node = node;
             break;
         }
     }

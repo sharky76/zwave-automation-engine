@@ -27,7 +27,7 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
@@ -44,7 +44,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
@@ -108,7 +108,7 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
@@ -125,7 +125,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_scene.o \
+	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
 	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \

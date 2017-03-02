@@ -31,6 +31,7 @@
 #include <event.h>
 #include "vdev_manager.h"
 #include <execinfo.h>
+#include "cli_rest.h"
 
 #define DEFAULT_PORT 9231
 
@@ -476,7 +477,7 @@ int main (int argc, char *argv[])
 
                     vty_sock = vty_io_create(VTY_HTTP, &vty_data);
                     char* str = vty_read(vty_sock);
-                    cli_command_exec(vty_sock, str);
+                    cli_command_exec_custom_node(rest_root_node, vty_sock, str);
 
                     vty_free(vty_sock);
                 }

@@ -177,7 +177,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
     if(ev->event_count > ev->old_event_count)
     {
-        LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s", ev->camera_name);
+        LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
         vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, (void*)ev);
     }
 

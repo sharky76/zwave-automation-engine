@@ -17,12 +17,11 @@ DECLARE_LOGGER(SocketIO)
 #define KEY_DOWN_ARROW 0x42
 #define KEY_RIGHT_ARROW 0x43
 #define KEY_LEFT_ARROW 0x44
+#define KEY_NEWLINE     0xa
 
-void    socket_write_cb(vty_t* vty, const char* format, va_list args)
+void    socket_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    char buf[BUFSIZE+1] = {0};
-    vsnprintf(buf, BUFSIZE, format, args);
-    send(vty->data->desc.socket, buf, sizeof(buf), 0);
+    send(vty->data->desc.socket, buf, len, 0);
 }
 
 char*   socket_read_cb(vty_t* vty)
@@ -54,7 +53,7 @@ char*   socket_read_cb(vty_t* vty)
                     break;
                 }
             }
-            vty_append_char(vty, ch[0]);
+            vty_insert_char(vty, ch[0]);
         }
         return vty->buffer;
     }
@@ -63,7 +62,6 @@ char*   socket_read_cb(vty_t* vty)
     if(recv(socket, ch, 1, 0) > 0)
     {
         LOG_DEBUG(SocketIO, "Socket recv: %s (0x%x)", ch, ch[0]);
-        
         if(ch[0] == '?')
         {
             cli_command_describe_norl(vty);
@@ -72,7 +70,7 @@ char*   socket_read_cb(vty_t* vty)
 
         if(ch[0] == KEY_TAB) // tab
         {
-            variant_stack_t* completions = cli_get_command_completions(vty->buffer, vty->buf_size);
+            variant_stack_t* completions = cli_get_command_completions(vty, vty->buffer, vty->buf_size);
             
             if(NULL != completions)
             {
@@ -173,6 +171,16 @@ char*   socket_read_cb(vty_t* vty)
                             vty_redisplay(vty, hist);
                             break;
                         }
+                    case KEY_LEFT_ARROW:
+                        {
+                            vty_cursor_left(vty);
+                            break;
+                        }
+                    case KEY_RIGHT_ARROW:
+                        {
+                            vty_cursor_right(vty);
+                            break;
+                        }
                     default:
                         return NULL;
                     }
@@ -182,7 +190,7 @@ char*   socket_read_cb(vty_t* vty)
             return NULL;
         }
 
-        if(ch[0] == '\n')        
+        if(ch[0] == KEY_NEWLINE)        
         {
             vty_add_history(vty);
             vty_append_char(vty, ch[0]);
@@ -190,7 +198,7 @@ char*   socket_read_cb(vty_t* vty)
         }
         else
         {
-            vty_append_char(vty, ch[0]);
+            vty_insert_char(vty, ch[0]);
         }
 
     }
@@ -217,3 +225,14 @@ void    socket_erase_line_cb(vty_t* vty)
 {
     vty_write(vty, "\33[2K\r");
 }
+
+void    socket_cursor_left_cb(vty_t* vty)
+{
+    vty_write(vty, "\33[1D");
+}
+
+void    socket_cursor_right_cb(vty_t* vty)
+{
+    vty_write(vty, "\33[1C");
+}
+

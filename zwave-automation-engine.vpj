@@ -339,6 +339,8 @@
 		<F N="cli_logger.h"/>
 		<F N="cli_resolver.c"/>
 		<F N="cli_resolver.h"/>
+		<F N="cli_rest.c"/>
+		<F N="cli_rest.h"/>
 		<F N="cli_scene.c"/>
 		<F N="cli_scene.h"/>
 		<F N="cli_sensor.c"/>

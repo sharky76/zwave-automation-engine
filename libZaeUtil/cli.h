@@ -62,6 +62,7 @@ extern variant_stack_t*    cli_node_list;
 extern cli_node_t*         root_node;
 
 void    cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt);
+void    cli_install_custom_node(variant_stack_t* custom_cli_node_list, cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt);
 void    cli_append_to_node(cli_node_t* node, cli_command_t command_list[]);
 void    cli_assemble_line(variant_stack_t* params, int start, char* out_line);
 variant_stack_t*    create_cmd_vec(const char* cmdline);

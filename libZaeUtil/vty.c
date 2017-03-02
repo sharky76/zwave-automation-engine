@@ -89,7 +89,7 @@ void    vty_display_banner(vty_t* vty)
 {
     if(vty->banner != NULL)
     {
-        vty_write(vty, "%s\n", vty->banner);
+        vty_write(vty, "%s\r\n", vty->banner);
     }
 }
 
@@ -97,7 +97,10 @@ void    vty_write(vty_t* vty, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    vty->write_cb(vty, format, args);
+    char buf[BUFSIZE+1] = {0};
+    int len = vsnprintf(buf, BUFSIZE, format, args);
+
+    vty->write_cb(vty, buf, len);
 }
 
 void    vty_error(vty_t* vty, const char* format, ...)
@@ -107,7 +110,7 @@ void    vty_error(vty_t* vty, const char* format, ...)
     char* error_format_buf = calloc(strlen(format) + 4, sizeof(char));
     strcat(error_format_buf, "%% ");
     strcat(error_format_buf, format);
-    vty->write_cb(vty, error_format_buf, args);
+    vty_write(vty, error_format_buf, args);
     free(error_format_buf);
 }
 
@@ -197,13 +200,49 @@ void    vty_set_history_size(vty_t* vty, int size)
     }
 }
 
-void    vty_append_char(vty_t* vty, char ch)
+void    vty_insert_char(vty_t* vty, char ch)
 {
     if(vty->buf_size < BUFSIZE)
     {
-        vty->buffer[vty->buf_size++] = ch;
-        vty_write(vty, "%c", ch);
+        if(vty->cursor_pos < vty->buf_size)
+        {
+            // need to insert the char
+            char newbuf[BUFSIZE] = {0};
+            strncpy(newbuf, vty->buffer, vty->cursor_pos);
+            strncat(newbuf, &ch, 1);
+            strncat(newbuf, vty->buffer + vty->cursor_pos, vty->buf_size - vty->cursor_pos);
+
+            //printf("Old Buffer: %s , New buffer: %s\n", vty->buffer, newbuf);
+
+            vty->buf_size++;
+            vty->cursor_pos++;
+            int saved_cursor = vty->cursor_pos;
+            vty_redisplay(vty, newbuf);
+
+            while(vty->cursor_pos > saved_cursor)
+            {
+                vty_cursor_left(vty);
+            }
+        }
+        else
+        {
+            //printf("Appending, New buffer: %s\n", vty->buffer);
+            // need to append the char
+            vty->buffer[vty->buf_size++] = ch;
+            vty->cursor_pos = vty->buf_size;
+            vty_write(vty, "%c", ch);
+        }
     }
+}
+
+void    vty_append_char(vty_t* vty, char ch)
+{
+    while(vty->cursor_pos < vty->buf_size)
+    {
+        vty_cursor_right(vty);
+    }
+
+    vty_insert_char(vty, ch);
 }
 
 void    vty_append_string(vty_t* vty, const char* str)
@@ -214,21 +253,43 @@ void    vty_append_string(vty_t* vty, const char* str)
     {
         strncpy(vty->buffer + vty->buf_size, str, len);
         vty->buf_size += len;
+        vty->cursor_pos = vty->buf_size;
         vty_write(vty, str);
     }
 }
 
 void    vty_erase_char(vty_t* vty)
 {
-    if(vty->buf_size > 0)
+    if(vty->buf_size > 0 && vty->cursor_pos > 0)
     {
-        vty->buffer[vty->buf_size] = 0;
-        vty->buf_size--;
-    
-        if(NULL != vty->erase_char_cb)
+        if(vty->cursor_pos < vty->buf_size)
         {
-            vty->erase_char_cb(vty);
+            char newbuf[BUFSIZE] = {0};
+            strncpy(newbuf, vty->buffer, vty->cursor_pos - 1);
+            strncat(newbuf, vty->buffer + vty->cursor_pos, vty->buf_size - vty->cursor_pos);
+
+            vty->buf_size--;
+            vty->cursor_pos--;
+            int saved_cursor = vty->cursor_pos;
+            vty_redisplay(vty, newbuf);
+
+            while(vty->buf_size != 0 && vty->cursor_pos > saved_cursor)
+            {
+                vty_cursor_left(vty);
+            }
         }
+        else
+        {
+            vty->buffer[vty->buf_size] = 0;
+            vty->buf_size--;
+            vty->cursor_pos = vty->buf_size;
+
+            if(NULL != vty->erase_char_cb)
+            {
+                vty->erase_char_cb(vty);
+            }
+        }
+
     }
 }
 
@@ -248,12 +309,16 @@ void    vty_redisplay(vty_t* vty, const char* new_buffer)
                 vty_erase_char(vty);
             }
         }
+
+        vty->cursor_pos = 0;
     
         if(NULL != new_buffer)
         {
             strncpy(vty->buffer, new_buffer, BUFSIZE-1);
             vty->buf_size = strlen(vty->buffer);
+            vty->cursor_pos = vty->buf_size;
             vty_write(vty, vty->buffer);
+
         }
     }
 }
@@ -262,5 +327,47 @@ void    vty_clear_buffer(vty_t* vty)
 {
     memset(vty->buffer, 0, vty->buf_size);
     vty->buf_size = 0;
+    vty->cursor_pos = 0;
+}
+
+void    vty_show_history(vty_t* vty)
+{
+    if(NULL != vty->show_history_cb)
+    {
+        vty->show_history_cb(vty);
+    }
+    else
+    {
+        stack_for_each(vty->history, history_variant)
+        {
+            vty_write(vty, "%s\r\n", variant_get_string(history_variant));
+        }
+    }
+}
+
+void    vty_cursor_left(vty_t* vty)
+{
+    if(vty->cursor_pos > 0)
+    {
+        if(NULL != vty->cursor_left_cb)
+        {
+            vty->cursor_left_cb(vty);
+        }
+
+        vty->cursor_pos--;
+    }
+}
+
+void    vty_cursor_right(vty_t* vty)
+{
+    if(vty->cursor_pos < vty->buf_size)
+    {
+        if(NULL != vty->cursor_right_cb)
+        {
+            vty->cursor_right_cb(vty);
+        }
+
+        vty->cursor_pos++;
+    }
 }
 

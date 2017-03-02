@@ -25,6 +25,7 @@
 #include "command_parser.h"
 #include "vty_io.h"
 #include "cli_vdev.h"
+#include "cli_rest.h"
 
 extern sigjmp_buf jmpbuf;
 extern int keep_running;
@@ -94,7 +95,7 @@ cli_command_t root_command_list[] = {
     {NULL,                   NULL,                          NULL}
 };
 
-cli_node_t*         current_node;
+//cli_node_t*         current_node;
 extern ZWay         zway;
 vty_t*              default_vty;
 
@@ -110,6 +111,7 @@ void    cli_set_vty(vty_t* new_vty)
 
     vty_set_history_size(new_vty, history_size);
 
+    new_vty->current_node = root_node;
     default_vty = new_vty;
 }
 
@@ -128,8 +130,8 @@ void    cli_init()
     cli_service_init(root_node);
     cli_logger_init(root_node);
     cli_auth_init(root_node);
-
-    current_node = root_node;
+    cli_rest_init(root_node);
+    //current_node = root_node;
 }
 
 void    cli_load_config()
@@ -146,6 +148,8 @@ void    cli_load_config()
         vty_t* file_vty = vty_io_create(VTY_FILE, &file_data);
         vty_set_prompt(file_vty, "(%s)# ", root_node->prompt);
         char* str;
+        
+        cli_set_vty(file_vty);
 
         while(str = vty_read(file_vty))
         {
@@ -233,7 +237,7 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
     }
 }
 
-char**  cmd_find_matches(variant_stack_t* cmd_vec, variant_stack_t* matches, int* complete_status)
+char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, variant_stack_t* matches, int* complete_status)
 {
     static char** cmd_matches = NULL;
 
@@ -324,7 +328,7 @@ char*   command_generator(const char* text, int state)
         }
         
         int status;
-        matched = cmd_find_matches(cmd_vec, matches, &status);
+        matched = cmd_find_matches(default_vty->current_node, cmd_vec, matches, &status);
         stack_free(cmd_vec);
     }
 
@@ -353,7 +357,7 @@ char**   cli_command_completer(const char* text, int start, int stop)
     return matches;
 }
 
-char**  cli_command_completer_norl(const char* text, int size)
+char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
 {
     static char** matched;
     static variant_stack_t* matches = NULL;
@@ -369,13 +373,13 @@ char**  cli_command_completer_norl(const char* text, int size)
 
     cmd_vec = create_cmd_vec(text);
 
-    if(cmd_vec->count == 0 || rl_end && isspace((int)text[size - 1]))
+    if(cmd_vec->count == 0 || /*rl_end &&*/ isspace((int)text[size - 1]))
     {
         stack_push_back(cmd_vec, variant_create_string(NULL));
     }
     
     int status;
-    matched = cmd_find_matches(cmd_vec, matches, &status);
+    matched = cmd_find_matches(vty->current_node, cmd_vec, matches, &status);
     stack_free(cmd_vec);
 
     if (matched && matched[0])
@@ -386,7 +390,7 @@ char**  cli_command_completer_norl(const char* text, int size)
     return NULL;
 }
 
-CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
+CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {
     CmdMatchStatus match_status = CMD_NO_MATCH;
 
@@ -400,7 +404,7 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
     variant_stack_t*    matches = stack_create();
     int status;
 
-    variant_stack_t* root = current_node->command_tree;
+    variant_stack_t* root = node->command_tree;
     
     if(NULL != complete_cmd_vec)
     {
@@ -519,9 +523,17 @@ CmdMatchStatus cli_get_command(const char* cmdline, cmd_tree_node_t** cmd_node, 
     return match_status;
 }
 
-variant_stack_t*    cli_get_command_completions(const char* buffer, size_t size)
+CmdMatchStatus cli_get_command(vty_t* vty, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {
-    char** cmd_list = cli_command_completer_norl(buffer, size);
+    cli_get_custom_command(vty->current_node, cmdline, cmd_node, complete_cmd_vec);
+}
+
+
+
+
+variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size)
+{
+    char** cmd_list = cli_command_completer_norl(vty, buffer, size);
     variant_stack_t* completions = NULL;
 
     if(NULL != cmd_list)
@@ -546,7 +558,7 @@ int     cli_command_describe()
 {
     cmd_tree_node_t* cmd_node;
 
-    CmdMatchStatus match_status = cli_get_command(rl_line_buffer, &cmd_node, NULL);
+    CmdMatchStatus match_status = cli_get_command(default_vty, rl_line_buffer, &cmd_node, NULL);
 
     if(match_status == CMD_FULL_MATCH)
     {
@@ -567,7 +579,7 @@ int     cli_command_describe_norl(vty_t* vty)
 {
     cmd_tree_node_t* cmd_node;
 
-    CmdMatchStatus match_status = cli_get_command(vty->buffer, &cmd_node, NULL);
+    CmdMatchStatus match_status = cli_get_command(vty, vty->buffer, &cmd_node, NULL);
 
     if(match_status == CMD_FULL_MATCH)
     {
@@ -576,27 +588,31 @@ int     cli_command_describe_norl(vty_t* vty)
     }
     else
     {
-        variant_stack_t* completions = cli_get_command_completions(vty->buffer, vty->buf_size);
+        variant_stack_t* completions = cli_get_command_completions(vty, vty->buffer, vty->buf_size);
         int word_count = 0;
-        vty_write(vty, "\n");
 
-        stack_for_each(completions, matching_command)
-        {
-            vty_write(vty, "%-20s", variant_get_string(matching_command));
-            if(word_count++ >= 3)
-            {
-                vty_write(vty, "\n");
-                word_count = 0;
-            }
-        }
-
-        if(word_count > 0)
+        if(NULL != completions)
         {
             vty_write(vty, "\n");
+    
+            stack_for_each(completions, matching_command)
+            {
+                vty_write(vty, "%-20s", variant_get_string(matching_command));
+                if(word_count++ >= 3)
+                {
+                    vty_write(vty, "\n");
+                    word_count = 0;
+                }
+            }
+    
+            if(word_count > 0)
+            {
+                vty_write(vty, "\n");
+            }
+    
+            vty_redisplay(vty, vty->buffer);
+            stack_free(completions);
         }
-
-        vty_redisplay(vty, vty->buffer);
-        stack_free(completions);
     }
 }
 
@@ -606,7 +622,7 @@ int     cli_command_quit(int count, int key)
     siglongjmp(jmpbuf, 1);
 }
 
-bool    cli_command_exec(vty_t* vty, char* line)
+bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 {
     cmd_tree_node_t* cmd_node;
 
@@ -621,7 +637,7 @@ bool    cli_command_exec(vty_t* vty, char* line)
     }
 
     variant_stack_t* params;
-    CmdMatchStatus match_status = cli_get_command(line, &cmd_node, &params);
+    CmdMatchStatus match_status = cli_get_custom_command(node, line, &cmd_node, &params);
 
     switch(match_status)
     {
@@ -641,6 +657,11 @@ bool    cli_command_exec(vty_t* vty, char* line)
     }
 
     stack_free(params);
+}
+
+bool    cli_command_exec(vty_t* vty, char* line)
+{
+    cli_command_exec_custom_node(vty->current_node, vty, line);
 }
 
 void    cli_command_exec_default(char* line)
@@ -840,9 +861,10 @@ void    cmd_enter_root_node(vty_t* vty)
 
         if(strstr(node->name, "") == node->name)
         {
-            current_node = node;
+            //current_node = node;
+            vty->current_node = node;
             char prompt[256] = {0};
-            sprintf(prompt, "(%s)# ", current_node->prompt);
+            sprintf(prompt, "(%s)# ", vty->current_node->prompt);
             vty_set_prompt(vty, prompt);
             break;
         }
@@ -875,8 +897,9 @@ bool    cmd_enter_node_by_name(vty_t* vty, const char* node_name)
             sprintf(prompt_end, "-%s)# ", node->prompt);
             //sprintf(prompt, "(%s-%s)# ", current_node->prompt, node->prompt);
             vty_set_prompt(vty, prompt);
-            current_node = node;
-            sprintf(prompt, "(%s)# ", current_node->prompt);
+            //current_node = node;
+            vty->current_node = node;
+            sprintf(prompt, "(%s)# ", vty->current_node->prompt);
             break;
         }
     }
@@ -884,16 +907,20 @@ bool    cmd_enter_node_by_name(vty_t* vty, const char* node_name)
 
 bool    cmd_exit_node(vty_t* vty, variant_stack_t* params)
 {
-    if(root_node != current_node)
+    if(root_node != vty->current_node)
     {
-        free(current_node->context);
-        current_node->context = 0;
-        current_node = current_node->parent;
+        //free(current_node->context);
+        //current_node->context = 0;
+
+        free(vty->current_node->context);
+        vty->current_node->context = 0;
+        vty->current_node = vty->current_node->parent;
+        //current_node = current_node->parent;
         char prompt[256] = {0};
 
-        if(current_node == root_node)
+        if(vty->current_node == root_node)
         {
-            sprintf(prompt, "(%s)# ", current_node->prompt);
+            sprintf(prompt, "(%s)# ", vty->current_node->prompt);
         }
         else
         {   
@@ -901,7 +928,7 @@ bool    cmd_exit_node(vty_t* vty, variant_stack_t* params)
 
             // vty->prompt = (config-scene-env)#
             // current_node->prompt = scene
-            char* current_prompt_start = strstr(prompt, current_node->prompt);
+            char* current_prompt_start = strstr(prompt, vty->current_node->prompt);
 
             // move strlen(current prompt) to point to the next "-"
             while(*current_prompt_start != '-')
@@ -990,15 +1017,7 @@ bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
 
     if(strcmp(mode, "list") == 0)
     {
-        HIST_ENTRY** history_entry = history_list();
-        if(NULL != history_entry)
-        {
-            while(*history_entry)
-            {
-                vty_write(vty, "%s\n", (*history_entry)->line);
-                history_entry++;
-            }
-        }
+        vty_show_history(vty);
     }
     else if(strcmp(mode, "show") == 0)
     {
