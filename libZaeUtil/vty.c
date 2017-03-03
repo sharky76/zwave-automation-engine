@@ -280,8 +280,8 @@ void    vty_erase_char(vty_t* vty)
         }
         else
         {
-            vty->buffer[vty->buf_size] = 0;
             vty->buf_size--;
+            vty->buffer[vty->buf_size] = 0;
             vty->cursor_pos = vty->buf_size;
 
             if(NULL != vty->erase_char_cb)

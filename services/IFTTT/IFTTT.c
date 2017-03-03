@@ -17,10 +17,11 @@ variant_t* ifttt_trigger_event(service_method_t* method, va_list args);
 void    service_create(service_t** service, int service_id)
 {
     SERVICE_INIT(IFTTT, "Send and receive IFTTT triggers");
-    SERVICE_ADD_METHOD(Trigger, ifttt_trigger_event, 1, "Trigger IFTTT event. Arg: Event, 3 Values can be provided as argument stack.");
+    SERVICE_ADD_METHOD(Trigger, ifttt_trigger_event, 1, "Trigger IFTTT Maker event. Arg: Event, 3 Values can be provided as argument stack.");
 
     (*service)->get_config_callback = ifttt_cli_get_config;
     DT_IFTTT = service_id;
+    ifttt_key = NULL;
 }
 
 void    service_cli_create(cli_node_t* parent_node)
@@ -30,34 +31,38 @@ void    service_cli_create(cli_node_t* parent_node)
 
 variant_t* ifttt_trigger_event(service_method_t* method, va_list args)
 {
-    variant_t* event_name = va_arg(args, variant_t*);
-    service_args_stack_t* service_stack = service_args_stack_get("IFTTT.Trigger");
-    hash_table_t*   value_table = (hash_table_t*)service_stack->data_storage;
-    
     if(NULL == ifttt_key)
     {
         LOG_ERROR(DT_IFTTT, "Key not set");
         return variant_create_bool(false);
     }
 
+    variant_t* event_name = va_arg(args, variant_t*);
+    service_args_stack_t* service_stack = service_args_stack_get("IFTTT.Trigger");
+    LOG_INFO(DT_IFTTT, "Event %s triggered", variant_get_string(event_name));    
+    
     // Create JSON payload
     json_object* payload_obj = json_object_new_object();
-    char* json_keys[3] = {"value1", "value2", "value3"};
 
-
-    for(int i = 0; i < 3; i++)
+    if(NULL != service_stack)
     {
-        variant_t* value_var;
-        uint32_t key = crc32(0, json_keys[i], strlen(json_keys[i]));
-        if((value_var = variant_hash_get(value_table, key)) != NULL)
+        hash_table_t*   value_table = (hash_table_t*)service_stack->data_storage;
+        char* json_keys[3] = {"value1", "value2", "value3"};
+    
+        for(int i = 0; i < 3; i++)
         {
-            json_object *value_obj = json_object_new_string(variant_get_string(value_var));
-            json_object_object_add(payload_obj, json_keys[i], value_obj);
+            variant_t* value_var;
+            uint32_t key = crc32(0, json_keys[i], strlen(json_keys[i]));
+            if((value_var = variant_hash_get(value_table, key)) != NULL)
+            {
+                json_object *value_obj = json_object_new_string(variant_get_string(value_var));
+                json_object_object_add(payload_obj, json_keys[i], value_obj);
+            }
         }
+    
+        const char* payload_str = json_object_to_json_string_ext(payload_obj, JSON_C_TO_STRING_SPACED);
+        LOG_ADVANCED(DT_IFTTT, "Creating payload %s", payload_str);
     }
-
-    const char* payload_str = json_object_to_json_string_ext(payload_obj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY);
-    LOG_ADVANCED(DT_IFTTT, "Creating payload %s", payload_str);
 
     CURL *curl_handle;
     CURLcode res;
@@ -85,7 +90,7 @@ variant_t* ifttt_trigger_event(service_method_t* method, va_list args)
         
         LOG_DEBUG(DT_IFTTT, "Trigger URL is %s", urlbuf);
         curl_easy_setopt(curl_handle, CURLOPT_URL, urlbuf);
-        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, payload_str);
+        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, json_object_to_json_string_ext(payload_obj, JSON_C_TO_STRING_SPACED));
     
         struct curl_slist *headers=NULL;
         headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -103,12 +108,14 @@ variant_t* ifttt_trigger_event(service_method_t* method, va_list args)
         }
         else 
         {
-            LOG_DEBUG(DT_IFTTT, "Mail sent successfully");
+            LOG_ADVANCED(DT_IFTTT, "Event %s triggered successfully", variant_get_string(event_name));
         }
     
         /* cleanup curl stuff */ 
         curl_easy_cleanup(curl_handle);
     }
+
+    json_object_put(payload_obj);
 
     return variant_create_bool(true);
 }

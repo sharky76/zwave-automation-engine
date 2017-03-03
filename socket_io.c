@@ -61,7 +61,7 @@ char*   socket_read_cb(vty_t* vty)
 
     if(recv(socket, ch, 1, 0) > 0)
     {
-        LOG_DEBUG(SocketIO, "Socket recv: %s (0x%x)", ch, ch[0]);
+        LOG_DEBUG(SocketIO, "Socket recv: %c (0x%x), buffer: %s, cursor: %d", ch[0], ch[0], vty->buffer, vty->cursor_pos);
         if(ch[0] == '?')
         {
             cli_command_describe_norl(vty);
