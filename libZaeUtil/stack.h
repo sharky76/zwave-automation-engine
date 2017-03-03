@@ -23,6 +23,11 @@ int __i__;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
 for(__i__ = 0; __i__ < _stack->count; __i__++, _value = stack_peek_at(_stack, __i__))   \
 
+#define stack_for_each_reverse(_stack, _value)  \
+int __i__;  \
+variant_t* _value = stack_peek_at(_stack, _stack->count-1);  \
+for(__i__ = _stack->count-1; __i__ >= 0; __i__--, _value = stack_peek_at(_stack, __i__))   \
+
 #define stack_for_each_range(_stack, _from, _to, _value)  \
 int __i__;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
@@ -38,3 +43,4 @@ variant_t*      stack_peek_at(variant_stack_t* stack, int index);
 void            stack_push_back(variant_stack_t* stack, variant_t* value);
 variant_t*      stack_pop_back(variant_stack_t* stack);
 void            stack_remove(variant_stack_t* stack, variant_t* value);
+variant_stack_t*    stack_sort(variant_stack_t* stack, int (*compare_cb)(const void* left, const void* right));

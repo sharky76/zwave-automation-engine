@@ -989,6 +989,7 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
     vty_t* file_vty = vty_io_create(VTY_FILE, &file_vty_data);
     vty_set_banner(file_vty, vty->banner);
     vty_set_history_size(file_vty, vty->history_size);
+    file_vty->current_node = vty->current_node;
     cmd_show_running_config(file_vty, NULL);
 
     vty_free(file_vty);

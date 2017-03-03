@@ -1,6 +1,7 @@
 #include "Expression.h"
 #include "../scene_action.h"
 #include "../command_parser.h"
+#include "service_args.h"
 #include <crc32.h>
 #include <ctype.h>
 
@@ -39,7 +40,7 @@ variant_t*  eval_impl(struct service_method_t* method, va_list args)
 variant_t*  process_template_impl(struct service_method_t* method, va_list args)
 {
     // First, get stack for this method
-    service_stack_t* service_stack = builtin_service_stack_get("Expression.ProcessTemplate");
+    service_args_stack_t* service_stack = service_args_stack_get("Expression.ProcessTemplate");
     variant_t*  template_var = va_arg(args, variant_t*);
     char* result_string = NULL;
 

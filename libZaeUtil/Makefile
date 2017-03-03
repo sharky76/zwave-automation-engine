@@ -26,17 +26,17 @@ CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-ra
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/logger.o $(OUTDIR)/service.o \
-	$(OUTDIR)/stack.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
-	$(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
+	$(OUTDIR)/service_args.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/vdev.o $(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/logger.o $(OUTDIR)/service.o \
-	$(OUTDIR)/stack.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
-	$(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
+	$(OUTDIR)/service_args.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/vdev.o $(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -rdynamic -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -x c "-D_GNU_SOURCE" -g -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
 LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
@@ -77,13 +77,13 @@ CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-ra
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/logger.o $(OUTDIR)/service.o \
-	$(OUTDIR)/stack.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
-	$(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
+	$(OUTDIR)/service_args.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/vdev.o $(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/logger.o $(OUTDIR)/service.o \
-	$(OUTDIR)/stack.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
-	$(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
+	$(OUTDIR)/service_args.o $(OUTDIR)/stack.o $(OUTDIR)/variant.o \
+	$(OUTDIR)/vdev.o $(OUTDIR)/vty.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 

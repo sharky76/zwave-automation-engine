@@ -338,7 +338,7 @@ void    vty_show_history(vty_t* vty)
     }
     else
     {
-        stack_for_each(vty->history, history_variant)
+        stack_for_each_reverse(vty->history, history_variant)
         {
             vty_write(vty, "%s\r\n", variant_get_string(history_variant));
         }

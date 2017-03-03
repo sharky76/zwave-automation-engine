@@ -3,6 +3,7 @@
 #include "scene_manager.h"
 #include "script_action_handler.h"
 #include "builtin_service.h"
+#include "service_args.h"
 #include <logger.h>
 #include <hash.h>
 #include <crc32.h>
@@ -206,7 +207,7 @@ void scene_action_exec_command(action_t* action)
             stack_for_each(action->environment, env_variant)
             {
                 method_stack_item_t* env = (method_stack_item_t*)variant_get_ptr(env_variant);
-                builtin_service_stack_create(env->stack_name);
+                service_args_stack_create(env->stack_name);
 
                 bool isOk;
                 variant_stack_t* compiled_value = command_parser_compile_expression(env->value, &isOk);
@@ -223,7 +224,7 @@ void scene_action_exec_command(action_t* action)
                     {
                         uint32_t key = crc32(0, env->name, strlen(env->name));
                         //printf("Inserting value with name %s and key %u, and val: %s\n", env->name, key, variant_get_string(env_value));
-                        builtin_service_stack_add(env->stack_name, key, env_value);
+                        service_args_stack_add(env->stack_name, key, env_value);
                     }
                 }
 
@@ -241,7 +242,7 @@ void scene_action_exec_command(action_t* action)
             variant_free(result);
         }
 
-        builtin_service_stack_clear();
+        service_args_stack_clear();
     }
 
     stack_free(compiled);

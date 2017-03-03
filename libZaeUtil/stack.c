@@ -225,3 +225,27 @@ void stack_remove(variant_stack_t* stack, variant_t* value)
 
     stack->count--;
 }
+
+variant_stack_t*    stack_sort(variant_stack_t* stack, int (*compare_cb)(const void* left, const void* right))
+{
+    variant_t** sorted_array = calloc(stack->count, sizeof(variant_t*));
+    variant_stack_t* sorted_stack = stack_create();
+
+    int i = 0;
+    // Copy stack to array
+    stack_for_each(stack, val)
+    {
+        sorted_array[i++] = val;
+    }
+
+    qsort(sorted_array, stack->count, sizeof(sorted_array), compare_cb);
+
+    // Copy sorted array to new stack
+    for(int i = 0; i < stack->count; i++)
+    {
+        stack_push_back(sorted_stack, sorted_array[i]);
+    }
+
+    free(sorted_array);
+    return sorted_stack;
+}
