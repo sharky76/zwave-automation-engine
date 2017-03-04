@@ -104,7 +104,7 @@ variant_t* ifttt_trigger_event(service_method_t* method, va_list args)
         /* check for errors */ 
         if(res != CURLE_OK) 
         {
-            LOG_ERROR(DT_IFTTT, "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            LOG_ERROR(DT_IFTTT, "Event trigger failed: %s", curl_easy_strerror(res));
         }
         else 
         {

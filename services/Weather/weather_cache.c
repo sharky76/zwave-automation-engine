@@ -175,9 +175,17 @@ void    weather_cache_parse_forecast(struct json_object* weather_response_obj)
     stack_empty(weather_cache.forecast_hourly);
 
     free(weather_cache.raw_forecast);
+    weather_cache.raw_forecast = NULL;
     
     json_object* entries_array;
     json_object_object_get_ex(weather_response_obj, "list", &entries_array);
+
+    if(NULL == entries_array)
+    {
+        LOG_ERROR(DT_WEATHER, "Forecast is empty");
+        return;
+    }
+
     int weather_entries = json_object_array_length(entries_array);
 
     for(int i = 0; i < weather_entries; i++)

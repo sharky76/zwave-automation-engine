@@ -4,12 +4,15 @@
 #include <string.h>
 #include <stdio.h>
 #include "datetime_cli.h"
+#include "logger.h"
 
 variant_t*  datetime_get_time_string(service_method_t* method, va_list args);
 variant_t*  datetime_get_timestamp(service_method_t* method, va_list args);
 variant_t*  datetime_time_less_than(service_method_t* method, va_list args);
 variant_t*  datetime_time_greater_than(service_method_t* method, va_list args);
 variant_t*  datetime_get_date_string(service_method_t* method, va_list args);
+
+int DT_DATETIME;
 
 void    service_create(service_t** service, int service_id)
 {
@@ -22,7 +25,7 @@ void    service_create(service_t** service, int service_id)
 
 
     (*service)->get_config_callback = datetime_cli_get_config;
-
+    DT_DATETIME = service_id;
     datetime_time_format = strdup("%H:%M");
     datetime_date_format = strdup("%m/%d/%Y");
 }
@@ -103,9 +106,11 @@ variant_t*  datetime_get_date_string(service_method_t* method, va_list args)
     time_t t = time(NULL);
     struct tm* p_tm = localtime(&t);
 
-    char* datebuf = (char*)calloc(11, sizeof(char));
+    char* datebuf = (char*)calloc(15, sizeof(char));
 
-    strftime(datebuf, 10, datetime_date_format, p_tm);
+    strftime(datebuf, 14, datetime_date_format, p_tm);
+
+    LOG_DEBUG(DT_DATETIME, "Date %s with format %s", datebuf, datetime_date_format);
 
     return variant_create_string(datebuf);
 }
