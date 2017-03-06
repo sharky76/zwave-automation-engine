@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stack.h"
+#include "vty.h"
 
 typedef struct vty_t vty_t;
 
@@ -68,4 +69,6 @@ void    cli_assemble_line(variant_stack_t* params, int start, char* out_line);
 variant_stack_t*    create_cmd_vec(const char* cmdline);
 variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size);
 bool    cli_exit_node(vty_t* vty, variant_stack_t* params);
+void    cli_command_describe_norl(vty_t* vty);
+variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size);
 

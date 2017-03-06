@@ -139,22 +139,23 @@ void    cli_load_config()
     char config_loc[512] = {0};
     snprintf(config_loc, 511, "%s/startup-config", global_config.config_location);
 
-    vty_data_t file_data = {
-        .desc.file = fopen(config_loc, "r")
-    };
+    vty_data_t* file_data = calloc(1, sizeof(vty_data_t));
+    file_data->desc.file = fopen(config_loc, "r");
 
-    if(NULL != file_data.desc.file)
+    if(NULL != file_data->desc.file)
     {
-        vty_t* file_vty = vty_io_create(VTY_FILE, &file_data);
+        vty_t* file_vty = vty_io_create(VTY_FILE, file_data);
         vty_set_prompt(file_vty, "(%s)# ", root_node->prompt);
         char* str;
         
         cli_set_vty(file_vty);
 
-        while(str = vty_read(file_vty))
+        while((str = vty_read(file_vty)) && !vty_is_error(file_vty))
         {
-            cli_command_exec(file_vty, str);
-            free(str);
+            if(vty_is_command_received(file_vty))
+            {
+                cli_command_exec(file_vty, str);
+            }
         }
 
         vty_free(file_vty);
@@ -575,47 +576,6 @@ int     cli_command_describe()
     }
 }
 
-int     cli_command_describe_norl(vty_t* vty)
-{
-    cmd_tree_node_t* cmd_node;
-
-    CmdMatchStatus match_status = cli_get_command(vty, vty->buffer, &cmd_node, NULL);
-
-    if(match_status == CMD_FULL_MATCH)
-    {
-        vty_write(vty, "\n%% %s\n", cmd_node->data->command->help);
-        vty_redisplay(vty, vty->buffer);
-    }
-    else
-    {
-        variant_stack_t* completions = cli_get_command_completions(vty, vty->buffer, vty->buf_size);
-        int word_count = 0;
-
-        if(NULL != completions)
-        {
-            vty_write(vty, "\n");
-    
-            stack_for_each(completions, matching_command)
-            {
-                vty_write(vty, "%-20s", variant_get_string(matching_command));
-                if(word_count++ >= 3)
-                {
-                    vty_write(vty, "\n");
-                    word_count = 0;
-                }
-            }
-    
-            if(word_count > 0)
-            {
-                vty_write(vty, "\n");
-            }
-    
-            vty_redisplay(vty, vty->buffer);
-            stack_free(completions);
-        }
-    }
-}
-
 int     cli_command_quit(int count, int key)
 {
     keep_running = 0;
@@ -626,7 +586,7 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 {
     cmd_tree_node_t* cmd_node;
 
-    if(line == 0 || *line == 0 || *line == '\n')
+    if(line == 0 || *line == 0 || *line == '\n' || *line == '\r')
     {
         return false;
     }
@@ -649,10 +609,10 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
         }
         break;
     case CMD_PARTIAL_MATCH:
-        vty_error(vty, "Ambiguous command\n");
+        vty_error(vty, "Ambiguous command%s", VTY_NEWLINE(vty));
         break;
     case CMD_NO_MATCH:
-        vty_error(vty, "Unknown command\n");
+        vty_error(vty, "Unknown command%s", VTY_NEWLINE(vty));
         break;
     }
 
@@ -689,13 +649,13 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
     if(strcmp(mode, "start") == 0)
     {
         err = zway_controller_add_node_to_network(zway, TRUE);
-        vty_write(vty, "%% Inclusion started\n");
+        vty_write(vty, "%% Inclusion started%s", VTY_NEWLINE(vty));
         //err = zway_fc_add_node_to_network(zway, TRUE, TRUE, NULL, NULL, NULL);
     }
     else
     {
         err = zway_controller_add_node_to_network(zway, FALSE);
-        vty_write(vty, "%% Inclusion stopped\n");
+        vty_write(vty, "%% Inclusion stopped%s", VTY_NEWLINE(vty));
         //err = zway_fc_add_node_to_network(zway, FALSE, TRUE, NULL, NULL, NULL);
     }
 
@@ -710,13 +670,13 @@ bool    cmd_controller_exclusion_mode(vty_t* vty, variant_stack_t* params)
     if(strcmp(mode, "start") == 0)
     {
         err = zway_controller_remove_node_from_network(zway, TRUE);
-        vty_write(vty, "%% Exclusion started\n");
+        vty_write(vty, "%% Exclusion started%s", VTY_NEWLINE(vty));
         //err = zway_fc_remove_node_from_network(zway, TRUE, TRUE, NULL, NULL, NULL);
     }
     else
     {
         err = zway_controller_remove_node_from_network(zway, FALSE);
-        vty_write(vty, "%% Exclusion stopped\n");
+        vty_write(vty, "%% Exclusion stopped%s", VTY_NEWLINE(vty));
 
         //err = zway_fc_remove_node_from_network(zway, FALSE, FALSE, NULL, NULL, NULL);
     }
@@ -793,7 +753,7 @@ bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)
 {
-    vty_write(vty, "Status: D - done, W - waiting for wakeup of the device, S - waiting for security session\n");
+    vty_write(vty, "Status: D - done, W - waiting for wakeup of the device, S - waiting for security session%s", VTY_NEWLINE(vty));
 
     char queuebuf[65000] = {0};
     FILE* queue_out = fmemopen(queuebuf, 64999, "w+");
@@ -804,7 +764,7 @@ bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params)
 {
-    vty_write(vty, "%-15s%-15s%s\n", "Command Id", "Name", "Methods(Args)");
+    vty_write(vty, "%-15s%-15s%s%s", "Command Id", "Name", "Methods(Args)", VTY_NEWLINE(vty));
     command_class_for_each(show_command_class_helper, vty);
 }
 
@@ -815,33 +775,36 @@ bool    cmd_help(vty_t* vty, variant_stack_t* params)
 bool    cmd_set_banner(vty_t* vty, variant_stack_t* params)
 {
     banner_stop_char = *variant_get_string(stack_peek_at(params, 1));
-    vty_write(vty, "Enter banner text ending with '%c'\n", banner_stop_char);
+    vty_write(vty, "Enter banner text ending with '%c'%s", banner_stop_char, VTY_NEWLINE(vty));
 
     free(banner);
     banner = NULL;
 
     vty_set_multiline(vty, true, banner_stop_char);
-    char* buf = vty_read(vty);
-    vty_set_multiline(vty, false, banner_stop_char);
-
-    if(NULL != buf)
+    do
     {
-        banner = strdup(buf);
+        vty_read(vty);
+    }
+    while(!vty_is_command_received(vty));
+
+    if(NULL != vty->buffer)
+    {
+        banner = strdup(vty->buffer);
     }
 
-    vty_write(vty, "\n");
+    vty_write(vty, VTY_NEWLINE(vty));
 }
 
 bool    cmd_show_banner(vty_t* vty, variant_stack_t* params)
 {
     if(0 != banner_stop_char && NULL != banner)
     {
-        vty_write(vty, "banner %c\n", banner_stop_char);
-        vty_write(vty, "%s%c\n", banner, banner_stop_char);
+        vty_write(vty, "banner %c%s", banner_stop_char, VTY_NEWLINE(vty));
+        vty_write(vty, "%s%c%s", banner, banner_stop_char, VTY_NEWLINE(vty));
     }
     else
     {
-        vty_write(vty, "no banner\n");
+        vty_write(vty, "no banner%s", VTY_NEWLINE(vty));
     }
 }
 
@@ -955,19 +918,19 @@ bool    cmd_close_session(vty_t* vty, variant_stack_t* params)
 bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
 {
     cli_command_exec(vty, "show banner");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s",VTY_NEWLINE(vty));
     cli_command_exec(vty, "show user");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show history");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show logging");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show resolver");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show service");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show virtual-device");
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show scene");
 }
 
@@ -1022,7 +985,7 @@ bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
     }
     else if(strcmp(mode, "show") == 0)
     {
-        vty_write(vty, "history %d\n", vty->history_size);
+        vty_write(vty, "history %d%s", vty->history_size, VTY_NEWLINE(vty));
     }
 }
 
@@ -1035,7 +998,8 @@ bool    cmd_set_history(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_quit(vty_t* vty, variant_stack_t* params)
 {
-    cli_command_quit(0, 0);
+    //cli_command_quit(0, 0);
+    vty_shutdown(vty);
 }
 
 bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
@@ -1054,7 +1018,7 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
             char* str_result;
             if(variant_to_string(result, &str_result))
             {
-                vty_write(vty, "%% %s\n", str_result);
+                vty_write(vty, "%% %s%s", str_result, VTY_NEWLINE(vty));
                 free(str_result);
                 variant_free(result);
                 retVal = true;
@@ -1070,7 +1034,7 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
 
     if(!retVal)
     {
-        vty_error(vty, "Error evaluating expression\n");
+        vty_error(vty, "Error evaluating expression%s", VTY_NEWLINE(vty));
     }
 
     return retVal;
@@ -1091,6 +1055,6 @@ void    show_command_class_helper(command_class_t* command_class, void* arg)
         supported_methods++;
     }
 
-    vty_write(vty, "\n");
+    vty_write(vty, VTY_NEWLINE(vty));
 }
 

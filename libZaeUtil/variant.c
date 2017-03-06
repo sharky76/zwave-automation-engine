@@ -307,13 +307,13 @@ bool variant_to_string(variant_t* variant, char** string)
             variant_stack_t* list = (variant_stack_t*)variant_get_ptr(variant);
             *string = (char*)calloc(list->count * 128, sizeof(char));
 
-            char br = '\n';
+            char* br = "\r\n";
 
             stack_for_each(list, list_entry_variant)
             {
                 const char* string_entry = variant_get_string(list_entry_variant);
                 strcat(*string, string_entry);
-                strncat(*string, &br, 1);
+                strncat(*string, br, 2);
             }
         }
         break;

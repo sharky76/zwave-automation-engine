@@ -188,7 +188,7 @@ bool process_state_transition(State current_state, state_context_t* state_contex
             break;
         default:
             {
-                LOG_ERROR(Parser, "Error, invalid transition\n");
+                LOG_ERROR(Parser, "Error, invalid transition");
             }
         }
 
@@ -900,5 +900,5 @@ void        command_parser_print_stack(variant_stack_t* compiled_expression)
         stack_item = stack_item->next;
     }
 
-    LOG_DEBUG(Parser, "\n");
+    LOG_DEBUG(Parser, "\r\n");
 }

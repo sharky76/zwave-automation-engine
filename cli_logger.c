@@ -172,13 +172,13 @@ bool    cmd_del_log_history(vty_t* vty, variant_stack_t* params)
 bool    cmd_enable_console(vty_t* vty, variant_stack_t* params)
 {
     logger_set_console(true);
-    vty_write(vty, "%% Console logging enabled\n");
+    vty_write(vty, "%% Console logging enabled%s", VTY_NEWLINE(vty));
 }
 
 bool    cmd_disable_console(vty_t* vty, variant_stack_t* params)
 {
     logger_set_console(false);
-    vty_write(vty, "%% Console logging disabled\n");
+    vty_write(vty, "%% Console logging disabled%s", VTY_NEWLINE(vty));
 }
 
 bool    cmd_show_logger_history(vty_t* vty, variant_stack_t* params)
@@ -190,21 +190,21 @@ bool    cmd_show_logger(vty_t* vty, variant_stack_t* params)
 {
     if(logger_is_enabled())
     {
-        vty_write(vty, "logging enable\n");
+        vty_write(vty, "logging enable%s", VTY_NEWLINE(vty));
     }
     else
     {
-        vty_write(vty, "no logging enable\n");
+        vty_write(vty, "no logging enable%s", VTY_NEWLINE(vty));
     }
 
     int hist_size = logger_get_buffer_size();
     if(hist_size > 0)
     {
-        vty_write(vty, "logging history %d\n", hist_size);
+        vty_write(vty, "logging history %d%s", hist_size, VTY_NEWLINE(vty));
     }
     else
     {
-        vty_write(vty, "no logging history\n");
+        vty_write(vty, "no logging history%s", VTY_NEWLINE(vty));
     }
 
     for(int i = 0; i < logger_services_size; i++)
@@ -215,16 +215,16 @@ bool    cmd_show_logger(vty_t* vty, variant_stack_t* params)
             switch(logger_get_level(s->service_id))
             {
             case LOG_LEVEL_BASIC:
-                vty_write(vty, "logging class %s info\n", s->service_name);
+                vty_write(vty, "logging class %s info%s", s->service_name, VTY_NEWLINE(vty));
                 break;
             case LOG_LEVEL_ERROR:
-                vty_write(vty, "logging class %s error\n", s->service_name);
+                vty_write(vty, "logging class %s error%s", s->service_name, VTY_NEWLINE(vty));
                 break;
             case LOG_LEVEL_ADVANCED:
-                vty_write(vty, "logging class %s advanced\n", s->service_name);
+                vty_write(vty, "logging class %s advanced%s", s->service_name, VTY_NEWLINE(vty));
                 break;
             case LOG_LEVEL_DEBUG:
-                vty_write(vty, "logging class %s debug\n", s->service_name);
+                vty_write(vty, "logging class %s debug%s", s->service_name, VTY_NEWLINE(vty));
                 break;
             }
         }

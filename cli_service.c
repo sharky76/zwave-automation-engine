@@ -62,20 +62,20 @@ bool cmd_enter_service_node(vty_t* vty, variant_stack_t* params)
     }
     else
     {
-        vty_error(vty, "No such service\n");
+        vty_error(vty, "No such service%s", VTY_NEWLINE(vty));
     }
 }
 
 bool cmd_list_service_classes(vty_t* vty, variant_stack_t* params)
 {
-    vty_write(vty, "%-20s%s\n", "Name", "Description");
+    vty_write(vty, "%-20s%s%s", "Name", "Description", VTY_NEWLINE(vty));
     service_manager_for_each_class(show_service_helper, vty);
     builtin_service_manager_for_each_class(show_builtin_service_helper, vty);
 }
 
 bool cmd_show_service_methods(vty_t* vty, variant_stack_t* params)
 {
-    vty_write(vty, "%-20s%s\n", "Name", "Description");
+    vty_write(vty, "%-20s%s%s", "Name", "Description", VTY_NEWLINE(vty));
 
     service_manager_for_each_method(variant_get_string(stack_peek_at(params, 3)), show_service_method_helper, vty);
     builtin_service_manager_for_each_method(variant_get_string(stack_peek_at(params, 3)), show_service_method_helper, vty);
@@ -90,21 +90,21 @@ void show_service_helper(service_t* service, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
-    vty_write(vty, "%-20s%s\n", service->service_name, service->description);
+    vty_write(vty, "%-20s%s%s", service->service_name, service->description, VTY_NEWLINE(vty));
 }
 
 void show_builtin_service_helper(builtin_service_t* service, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
-    vty_write(vty, "%-20s%s\n", service->service_name, service->description);
+    vty_write(vty, "%-20s%s%s", service->service_name, service->description, VTY_NEWLINE(vty));
 }
 
 void show_service_method_helper(service_method_t* method, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
-    vty_write(vty, "%-20s%s\n", method->name, method->help);
+    vty_write(vty, "%-20s%s%s", method->name, method->help, VTY_NEWLINE(vty));
 }
 
 void show_service_config_helper(service_t* service, void* arg)
@@ -113,16 +113,16 @@ void show_service_config_helper(service_t* service, void* arg)
 
     if(NULL != service->get_config_callback)
     {
-        vty_write(vty, "service %s\n", service->service_name);
+        vty_write(vty, "service %s%s", service->service_name, VTY_NEWLINE(vty));
         char** service_config = service->get_config_callback();
         int i = 0;
         char* cfg_string;
 
         while(cfg_string = service_config[i++])
         {
-            vty_write(vty, " %s\n", cfg_string);
+            vty_write(vty, " %s%s", cfg_string, VTY_NEWLINE(vty));
         }
 
-        vty_write(vty, "!\n");
+        vty_write(vty, "!%s", VTY_NEWLINE(vty));
     }
 }

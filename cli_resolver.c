@@ -73,10 +73,10 @@ void    show_resolver_helper(device_record_t* record, void* arg)
 
     if(record->devtype == ZWAVE)
     {
-        vty_write(vty, "resolver %s node-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
+        vty_write(vty, "resolver %s node-id %d instance %d command-class %d%s", record->deviceName, record->nodeId, record->instanceId, record->commandId, VTY_NEWLINE(vty));
     }
     else
     {
-        vty_write(vty, "resolver %s vdev-id %d instance %d command-class %d\n", record->deviceName, record->nodeId, record->instanceId, record->commandId);
+        vty_write(vty, "resolver %s vdev-id %d instance %d command-class %d%s", record->deviceName, record->nodeId, record->instanceId, record->commandId, VTY_NEWLINE(vty));
     }
 }

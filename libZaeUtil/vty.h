@@ -35,7 +35,7 @@ typedef struct vty_t
 {
     vty_type type;
     void    (*write_cb)(struct vty_t*, const char*, size_t size);
-    char*   (*read_cb)(struct vty_t*);
+    int     (*read_cb)(struct vty_t*, char** str);
     void    (*flush_cb)(struct vty_t*);
     void    (*erase_char_cb)(struct vty_t*); // erase last char
     void    (*erase_line_cb)(struct vty_t*);
@@ -56,7 +56,17 @@ typedef struct vty_t
     int     history_size;
     int     history_index;  // 0 - most recent entry
     cli_node_t* current_node;
+    bool    command_completion_started;
+    bool    esc_sequence_started;
+    bool    iac_started;
+    int     iac_count;
+    variant_stack_t* completions;
+    bool    command_received;
+    bool    shutdown;
+    bool    is_authenticated;
 } vty_t;
+
+#define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET || _vty_->type == VTY_FILE) ? "\r\n" : "\n")
 
 void    vty_signal_init();
 vty_t*  vty_create(vty_type type, vty_data_t* data);
@@ -78,11 +88,18 @@ const char*   vty_get_history(vty_t* vty, bool direction); // true - to newest, 
 void    vty_set_history_size(vty_t* vty, int size);
 void    vty_insert_char(vty_t* vty, char ch);
 void    vty_append_char(vty_t* vty, char ch);
-void    vty_append_string(vty_t* vty, const char* str);
+void    vty_append_string(vty_t* vty, const char* format, ...);
 void    vty_erase_char(vty_t* vty);
 void    vty_redisplay(vty_t* vty, const char* new_buffer);
 void    vty_clear_buffer(vty_t* vty);
 void    vty_show_history(vty_t* vty);
 void    vty_cursor_left(vty_t* vty);
 void    vty_cursor_right(vty_t* vty);
+void    vty_new_line(vty_t* vty);
+void    vty_set_command_received(vty_t* vty, bool is_cmd_received);
+bool    vty_is_command_received(vty_t* vty);
+void    vty_shutdown(vty_t* vty);
+bool    vty_is_shutdown(vty_t* vty);
+void    vty_set_authenticated(vty_t* vty, bool is_authenticated);
+bool    vty_is_authenticated(vty_t* vty);
 

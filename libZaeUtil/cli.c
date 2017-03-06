@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 int DT_CMD_NODE = DT_USER+1;
 int DT_CLI_NODE = DT_USER+2;
@@ -452,4 +454,359 @@ void    cli_assemble_line(variant_stack_t* params, int start, char* out_line)
 
     int last_char = strlen(out_line)-1;
     out_line[last_char] = '\0';
+}
+
+/**
+recursively traverse the command stack and save all matching 
+commands into matches stack. 
+*/
+void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, const char* cmd_part_str)
+{
+    cmd_tree_node_t* last_node = NULL;
+
+    while(matches->count > 0)
+    {
+        stack_pop_front(matches);
+    }
+
+    stack_for_each((*root), command_tree_node_variant)
+    {
+        cmd_tree_node_t* node = (cmd_tree_node_t*)variant_get_ptr(command_tree_node_variant);
+        if(NULL != cmd_part_str)
+        {
+            if(node->data->type == TYPE_INT)
+            {
+                char* endptr;
+                int base;
+                if(strstr(cmd_part_str, "0x") == cmd_part_str)
+                {
+                    base = 16;
+                }
+                else
+                {
+                    base = 10;
+                }
+
+                int num = strtol(cmd_part_str, &endptr, base);
+                if(*endptr == '\0')
+                {
+                    if(!node->data->has_range || *cmd_part_str == 0 || (variant_get_int(node->data->value_range.start) <= num && variant_get_int(node->data->value_range.end) >= num))
+                    {
+                        stack_push_back(matches, command_tree_node_variant);
+                        last_node = node;
+                    }
+                }
+            }
+            else if((node->data->type == TYPE_TERM && *cmd_part_str == 0) || node->data->type == TYPE_WORD || node->data->type == TYPE_LINE || node->data->type == TYPE_CHAR ||
+               (node->data->type == TYPE_CMD_PART && strstr(node->data->name, cmd_part_str) == node->data->name))
+            {
+                stack_push_back(matches, command_tree_node_variant);
+
+                if(node->data->type != TYPE_LINE)
+                {
+                    last_node = node;
+                }
+            }
+        }
+        else
+        {
+            stack_push_back(matches, command_tree_node_variant);
+        }
+    }
+
+    if(NULL != last_node)
+    {
+        *root = last_node->children;
+    }
+}
+
+char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, variant_stack_t* matches, int* complete_status)
+{
+    static char** cmd_matches = NULL;
+
+    if(cmd_matches)
+    {
+        free(cmd_matches);
+    }
+    
+    variant_stack_t* root = current_node->command_tree;
+
+    // Traverse the cmd vec and find the last command part matching cmd_vec
+    stack_for_each(cmd_vec, cmd_part_variant)
+    {
+        const char* cmd_part_str = variant_get_string(cmd_part_variant);
+
+        if(NULL != cmd_part_str || matches->count == 0)
+        {
+            cmd_find_matches_worker(&root, matches, cmd_part_str);
+            if(matches->count == 0)
+            {
+                break;
+            }
+        }
+    }
+    
+    // We want to remove singe <CR> match otherwise it will be appended to the command line!
+    if(matches->count == 1)
+    {
+        variant_t* node_variant = stack_peek_at(matches, 0);
+        cmd_tree_node_t* node = (cmd_tree_node_t*)variant_get_ptr(node_variant);
+
+        if(node->data->type == TYPE_TERM)
+        {
+            stack_pop_front(matches);
+        }
+        else if(node->data->type != TYPE_CMD_PART)
+        {
+            stack_push_back(matches, variant_create_string(strdup("")));
+        }
+    }
+
+    cmd_matches = calloc(matches->count+1, sizeof(char*));
+    int i = 0;
+    while(matches->count > 0)
+    {
+        variant_t* node_variant = stack_pop_front(matches);
+        if(node_variant->type == DT_STRING)
+        {
+            cmd_matches[i++] = strdup(variant_get_string(node_variant));
+        }
+        else
+        {
+            cmd_tree_node_t* node = (cmd_tree_node_t*)variant_get_ptr(node_variant);
+            cmd_matches[i++] = strdup(node->data->name);
+        }
+    }
+
+    return cmd_matches;
+}
+
+CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
+{
+    CmdMatchStatus match_status = CMD_NO_MATCH;
+
+    variant_stack_t* cmd_vec = create_cmd_vec(cmdline);
+
+    //if(cmd_vec->count == 0 || rl_end && isspace((int)rl_line_buffer[rl_end - 1]))
+    {
+        stack_push_back(cmd_vec, variant_create_string(NULL));
+    }
+
+    variant_stack_t*    matches = stack_create();
+    int status;
+
+    variant_stack_t* root = node->command_tree;
+    
+    if(NULL != complete_cmd_vec)
+    {
+        *complete_cmd_vec = stack_create();
+    }
+
+    // Traverse the cmd vec and find the last command part matching cmd_vec
+    stack_for_each(cmd_vec, cmd_part_variant)
+    {
+        const char* cmd_part_str = variant_get_string(cmd_part_variant);
+
+        if(NULL != cmd_part_str && 0 != *cmd_part_str)
+        {
+            cmd_find_matches_worker(&root, matches, cmd_part_str);
+
+            if(matches->count == 1)
+            {
+                match_status = CMD_PARTIAL_MATCH;
+                variant_t* matched_node_variant = stack_pop_front(matches);
+                cmd_tree_node_t* node = variant_get_ptr(matched_node_variant);
+                
+                if(NULL != complete_cmd_vec)
+                {
+                    switch(node->data->type)
+                    {
+                    case TYPE_CMD_PART:
+                        stack_push_back(*complete_cmd_vec, variant_create_string(strdup(node->data->name)));
+                        break;
+                    case TYPE_WORD:
+                    case TYPE_LINE:
+                    case TYPE_CHAR:
+                        stack_push_back(*complete_cmd_vec, variant_create_string(strdup(cmd_part_str)));
+                        break;
+                    case TYPE_INT:
+                        {
+                            int base;
+                            if(strstr(cmd_part_str, "0x") == cmd_part_str)
+                            {
+                                base = 16;
+                            }
+                            else
+                            {
+                                base = 10;
+                            }
+    
+                            int num = strtol(cmd_part_str, NULL, base);
+                            stack_push_back(*complete_cmd_vec, variant_create_int32(DT_INT32, num));
+                        }
+                        break;
+                    }
+                }
+
+                // Now lets see if this is the terminal node. Terminal nodes has only one child - <cr>
+                stack_for_each(node->children, term_node_variant)
+                {
+                    cmd_tree_node_t* term_node = variant_get_ptr(term_node_variant);
+                    if(term_node->data->type == TYPE_TERM)
+                    {
+                        match_status = CMD_FULL_MATCH;
+                        *cmd_node = term_node;
+                    }
+                }
+            }
+            else if(matches->count == 0)
+            {
+                match_status = CMD_NO_MATCH;
+                break;
+            }
+            else 
+            {
+                bool exact_match_found = false;
+
+                // Can happen that more than one partial match found and 
+                // one exact match found too
+                while(matches->count > 0 && !exact_match_found)
+                {
+                    variant_t* matched_node_variant = stack_pop_front(matches);
+                    cmd_tree_node_t* node = variant_get_ptr(matched_node_variant);
+
+                    if(node->data->type == TYPE_CMD_PART && strcmp(node->data->name, cmd_part_str) == 0)
+                    {
+                        stack_push_back(*complete_cmd_vec, variant_create_string(strdup(node->data->name)));
+                        
+                        // Now lets see if this is the terminal node. Terminal nodes has only one child - <cr>
+                        stack_for_each(node->children, term_node_variant)
+                        {
+                            cmd_tree_node_t* term_node = variant_get_ptr(term_node_variant);
+                            if(term_node->data->type == TYPE_TERM)
+                            {
+                                match_status = CMD_FULL_MATCH;
+                                *cmd_node = term_node;
+                                exact_match_found = true;
+                            }
+                        }
+                    }
+                }
+
+                while(matches->count > 0)
+                {
+                    stack_pop_front(matches);
+                }
+
+                if(!exact_match_found)
+                {
+                    match_status = CMD_PARTIAL_MATCH;
+                }
+                
+                break;
+            }
+        }
+    }
+
+    stack_free(matches);
+    stack_free(cmd_vec);
+
+    return match_status;
+}
+
+CmdMatchStatus cli_get_command(vty_t* vty, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
+{
+    cli_get_custom_command(vty->current_node, cmdline, cmd_node, complete_cmd_vec);
+}
+
+void     cli_command_describe_norl(vty_t* vty)
+{
+    cmd_tree_node_t* cmd_node;
+
+    CmdMatchStatus match_status = cli_get_command(vty, vty->buffer, &cmd_node, NULL);
+
+    if(match_status == CMD_FULL_MATCH)
+    {
+        vty_write(vty, "%s%% %s%s", VTY_NEWLINE(vty), cmd_node->data->command->help, VTY_NEWLINE(vty));
+        vty_redisplay(vty, vty->buffer);
+    }
+    else
+    {
+        variant_stack_t* completions = cli_get_command_completions(vty, vty->buffer, vty->buf_size);
+        int word_count = 0;
+
+        if(NULL != completions)
+        {
+            vty_write(vty, VTY_NEWLINE(vty));
+    
+            stack_for_each(completions, matching_command)
+            {
+                vty_write(vty, "%-20s", variant_get_string(matching_command));
+                if(word_count++ >= 3)
+                {
+                    vty_write(vty, VTY_NEWLINE(vty));
+                    word_count = 0;
+                }
+            }
+    
+            if(word_count > 0)
+            {
+                vty_write(vty, VTY_NEWLINE(vty));
+            }
+    
+            vty_redisplay(vty, vty->buffer);
+            stack_free(completions);
+        }
+    }
+}
+
+char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
+{
+    static char** matched;
+    static variant_stack_t* matches = NULL;
+
+    variant_stack_t* cmd_vec;
+
+    char* cmd_name;
+
+    stack_free(matches);
+    matches = stack_create();
+
+    cmd_vec = create_cmd_vec(text);
+
+    if(cmd_vec->count == 0 || isspace((int)text[size - 1]))
+    {
+        stack_push_back(cmd_vec, variant_create_string(NULL));
+    }
+    
+    int status;
+    matched = cmd_find_matches(vty->current_node, cmd_vec, matches, &status);
+    stack_free(cmd_vec);
+
+    if (matched && matched[0])
+    {
+        return matched;
+    }
+
+    return NULL;
+}
+
+variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size)
+{
+    char** cmd_list = cli_command_completer_norl(vty, buffer, size);
+    variant_stack_t* completions = NULL;
+
+    if(NULL != cmd_list)
+    {
+        completions = stack_create();
+
+        char** first_cmd = cmd_list;
+        while(NULL != *first_cmd)
+        {
+            stack_push_back(completions, variant_create_string(strdup(*first_cmd)));
+            first_cmd++;
+        }
+    }
+
+    return completions;
 }

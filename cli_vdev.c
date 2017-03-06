@@ -60,19 +60,19 @@ bool cmd_enter_vdev_node(vty_t* vty, variant_stack_t* params)
     }
     else
     {
-        vty_error(vty, "No such virtual device\n");
+        vty_error(vty, "No such virtual device%s", VTY_NEWLINE(vty));
     }
 }
 
 bool cmd_list_vdev(vty_t* vty, variant_stack_t* params)
 {
-    vty_write(vty, "%-10s%-20s%s\n", "ID", "Name", "Description");
+    vty_write(vty, "%-10s%-20s%s%s", "ID", "Name", "Description", VTY_NEWLINE(vty));
     vdev_manager_for_each(show_vdev_helper, vty);
 }
 
 bool cmd_show_vdev_methods(vty_t* vty, variant_stack_t* params)
 {
-    vty_write(vty, "%-20s%s\n", "Name", "Description");
+    vty_write(vty, "%-20s%s%s", "Name", "Description", VTY_NEWLINE(vty));
 
     vdev_manager_for_each_method(variant_get_string(stack_peek_at(params, 3)), show_vdev_method_helper, vty);
 }
@@ -86,14 +86,14 @@ void show_vdev_helper(vdev_t* vdev, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
-    vty_write(vty, "%-10d%-20s%s\n", vdev->vdev_id, vdev->name, "TODO");
+    vty_write(vty, "%-10d%-20s%s%s", vdev->vdev_id, vdev->name, "TODO", VTY_NEWLINE(vty));
 }
 
 void show_vdev_method_helper(vdev_command_t* method, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
-    vty_write(vty, "%-20s%s\n", method->name, method->help);
+    vty_write(vty, "%-20s%s%s", method->name, method->help, VTY_NEWLINE(vty));
 }
 
 void show_vdev_config_helper(vdev_t* vdev, void* arg)
@@ -102,17 +102,17 @@ void show_vdev_config_helper(vdev_t* vdev, void* arg)
 
     if(NULL != vdev->get_config_callback)
     {
-        vty_write(vty, "virtual-device %s\n", vdev->name);
+        vty_write(vty, "virtual-device %s%s", vdev->name, VTY_NEWLINE(vty));
         char** vdev_config = vdev->get_config_callback();
         int i = 0;
         char* cfg_string;
 
         while(cfg_string = vdev_config[i++])
         {
-            vty_write(vty, " %s\n", cfg_string);
+            vty_write(vty, " %s%s", cfg_string, VTY_NEWLINE(vty));
         }
 
-        vty_write(vty, "!\n");
+        vty_write(vty, "!%s", VTY_NEWLINE(vty));
     }
 }
 

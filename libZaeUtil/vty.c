@@ -4,8 +4,23 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "cli.h"
+#include <arpa/telnet.h>
+#include <stdio.h>
 
 #define HISTORY_START   -1
+#define KEY_TAB       0x09
+#define KEY_BACKSPACE 0x7f
+#define KEY_ESC       0x1b
+#define KEY_BRACKET   0x5b
+#define KEY_UP_ARROW  0x41
+#define KEY_DOWN_ARROW 0x42
+#define KEY_RIGHT_ARROW 0x43
+#define KEY_LEFT_ARROW 0x44
+#define KEY_NEWLINE     0xa
+#define KEY_RETURN      0xd
+#define KEY_CTRL_Z      0x1a
+#define KEY_CTRL_C      0x3
 
 vty_t*  vty_create(vty_type type, vty_data_t* data)
 {
@@ -19,7 +34,14 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
     vty->history_size = 0;
     vty->history_index = HISTORY_START;
     vty->buffer = calloc(BUFSIZE, sizeof(char));
+    vty->completions = stack_create();
     return vty;
+}
+
+void    vty_set_completions(vty_t* vty)
+{
+    stack_free(vty->completions);
+    vty->completions = cli_get_command_completions(vty, vty->buffer, vty->buf_size);
 }
 
 void    vty_set_echo(vty_t* vty, bool is_echo)
@@ -58,9 +80,11 @@ void    vty_free(vty_t* vty)
         close(vty->data->desc.socket);
     }
 
+    free(vty->data);
     free(vty->prompt);
     free(vty->buffer);
     stack_free(vty->history);
+    stack_free(vty->completions);
     free(vty);
 }
 
@@ -89,7 +113,7 @@ void    vty_display_banner(vty_t* vty)
 {
     if(vty->banner != NULL)
     {
-        vty_write(vty, "%s\r\n", vty->banner);
+        vty_write(vty, "%s%s", vty->banner, VTY_NEWLINE(vty));
     }
 }
 
@@ -107,25 +131,246 @@ void    vty_error(vty_t* vty, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    char* error_format_buf = calloc(strlen(format) + 4, sizeof(char));
+
+    char buf[BUFSIZE+1] = {0};
+    int len = vsnprintf(buf, BUFSIZE, format, args);
+
+    char* error_format_buf = calloc(len + 4, sizeof(char));
     strcat(error_format_buf, "%% ");
-    strcat(error_format_buf, format);
-    vty_write(vty, error_format_buf, args);
+    strcat(error_format_buf, buf);
+    vty_write(vty, error_format_buf);
     free(error_format_buf);
 }
 
 char*   vty_read(vty_t* vty)
 {
-    char* str = vty->read_cb(vty);
-    if(NULL != str && vty->echo)
+    if(vty_is_command_received(vty))
     {
-        /*if('\0' != *str && *str != '\n' && vty->type == VTY_STD)
-        {
-            add_history(str);
-        }*/
+        vty_clear_buffer(vty);
     }
 
-    return str;
+    char* ch;
+    vty_set_command_received(vty, false);
+
+    //while(true)
+    {
+        int n = vty->read_cb(vty, &ch);
+
+        if(n > 1)
+        {
+            vty_append_string(vty, ch);
+        }
+        else if(n <= 0)
+        {
+            vty_set_error(vty, true);
+            vty_clear_buffer(vty);
+            //break;
+        }
+        else if(vty->type == VTY_FILE && ch[0] == (char)EOF)
+        {
+            vty_set_error(vty, true);
+            vty_clear_buffer(vty);
+            //break;
+        }
+        else if(vty->multi_line)
+        {
+            if(ch[0] == vty->multiline_stop_char)
+            {
+                vty_set_command_received(vty, true);
+                vty->multi_line = false;
+                //break;
+            }
+            else
+            {
+                if(*ch == KEY_RETURN)
+                {
+                    vty_append_string(vty, VTY_NEWLINE(vty));
+                }
+                else if(*ch == KEY_NEWLINE)
+                {
+                    //printf("Char received: %c (0x%x)\n", *ch, *ch);
+                    vty_append_string(vty, "%s", "\r\n");
+                    //printf("buffer: 0x%x 0x%x\n", vty->buffer[vty->buf_size-2], vty->buffer[vty->buf_size-1]);
+                }
+                else
+                {
+                    vty_insert_char(vty, *ch);
+                }
+            }
+        }
+        else if(ch[0] == KEY_NEWLINE || ch[0] == KEY_RETURN || ch[n-1] == '\n' )
+        {
+            //printf("Line received: %s, multiline: %d\n", vty->buffer, vty->multi_line);
+            vty_add_history(vty);
+            vty_set_command_received(vty, true);
+            //break;
+        }
+        else if(ch[0] == IAC)
+        {
+            //printf("IAC start\n");
+            vty->iac_started = true;
+            vty->iac_count = 1;
+        }
+        else if(vty->iac_started)
+        {
+            if(vty->iac_count < 2)
+            {
+                //printf("IAC cont\n");
+
+                vty->iac_count++;
+            }
+            else
+            {
+                //printf("IAC end\n");
+
+                vty->iac_started = false;
+            }
+        }
+        else if(ch[0] == KEY_CTRL_Z)
+        {
+            vty_clear_buffer(vty);
+            vty_append_string(vty, "end");
+            vty_set_command_received(vty, true);
+            //break;
+        }
+        else if(ch[0] == KEY_CTRL_C)
+        {
+            vty_clear_buffer(vty);
+            vty_set_command_received(vty, true);
+            //break;
+        }
+        else if(ch[0] == '?')
+        {
+            cli_command_describe_norl(vty);
+        }
+        else if(ch[0] == KEY_TAB) // tab
+        {
+            if(!vty->command_completion_started)
+            {
+                vty_set_completions(vty);
+            
+                //printf("Show 1 completiing for %s\r\n", vty->buffer);
+
+                if(NULL != vty->completions)
+                {
+                    if(vty->completions->count == 1)
+                    {
+                        variant_stack_t* cmd_stack = create_cmd_vec(vty->buffer);
+                        variant_t* incomplete_cmd = stack_pop_back(cmd_stack);
+                        variant_t* complete_cmd = stack_pop_front(vty->completions);
+    
+                        // Redisplay the completed command
+                        for(int i = 0; i < strlen(variant_get_string(incomplete_cmd)); i++)
+                        {
+                            vty_erase_char(vty);
+                        }
+
+                        const char* complete_cmd_string = variant_get_string(complete_cmd);
+                        vty_append_string(vty, complete_cmd_string);
+                        
+                        vty_append_char(vty, ' ');
+                        variant_free(incomplete_cmd);
+                        variant_free(complete_cmd);
+                        stack_free(vty->completions);
+                        vty->completions = NULL;
+                        stack_free(cmd_stack);
+
+                        
+                    }
+                    else
+                    {
+                        vty->command_completion_started = true;
+                    }
+                }
+            }
+            else
+            {   
+                vty->command_completion_started = false;
+                int word_count = 0;
+                vty_write(vty, VTY_NEWLINE(vty));
+
+                stack_for_each(vty->completions, matching_command)
+                {
+                    vty_write(vty, "%-20s", variant_get_string(matching_command));
+                    if(word_count++ >= 3)
+                    {
+                        vty_write(vty, VTY_NEWLINE(vty));
+                        word_count = 0;
+                    }
+                }
+
+                if(word_count > 0)
+                {
+                    vty_write(vty, VTY_NEWLINE(vty));
+                }
+
+                vty_redisplay(vty, vty->buffer);
+            }
+        }
+        else if(ch[0] == KEY_BACKSPACE) // backspace
+        {
+            vty_erase_char(vty);
+        }
+        else if(ch[0] == KEY_ESC) // ESC char
+        {
+            vty->esc_sequence_started = true;
+        }
+        else if(vty->esc_sequence_started)
+        {
+            if(ch[0] == KEY_BRACKET) // bracket char 
+            {
+
+            }
+            else if(ch[0] == KEY_UP_ARROW)
+            {
+                const char* hist = vty_get_history(vty, false);
+
+                if(NULL != hist)
+                {
+                    vty_redisplay(vty, hist);
+                }
+
+                vty->esc_sequence_started = false;
+            }
+            else if(ch[0] == KEY_DOWN_ARROW)
+            {
+                const char* hist = vty_get_history(vty, true);
+                if(NULL == hist)
+                {
+                    vty_clear_buffer(vty);
+                }
+                vty_redisplay(vty, hist);
+                vty->esc_sequence_started = false;
+
+            }
+            else if(ch[0] == KEY_LEFT_ARROW)
+            {
+                vty_cursor_left(vty);
+                vty->esc_sequence_started = false;
+
+            }
+            else if(ch[0] == KEY_RIGHT_ARROW)
+            {
+                vty_cursor_right(vty);
+                vty->esc_sequence_started = false;
+
+                //break;
+            }
+        }
+        else if(n == 1)
+        {
+            vty_insert_char(vty, *ch);
+        }
+        else
+        {
+            vty_append_string(vty, ch);
+        }
+
+        free(ch);
+    }
+
+    //free(ch);
+    return vty->buffer;
 }
 
 void    vty_flush(vty_t* vty)
@@ -202,7 +447,7 @@ void    vty_set_history_size(vty_t* vty, int size)
 
 void    vty_insert_char(vty_t* vty, char ch)
 {
-    if(vty->buf_size < BUFSIZE)
+    if(vty->buf_size < BUFSIZE && ch != 0x0)
     {
         if(vty->cursor_pos < vty->buf_size)
         {
@@ -230,7 +475,11 @@ void    vty_insert_char(vty_t* vty, char ch)
             // need to append the char
             vty->buffer[vty->buf_size++] = ch;
             vty->cursor_pos = vty->buf_size;
-            vty_write(vty, "%c", ch);
+
+            if(vty->echo)
+            {
+                vty_write(vty, "%c", ch);
+            }
         }
     }
 }
@@ -245,16 +494,19 @@ void    vty_append_char(vty_t* vty, char ch)
     vty_insert_char(vty, ch);
 }
 
-void    vty_append_string(vty_t* vty, const char* str)
+void    vty_append_string(vty_t* vty, const char* format, ...)
 {
-    int len = strlen(str);
+    va_list args;
+    va_start(args, format);
+    char buf[BUFSIZE+1] = {0};
+    int len = vsnprintf(buf, BUFSIZE, format, args);
 
     if(vty->buf_size + len < BUFSIZE)
     {
-        strncpy(vty->buffer + vty->buf_size, str, len);
+        strncpy(vty->buffer + vty->buf_size, buf, len);
         vty->buf_size += len;
         vty->cursor_pos = vty->buf_size;
-        vty_write(vty, str);
+        vty_write(vty, buf);
     }
 }
 
@@ -340,7 +592,7 @@ void    vty_show_history(vty_t* vty)
     {
         stack_for_each_reverse(vty->history, history_variant)
         {
-            vty_write(vty, "%s\r\n", variant_get_string(history_variant));
+            vty_write(vty, "%s%s", variant_get_string(history_variant), VTY_NEWLINE(vty));
         }
     }
 }
@@ -369,5 +621,40 @@ void    vty_cursor_right(vty_t* vty)
 
         vty->cursor_pos++;
     }
+}
+
+void    vty_new_line(vty_t* vty)
+{
+    vty_write(vty, VTY_NEWLINE(vty));
+}
+
+void    vty_set_command_received(vty_t* vty, bool is_cmd_received)
+{
+    vty->command_received = is_cmd_received;
+}
+
+bool    vty_is_command_received(vty_t* vty)
+{
+    return vty->command_received;
+}
+
+void    vty_shutdown(vty_t* vty)
+{
+    vty->shutdown = true;
+}
+
+bool    vty_is_shutdown(vty_t* vty)
+{
+    return vty->shutdown;
+}
+
+void    vty_set_authenticated(vty_t* vty, bool is_authenticated)
+{
+    vty->is_authenticated = is_authenticated;
+}
+
+bool    vty_is_authenticated(vty_t* vty)
+{
+    return vty->is_authenticated;
 }
 

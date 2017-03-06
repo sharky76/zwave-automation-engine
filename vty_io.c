@@ -11,12 +11,15 @@
 #include <arpa/telnet.h>
 
 void    file_write_cb(vty_t* vty, const char* buf, size_t len);
-char*   file_read_cb(vty_t* vty);
+int     file_read_cb(vty_t* vty, char** str);
 void    std_write_cb(vty_t* vty, const char* buf, size_t len);
-char*   std_read_cb(vty_t* vty);
-void    std_show_history(vty_t* vty);
+int     std_read_cb(vty_t* vty, char** str);
+void    std_erase_cb(vty_t* vty);
+void    std_erase_line_cb(vty_t* vty);
+void    std_cursor_left_cb(vty_t* vty);
+void    std_cursor_right_cb(vty_t* vty);
 
-char*   http_read_cb(vty_t* vty);
+int     http_read_cb(vty_t* vty, char** str);
 void    http_write_cb(vty_t* vty, const char* buf, size_t len);
 void    http_flush_cb(vty_t* vty);
 
@@ -44,7 +47,10 @@ void    vty_io_config(vty_t* vty)
         rl_outstream = vty->data->desc.io_pair[OUT];
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
-        vty->show_history_cb = std_show_history;
+        vty->erase_char_cb = std_erase_cb;
+        vty->erase_line_cb = std_erase_line_cb;
+        vty->cursor_left_cb = std_cursor_left_cb;
+        vty->cursor_right_cb = std_cursor_right_cb;
 
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
@@ -64,15 +70,17 @@ void    vty_io_config(vty_t* vty)
         vty->cursor_right_cb = socket_cursor_right_cb;
 
         //char iac_sga_buf[3] = {255, 251, 3};
-        /*
+        
         unsigned char cmd_will_echo[] = { IAC, WILL, TELOPT_ECHO };
         unsigned char cmd_will_sga[] = { IAC, WILL, TELOPT_SGA };
         unsigned char cmd_dont_linemode[] = { IAC, DONT, TELOPT_LINEMODE };
-        
+        //unsigned char cmd_will_cr[] = {IAC, WILL, TELOPT_NAOCRD};
+
         socket_write_cb(vty, cmd_will_echo, 3);
         socket_write_cb(vty, cmd_will_sga, 3);
         socket_write_cb(vty, cmd_dont_linemode, 3);
-        */
+        //socket_write_cb(vty, cmd_will_cr, 3);
+        
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     }
@@ -84,9 +92,9 @@ void    file_write_cb(vty_t* vty, const char* buf, size_t len)
     fprintf(vty->data->desc.file, buf);
 }
 
-char*   file_read_cb(vty_t* vty)
+int   file_read_cb(vty_t* vty, char** str)
 {
-    if(vty->multi_line)
+    /*if(vty->multi_line)
     {
         char ch = 0;
         memset(vty->buffer, 0, vty->buf_size);
@@ -106,9 +114,9 @@ char*   file_read_cb(vty_t* vty)
         }
         return vty->buffer;
     }
-    else
+    else*/
     {
-        char* buffer = calloc(2048, sizeof(char));
+        /*char* buffer = calloc(2048, sizeof(char));
         char* res = fgets(buffer, 2048, vty->data->desc.file);
     
         if(NULL == res)
@@ -116,7 +124,31 @@ char*   file_read_cb(vty_t* vty)
             free(buffer);
         }
     
-        return res;
+        return res;*/
+        char ch = 0;
+        
+        /*while((ch = fgetc(vty->data->desc.file)) != '\n')
+        {
+            // Read multiple lines of input into buffer until \n.\n is found
+            if(vty->buf_size + 1 < BUFSIZE)
+            {
+                vty->buffer[vty->buf_size++] = ch;
+            }
+        }
+
+        return vty->buffer;*/
+
+        *str = malloc(sizeof(char));
+        *str[0] = fgetc(vty->data->desc.file);
+
+        if(**str == (char)EOF)
+        {
+            return -1;
+        }
+        else
+        {
+            return 1;
+        }
     }
 }
 
@@ -125,42 +157,23 @@ void    std_write_cb(vty_t* vty, const char* buf, size_t len)
     write(fileno(vty->data->desc.io_pair[OUT]), buf, len);
 }
 
-char*   std_read_cb(vty_t* vty)
+int   std_read_cb(vty_t* vty, char** str)
 {
-    /*fd_set fds;
-    keep_running = true;
-    
-    rl_set_prompt(vty->prompt);
-    while(keep_running)
-    {
-        FD_ZERO (&fds);
-        FD_SET(fileno(rl_instream), &fds);    
-    
-        int r = select (fileno(rl_instream)+1, &fds, NULL, NULL, NULL);
-        if (r < 0)
-        {
-            rl_callback_handler_remove ();
-            return NULL;
-        }
-        else if (FD_ISSET (fileno (rl_instream), &fds))
-        {
-            rl_callback_read_char();
-        }
-    }
+    *str = malloc(sizeof(char));
+    *str[0] = fgetc(vty->data->desc.io_pair[IN]);
+    return 1;
 
-    //rl_callback_handler_remove ();*/
-
-    if(!vty->echo)
+    /*if(!vty->echo)
     {
         fprintf(vty->data->desc.io_pair[OUT], "%s", vty->prompt);
         fflush(vty->data->desc.io_pair[OUT]);
 
-        char* line = calloc(128, sizeof(char));
+        *line = calloc(128, sizeof(char));
         fgets(line, 127, vty->data->desc.io_pair[IN]);
-        fprintf(vty->data->desc.io_pair[OUT], "\n");
+        fprintf(vty->data->desc.io_pair[OUT], VTY_NEWLINE(vty));
         fflush(vty->data->desc.io_pair[OUT]);
 
-        return line;
+        return strlen(str);
     }
     else if(vty->multi_line)
     {
@@ -209,28 +222,37 @@ char*   std_read_cb(vty_t* vty)
                 add_history(line);
             }
         }
-        return line;
-    }
+        return *line;
+    }*/
     //return rl_line_buffer;
 }
 
-void    std_show_history(vty_t* vty)
+void std_erase_cb(vty_t* vty)
 {
-    HIST_ENTRY** history_entry = history_list();
-    if(NULL != history_entry)
-    {
-        while(*history_entry)
-        {
-            vty_write(vty, "%s\n", (*history_entry)->line);
-            history_entry++;
-        }
-    }
+    vty_write(vty, "\b \b");
 }
 
-char*   http_read_cb(vty_t* vty)
+void    std_erase_line_cb(vty_t* vty)
+{
+    vty_write(vty, "\33[2K\r");
+}
+
+void    std_cursor_left_cb(vty_t* vty)
+{
+    vty_write(vty, "\33[1D");
+}
+
+void    std_cursor_right_cb(vty_t* vty)
+{
+    vty_write(vty, "\33[1C");
+}
+
+int   http_read_cb(vty_t* vty, char** str)
 {
     int socket = vty->data->desc.socket;
-    return http_server_read_request(socket);
+    char* resp = http_server_read_request(socket);
+    *str = strdup(resp);
+    return strlen(resp);
 }
 
 void    http_write_cb(vty_t* vty, const char* buf, size_t len)

@@ -32,6 +32,7 @@
 #include "vdev_manager.h"
 #include <execinfo.h>
 #include "cli_rest.h"
+#include <termios.h>
 
 #define DEFAULT_PORT 9231
 
@@ -333,19 +334,50 @@ int main (int argc, char *argv[])
             int session_sock = -1;
             vty_t* vty_sock;
 
-            //variant_stack_t* client_socket_list = stack_create();
+            variant_stack_t* client_socket_list = stack_create();
+            
+            // Create STD vty
+            vty_t* vty_std = NULL;
+            struct termios org_opts, new_opts;
+
+            if(!is_daemon)
+            {
+                struct termios org_opts, new_opts;
+                int res=0;
+                res=tcgetattr(STDIN_FILENO, &org_opts);
+                //assert(res==0);
+                    //---- set new terminal parms --------
+                memcpy(&new_opts, &org_opts, sizeof(new_opts));
+                new_opts.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOKE | ICRNL | ECHOCTL);
+                tcsetattr(STDIN_FILENO, TCSANOW, &new_opts);
+
+                vty_data_t* vty_data = calloc(1, sizeof(vty_data_t));
+                vty_data->desc.io_pair[0] = stdin;
+                vty_data->desc.io_pair[1] = stdout;
+                vty_std = vty_io_create(VTY_STD, vty_data);
+
+                cli_set_vty(vty_std);
+                vty_display_banner(vty_std);
+                        
+                if(user_manager_get_count() > 0 && !vty_is_authenticated(vty_std))
+                {
+                    cmd_enter_auth_node(vty_std);
+                }
+
+                vty_display_prompt(vty_std);
+            }
 
             while(true)
             {
                 FD_ZERO (&fds);
                 FD_SET(cli_sock,    &fds);    
                 FD_SET(http_socket, &fds);
-
-                /*stack_for_each(client_socket_list, vty_variant)
+                
+                stack_for_each(client_socket_list, vty_variant)
                 {
                     vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, vty_variant);
                     FD_SET(vty_ptr->data->desc.socket, &fds);
-                }*/
+                }
 
                 if(!is_daemon)
                 {
@@ -365,34 +397,30 @@ int main (int argc, char *argv[])
                     {
                         stdout_logger_data_t log_data = { STDOUT_FILENO };
                         logger_set_data(&log_data);
-
-                        vty_data_t vty_data = {
-                        .desc.io_pair[0] = stdin,
-                        .desc.io_pair[1] = stdout
-                        };
-                        
-                        vty_sock = vty_io_create(VTY_STD, &vty_data);
-                        cli_set_vty(vty_sock);
-                        vty_display_banner(vty_sock);
-
-                        if(user_manager_get_count() > 0)
-                        {
-                            cmd_enter_auth_node(vty_sock);
-                        }
                 
-                        //sigsetjmp(exit_jmpbuf, 1);
-                        sigsetjmp (jmpbuf, 1);
-                        jmpflag = 1;
-    
-                        while(keep_running)
+                        char* str = vty_read(vty_std);
+
+                        if(vty_is_command_received(vty_std))
                         {
-                            char* str = vty_read(vty_sock);
-                            cli_command_exec(vty_sock, str);
-                            rl_on_new_line();
-                            free(str);
+                            vty_new_line(vty_std);
+                            cli_command_exec(vty_std, str);
+                            vty_display_prompt(vty_std);
+                            vty_flush(vty_std);
                         }
-                        vty_free(vty_sock);
-                        keep_running = 1;
+                        else if(vty_is_error(vty_std))
+                        {
+                            LOG_ERROR(General, "Input error");
+                        }
+
+                        if(vty_is_shutdown(vty_std))
+                        {
+                            LOG_ADVANCED(General, "Goodbye");
+                            vty_free(vty_std);
+                            tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
+                            zway_stop(zway);
+                            zway_terminate(&zway);
+                            exit(0);
+                        }
                     }
                 }
                 if(FD_ISSET(cli_sock, &fds))
@@ -404,31 +432,14 @@ int main (int argc, char *argv[])
     
                     LOG_ADVANCED(General, "Remote client connected");
     
-                    /*int saved_stdout = dup(STDOUT_FILENO);
-                    int saved_stdin = dup(STDIN_FILENO);
-    
-                    close(STDOUT_FILENO);
-                    dup2(session_sock, STDOUT_FILENO);
-                    close(STDIN_FILENO);
-                    dup2(session_sock, STDIN_FILENO);
-        
-                    //FILE* readline_io = fdopen(session_sock, "rw");
-                    vty_data_t vty_data = {
-                        .desc.io_pair[0] = stdin,
-                        .desc.io_pair[1] = stdout
-                    };
-    
-                    vty_sock = vty_io_create(VTY_STD, &vty_data); 
-                    */
-                    
-                    vty_data_t vty_data = {
-                        .desc.socket = session_sock
-                    };
-                    vty_sock = vty_io_create(VTY_SOCKET, &vty_data); 
+                    vty_data_t* vty_data = calloc(1, sizeof(vty_data_t));
+                    vty_data->desc.socket = session_sock;
+                    vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
 
-                    //stack_push_back(client_socket_list, variant_create_ptr(DT_PTR, vty_sock, NULL));
+                    stack_push_back(client_socket_list, variant_create_ptr(DT_PTR, vty_sock, NULL));
 
                     cli_set_vty(vty_sock);
+
                     vty_display_banner(vty_sock);
                         
                     if(user_manager_get_count() > 0)
@@ -437,37 +448,7 @@ int main (int argc, char *argv[])
                     }
                 
                     vty_display_prompt(vty_sock);
-
-                    //sigsetjmp(exit_jmpbuf, 1);
-                    sigsetjmp (jmpbuf, 1);
-                    jmpflag = 1;
-    
-                    while(keep_running)
-                    {
-                        char* str = vty_read(vty_sock);
-
-                        if(NULL != str)
-                        {
-                            cli_command_exec(vty_sock, str);
-                            vty_display_prompt(vty_sock);
-                            vty_flush(vty_sock);
-                        }
-                        else if(vty_is_error(vty_sock))
-                        {
-                            LOG_ERROR(General, "Socket error");
-                            keep_running = false;
-                        }
-                        //rl_on_new_line();
-                        //free(str);
-                    }
-    
-                    keep_running = 1;
-                    vty_free(vty_sock);
-                    //dup2(saved_stdout, STDOUT_FILENO);
-                    //dup2(saved_stdin, STDIN_FILENO);
-
-                    LOG_ADVANCED(General, "Remote client disconnected");
-                } 
+                }
                 else if(FD_ISSET(http_socket, &fds))
                 {
                     session_sock = accept(http_socket, NULL, NULL);
@@ -480,6 +461,38 @@ int main (int argc, char *argv[])
                     cli_command_exec_custom_node(rest_root_node, vty_sock, str);
 
                     vty_free(vty_sock);
+                }
+                else
+                {
+                    stack_for_each(client_socket_list, vty_variant)
+                    {
+                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, vty_variant);
+                        if(FD_ISSET(vty_ptr->data->desc.socket, &fds))
+                        {
+                            char* str = vty_read(vty_ptr);
+
+                            if(vty_is_command_received(vty_ptr))
+                            {
+                                vty_new_line(vty_ptr);
+                                cli_command_exec(vty_ptr, str);
+                                vty_display_prompt(vty_ptr);
+                                vty_flush(vty_ptr);
+                            }
+                            else if(vty_is_error(vty_ptr))
+                            {
+                                LOG_ERROR(General, "Socket error");
+                                vty_free(vty_ptr);
+                                stack_remove(client_socket_list, vty_variant);
+                            }
+
+                            if(vty_is_shutdown(vty_ptr))
+                            {
+                                LOG_ADVANCED(General, "Remote client disconnected");
+                                vty_free(vty_ptr);
+                                stack_remove(client_socket_list, vty_variant);
+                            }
+                        }
+                    }
                 }
             }
 

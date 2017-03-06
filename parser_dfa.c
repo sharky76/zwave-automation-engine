@@ -209,7 +209,7 @@ AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
     {
         return A_COMMA;
     }
-    else if(*str == '\0' || *str == '\n')
+    else if(*str == '\0' || *str == '\n' || *str == '\r')
     {
         return A_EOL;
     }

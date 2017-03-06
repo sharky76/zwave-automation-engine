@@ -178,7 +178,7 @@ void  timer_tick_event(const char* name, event_t* pevent)
         ADD_MONTH(job_time, p_tm->tm_mon);
         ADD_WEEKDAY(job_time, p_tm->tm_wday);
 
-        LOG_DEBUG(DT_CRON, "Cron Event %d %d %d %d %d\n", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
+        LOG_DEBUG(DT_CRON, "Cron Event %d %d %d %d %d", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
 
         variant_stack_t* scene_list = crontab_get_scene(job_time);
 

@@ -33,7 +33,6 @@ void    cli_command_exec_default(char* line);
 char**  cli_command_completer(const char* text, int start, int stop);
 char**  cli_command_completer_norl(vty_t* vty, const char* text, int size);
 int     cli_command_describe();
-int     cli_command_describe_norl(vty_t* vty);
 int     cli_command_quit(int count, int key);
 variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size);
 void    cmd_enter_root_node(vty_t* vty);

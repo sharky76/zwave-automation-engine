@@ -178,7 +178,7 @@ bool cmd_config_scene_action_script(vty_t* vty, variant_stack_t* params)
         new_action = scene_action_create(A_SCRIPT, variant_get_string(stack_peek_at(params, 2)));
         if(!scene_add_action(scene, new_action))
         {
-            vty_error(vty, "Unable to add action\n");
+            vty_error(vty, "Unable to add action%s", VTY_NEWLINE(vty));
         }
     }
 
@@ -358,7 +358,7 @@ bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params)
 bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params)
 {
     scene_t* scene = scene_manager_get_scene(scene_node->context);
-    vty_write(vty, "condition %s\n", scene->condition);
+    vty_write(vty, "condition %s%s", scene->condition, VTY_NEWLINE(vty));
 }
 
 bool cmd_scene_enable(vty_t* vty, variant_stack_t* params)
@@ -377,23 +377,23 @@ void    show_scene_helper(scene_t* scene, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
-    vty_write(vty, "scene %s\n", scene->name);
+    vty_write(vty, "scene %s%s", scene->name, VTY_NEWLINE(vty));
 
     if(scene->is_enabled)
     {
-        vty_write(vty, " enable\n");
+        vty_write(vty, " enable%s", VTY_NEWLINE(vty));
     }
     else
     {
-        vty_write(vty, " no enable\n");
+        vty_write(vty, " no enable%s", VTY_NEWLINE(vty));
     }
 
-    vty_write(vty, " source %s\n", scene->source);
-    vty_write(vty, " condition %s\n", scene->condition);
+    vty_write(vty, " source %s%s", scene->source, VTY_NEWLINE(vty));
+    vty_write(vty, " condition %s%s", scene->condition, VTY_NEWLINE(vty));
     
     scene_for_each_action(scene, show_scene_action_helper, vty);
 
-    vty_write(vty, "!\n");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
 }
 
 void    show_scene_action_helper(action_t* action, void* arg)
@@ -403,23 +403,23 @@ void    show_scene_action_helper(action_t* action, void* arg)
     switch(action->type)
     {
     case A_SCRIPT:
-        vty_write(vty, " action script %s\n", action->path);
+        vty_write(vty, " action script %s%s", action->path, VTY_NEWLINE(vty));
         scene_action_for_each_environment(action, show_scene_action_env_helper, vty);
-        vty_write(vty, " !\n");
+        vty_write(vty, " !%s", VTY_NEWLINE(vty));
         break;
     case A_COMMAND:
-        vty_write(vty, " action command %s\n", action->path);
+        vty_write(vty, " action command %s%s", action->path, VTY_NEWLINE(vty));
         scene_action_for_each_method_stack_item(action, show_scene_action_token_helper, vty);
-        vty_write(vty, " !\n");
+        vty_write(vty, " !%s", VTY_NEWLINE(vty));
         break;
     case A_SCENE:
-        vty_write(vty, " action scene %s\n", action->path);
+        vty_write(vty, " action scene %s%s", action->path, VTY_NEWLINE(vty));
         break;
     case A_ENABLE:
-        vty_write(vty, " action enable %s\n", action->path);
+        vty_write(vty, " action enable %s%s", action->path, VTY_NEWLINE(vty));
         break;
     case A_DISABLE:
-        vty_write(vty, " action disable %s\n", action->path);
+        vty_write(vty, " action disable %s%s", action->path, VTY_NEWLINE(vty));
         break;
     default:
         {
@@ -432,11 +432,11 @@ void    show_scene_action_helper(action_t* action, void* arg)
 void    show_scene_action_env_helper(env_t* env, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "  environment %s value %s\n", env->name, env->value);
+    vty_write(vty, "  environment %s value %s%s", env->name, env->value, VTY_NEWLINE(vty));
 }
 
 void show_scene_action_token_helper(method_stack_item_t* env, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "  argument class %s name %s value %s\n", env->stack_name, env->name, env->value);
+    vty_write(vty, "  argument class %s name %s value %s%s", env->stack_name, env->name, env->value, VTY_NEWLINE(vty));
 }

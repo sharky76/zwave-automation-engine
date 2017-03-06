@@ -66,7 +66,7 @@ variant_t*  weather_get_forecast(service_method_t* method, va_list args)
                 }
 
                 formatted_output = realloc(formatted_output, old_len + 255);
-                snprintf(formatted_output+old_len, 254, "%s %.1fF %s\n", time_string, forecast_entry->weather_entry.temp, forecast_entry->weather_entry.precipitation);
+                snprintf(formatted_output+old_len, 254, "%s %.1fF %s\r\n", time_string, forecast_entry->weather_entry.temp, forecast_entry->weather_entry.precipitation);
             }
             return variant_create_string(formatted_output);
         }
@@ -87,7 +87,7 @@ variant_t*  weather_get_forecast(service_method_t* method, va_list args)
                 }
 
                 formatted_output = realloc(formatted_output, old_len + 255);
-                snprintf(formatted_output+old_len, 254, "%s %.1fF %s\n", time_string, forecast_entry->weather_entry.temp, forecast_entry->weather_entry.precipitation);
+                snprintf(formatted_output+old_len, 254, "%s %.1fF %s\r\n", time_string, forecast_entry->weather_entry.temp, forecast_entry->weather_entry.precipitation);
             }
             return variant_create_string(formatted_output);
         }

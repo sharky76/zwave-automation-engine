@@ -93,12 +93,12 @@ bool cmd_auth_password(vty_t* vty, variant_stack_t* params)
     {
     
         // Go to root node on success
-        
+        vty_set_authenticated(vty, true);
         cmd_enter_root_node(vty);
     }
     else
     {
-        vty_error(vty, "Invalid username/password\n");
+        vty_error(vty, "Invalid username/password%s", VTY_NEWLINE(vty));
         cmd_enter_auth_node(vty);
     }
 
@@ -115,7 +115,7 @@ bool cmd_auth_add_user(vty_t* vty, variant_stack_t* params)
     }
     else if(!user_manager_add_user(variant_get_string(stack_peek_at(params, 1)), variant_get_string(stack_peek_at(params, 3))))
     {
-        vty_error(vty, "Unable to add user\n");
+        vty_error(vty, "Unable to add user%s", VTY_NEWLINE(vty));
     }
 }
 
@@ -132,5 +132,5 @@ bool cmd_auth_show_users(vty_t* vty, variant_stack_t* params)
 void show_user_helper(user_entry_t* entry, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "user %s password %d\n", entry->username, entry->password);
+    vty_write(vty, "user %s password %d%s", entry->username, entry->password, VTY_NEWLINE(vty));
 }

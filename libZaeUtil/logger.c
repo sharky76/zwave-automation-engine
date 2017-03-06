@@ -119,7 +119,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
         int len_so_far = strlen(log_format_buffer);
 
         strncat(log_format_buffer, format, MAX_LOG_ENTRY_LEN-len_so_far-1);
-        strcat(log_format_buffer, "\n");
+        strcat(log_format_buffer, "\r\n");
 
         char buf[1024] = {0};
         vsnprintf(buf, 1023, log_format_buffer, args);

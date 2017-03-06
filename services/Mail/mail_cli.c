@@ -60,7 +60,7 @@ void add_to_config_list_visitor(template_t* template, void* arg)
     show_template_visitor_data_t* data = (show_template_visitor_data_t*)arg;
 
     char buf[1024] = {0};
-    snprintf(buf, 1023, "template %s %c\n%s%c", template->name, template->end_indicator, template->template, template->end_indicator);
+    snprintf(buf, 1023, "template %s %c\r\n%s%c", template->name, template->end_indicator, template->template, template->end_indicator);
     data->config_list[data->start_index] = strdup(buf);
     data->start_index++;
 }
@@ -163,13 +163,17 @@ bool    cmd_add_mail_template(vty_t* vty, variant_stack_t* params)
 {
     const char* template_name = variant_get_string(stack_peek_at(params, 1));
     char template_stop_char = *variant_get_string(stack_peek_at(params, 2));
-    vty_write(vty, "Enter template text ending with '%c'\n", template_stop_char);
+    vty_write(vty, "Enter template text ending with '%c'%s", template_stop_char, VTY_NEWLINE(vty));
 
     vty_set_multiline(vty, true, template_stop_char);
-    char* buf = vty_read(vty);
-    vty_set_multiline(vty, false, template_stop_char);
-    vty_write(vty, "\n");
-    mail_data_add_template(template_name, template_stop_char, buf);
+    do
+    {
+        vty_read(vty);
+    }
+    while(!vty_is_command_received(vty));
+
+    vty_write(vty, VTY_NEWLINE(vty));
+    mail_data_add_template(template_name, template_stop_char, vty->buffer);
 }
 
 bool    cmd_del_mail_template(vty_t* vty, variant_stack_t* params)
