@@ -53,76 +53,50 @@ typedef struct show_template_visitor_data_t
 {
     char** config_list;
     int    start_index;
+    vty_t* vty;
 } show_template_visitor_data_t;
 
 void add_to_config_list_visitor(template_t* template, void* arg)
 {
     show_template_visitor_data_t* data = (show_template_visitor_data_t*)arg;
 
-    char buf[1024] = {0};
-    snprintf(buf, 1023, "template %s %c\r\n%s%c", template->name, template->end_indicator, template->template, template->end_indicator);
-    data->config_list[data->start_index] = strdup(buf);
-    data->start_index++;
+    vty_write(data->vty, " template %s %c%s", template->name, template->end_indicator, VTY_NEWLINE(data->vty));
+    vty_write_multiline(data->vty, template->template);
+    vty_write(data->vty, "%c%s", template->end_indicator, VTY_NEWLINE(data->vty));
 }
 
 void add_recipients_to_config_list_visitor(const char* recipient, void* arg)
 {
     show_template_visitor_data_t* data = (show_template_visitor_data_t*)arg;
-
-    char buf[1024] = {0};
-    snprintf(buf, 1023, "recipient %s", recipient);
-    data->config_list[data->start_index] = strdup(buf);
-    data->start_index++;
+    vty_write(data->vty, " recipient %s%s", recipient, VTY_NEWLINE(data->vty));
 }
 
-char** mail_cli_get_config()
+char** mail_cli_get_config(vty_t* vty)
 {
-    if(NULL != config_list)
-    {
-        char* cfg;
-        int i = 0;
-        while(cfg = config_list[i++])
-        {
-            free(cfg);
-        }
-
-        free(config_list);
-    }
-
-    int config_index = 0;
-    config_list = calloc(template_table->count + recipient_table->count + 3, sizeof(char*));
-
     if(smtp_data->server_name != 0)
     {
-        char buf[512] = {0};
         if(smtp_data->is_smtps)
         {
-            snprintf(buf, 511, "server %s smtps port %d", smtp_data->server_name, smtp_data->port);
+            vty_write(vty, " server %s smtps port %d%s", smtp_data->server_name, smtp_data->port, VTY_NEWLINE(vty));
         }
         else
         {
-            snprintf(buf, 511, "server %s port %d", smtp_data->server_name, smtp_data->port);
+            vty_write(vty, " server %s port %d%s", smtp_data->server_name, smtp_data->port, VTY_NEWLINE(vty));
         }
-
-        config_list[config_index++] = strdup(buf);
     }
 
     if(smtp_data->username != 0)
     {
-        char buf[512] = {0};
-
-        snprintf(buf, 511, "auth %s password %s", smtp_data->username, smtp_data->password);
-        config_list[config_index++] = strdup(buf);
+        vty_write(vty, " auth %s password %s%s", smtp_data->username, smtp_data->password, VTY_NEWLINE(vty));
     }
 
     show_template_visitor_data_t data = {
-        .config_list = config_list,
-        .start_index = config_index
+        .vty = vty
     };
 
     variant_hash_for_each_value(recipient_table, const char*, add_recipients_to_config_list_visitor, &data);
     variant_hash_for_each_value(template_table, template_t*, add_to_config_list_visitor, &data);
-    return config_list;
+    return NULL;
 }
 
 bool    cmd_configure_server(vty_t* vty, variant_stack_t* params)

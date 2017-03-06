@@ -81,6 +81,14 @@ $(OUTDIR):
 # Build dependencies
 deps:
 	@(cd libZaeUtil/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Cron/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/DateTime/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/IFTTT/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Mail/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/SMS/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Timer/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Weather/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -93,6 +101,14 @@ clean:
 # Clean this project and all dependencies
 cleanall: clean
 	@(cd libZaeUtil/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Cron/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/DateTime/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/IFTTT/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Mail/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/SMS/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Timer/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Weather/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif
 
 #
@@ -162,6 +178,14 @@ $(OUTDIR):
 # Build dependencies
 deps:
 	@(cd libZaeUtil/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Cron/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/DateTime/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/IFTTT/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Mail/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/SMS/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Timer/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd services/Weather/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -174,4 +198,12 @@ clean:
 # Clean this project and all dependencies
 cleanall: clean
 	@(cd libZaeUtil/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Cron/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/DateTime/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/IFTTT/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Mail/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/SMS/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Timer/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd services/Weather/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif

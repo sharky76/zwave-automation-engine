@@ -121,6 +121,14 @@
 		</PostBuildCommands>
 		<Dependencies Name="Debug">
 			<Dependency Project="libZaeUtil/libZaeUtil.vpj"/>
+			<Dependency Project="services/Cron/Cron.vpj"/>
+			<Dependency Project="services/DateTime/DateTime.vpj"/>
+			<Dependency Project="services/IFTTT/IFTTT.vpj"/>
+			<Dependency Project="services/Mail/Mail.vpj"/>
+			<Dependency Project="services/SMS/SMS.vpj"/>
+			<Dependency Project="services/Timer/Timer.vpj"/>
+			<Dependency Project="services/Weather/Weather.vpj"/>
+			<Dependency Project="vdev/SurveillanceStation/SurveillanceStation.vpj"/>
 		</Dependencies>
 	</Config>
 	<Config
@@ -239,6 +247,14 @@
 		</PostBuildCommands>
 		<Dependencies Name="Release">
 			<Dependency Project="libZaeUtil/libZaeUtil.vpj"/>
+			<Dependency Project="services/Cron/Cron.vpj"/>
+			<Dependency Project="services/DateTime/DateTime.vpj"/>
+			<Dependency Project="services/IFTTT/IFTTT.vpj"/>
+			<Dependency Project="services/Mail/Mail.vpj"/>
+			<Dependency Project="services/SMS/SMS.vpj"/>
+			<Dependency Project="services/Timer/Timer.vpj"/>
+			<Dependency Project="services/Weather/Weather.vpj"/>
+			<Dependency Project="vdev/SurveillanceStation/SurveillanceStation.vpj"/>
 		</Dependencies>
 	</Config>
 	<CustomFolders>

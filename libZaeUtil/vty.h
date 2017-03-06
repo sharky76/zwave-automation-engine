@@ -66,7 +66,7 @@ typedef struct vty_t
     bool    is_authenticated;
 } vty_t;
 
-#define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET || _vty_->type == VTY_FILE) ? "\r\n" : "\n")
+#define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET) ? "\r\n" : "\n")
 
 void    vty_signal_init();
 vty_t*  vty_create(vty_type type, vty_data_t* data);
@@ -102,4 +102,7 @@ void    vty_shutdown(vty_t* vty);
 bool    vty_is_shutdown(vty_t* vty);
 void    vty_set_authenticated(vty_t* vty, bool is_authenticated);
 bool    vty_is_authenticated(vty_t* vty);
+void    vty_write_multiline(vty_t* vty, char* buffer);
+int     vty_convert_multiline(vty_t* vty, char* buffer, char** output);
+
 

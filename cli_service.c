@@ -114,13 +114,16 @@ void show_service_config_helper(service_t* service, void* arg)
     if(NULL != service->get_config_callback)
     {
         vty_write(vty, "service %s%s", service->service_name, VTY_NEWLINE(vty));
-        char** service_config = service->get_config_callback();
+        char** service_config = service->get_config_callback(vty);
         int i = 0;
         char* cfg_string;
-
-        while(cfg_string = service_config[i++])
+        
+        if(NULL != service_config)
         {
-            vty_write(vty, " %s%s", cfg_string, VTY_NEWLINE(vty));
+            while(cfg_string = service_config[i++])
+            {
+                vty_write(vty, " %s%s", cfg_string, VTY_NEWLINE(vty));
+            }
         }
 
         vty_write(vty, "!%s", VTY_NEWLINE(vty));

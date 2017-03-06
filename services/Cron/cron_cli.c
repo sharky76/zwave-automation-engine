@@ -62,7 +62,7 @@ char* crontab_time_to_string(crontab_time_t time)
     return time_str;
 }
 
-char** cron_cli_get_config()
+char** cron_cli_get_config(vty_t* vty)
 {
     if(NULL != config_list)
     {

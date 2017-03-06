@@ -13,6 +13,7 @@ API for adding service plugins
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include "vty.h"
 
 typedef struct service_method_t
 {
@@ -35,7 +36,7 @@ typedef struct service_t
     int         service_id;
     char*       service_name;
     char*       description;
-    char**      (*get_config_callback)(void);
+    char**      (*get_config_callback)(vty_t*);
     //void        (*on_event)(const char*, event_t*);
     variant_stack_t*    service_methods;
     variant_stack_t*    event_subscriptions;

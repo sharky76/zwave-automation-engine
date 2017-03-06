@@ -32,7 +32,7 @@ void    timer_cli_init(cli_node_t* parent_node)
     timer_list_static = stack_create();
 }
 
-char**  timer_cli_get_config()
+char**  timer_cli_get_config(vty_t* vty)
 {
     if(NULL != config_list)
     {

@@ -35,7 +35,7 @@ typedef struct vdev_t
     int  vdev_id;
     const char* name;
     void  (*start)();
-    char**      (*get_config_callback)(void);
+    char**      (*get_config_callback)(vty_t*);
     variant_stack_t*  supported_method_list;
     variant_stack_t*  event_subscriptions;
     void* command_class_ptr;    // For compatibility with ZWAVE device function operators

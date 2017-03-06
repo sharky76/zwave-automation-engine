@@ -21,7 +21,7 @@ void    datetime_cli_init(cli_node_t* parent_node)
     cli_install_node(&datetime_node, parent_node, datetime_command_list, "DateTime", "service-datetime");
 }
 
-char**  datetime_cli_get_config()
+char**  datetime_cli_get_config(vty_t* vty)
 {
     if(NULL != config_list)
     {

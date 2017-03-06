@@ -22,7 +22,7 @@ void SurveillanceStation_cli_create(cli_node_t* parent_node)
     cli_install_node(&SS_node, parent_node, SS_command_list, "SurveillanceStation", "vdev-SurveillanceStation");
 }
 
-char** SurveillanceStation_get_config()
+char** SurveillanceStation_get_config(vty_t* vty)
 {
     if(NULL != config_list)
     {

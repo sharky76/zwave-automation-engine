@@ -253,6 +253,8 @@ variant_t*  mail_get_template(service_method_t* method, va_list args)
 
     if(NULL != template)
     {
+        // Convert multi line string to proper format
+        //vty_convert_multiline()
         return variant_create_string(strdup(template->template));
     }
     else

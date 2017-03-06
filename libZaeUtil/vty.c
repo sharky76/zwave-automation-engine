@@ -184,15 +184,10 @@ char*   vty_read(vty_t* vty)
             {
                 if(*ch == KEY_RETURN)
                 {
-                    vty_append_string(vty, VTY_NEWLINE(vty));
+                    vty_write(vty, "%c", KEY_RETURN);
+                    vty_insert_char(vty, KEY_NEWLINE);
                 }
-                else if(*ch == KEY_NEWLINE)
-                {
-                    //printf("Char received: %c (0x%x)\n", *ch, *ch);
-                    vty_append_string(vty, "%s", "\r\n");
-                    //printf("buffer: 0x%x 0x%x\n", vty->buffer[vty->buf_size-2], vty->buffer[vty->buf_size-1]);
-                }
-                else
+                else 
                 {
                     vty_insert_char(vty, *ch);
                 }
@@ -657,4 +652,67 @@ bool    vty_is_authenticated(vty_t* vty)
 {
     return vty->is_authenticated;
 }
+
+void    vty_write_multiline(vty_t* vty, char* buffer)
+{
+    if(NULL == buffer || strlen(buffer) == 0)
+    {
+        return;
+    }
+
+    FILE* stream = fmemopen(buffer, strlen(buffer), "r");
+
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    while((read = getline(&line, &len, stream)) != -1)
+    {
+        if(line[read-1] == '\n')
+        {
+            line[read-1] = 0;
+            vty_write(vty, "%s", line);
+            vty_write(vty, "%s", VTY_NEWLINE(vty));
+        }
+        else
+        {
+            vty_write(vty, "%s", line);
+        }
+    }
+
+    free(line);
+    fclose(stream);
+}
+
+int     vty_convert_multiline(vty_t* vty, char* buffer, char** output)
+{
+    FILE* stream = fmemopen(buffer, strlen(buffer), "r");
+
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    int initial_len = strlen(buffer)*2;
+    *output = calloc(initial_len, sizeof(char));
+
+    while((read = getline(&line, &len, stream)) != -1)
+    {
+        if(line[read-1] == '\n')
+        {
+            line[read-1] = 0;
+            strcat(*output, line);
+            strcat(*output, VTY_NEWLINE(vty));
+        }
+        else
+        {
+            strcat(*output, line);
+        }
+    }
+
+    free(line);
+    fclose(stream);
+
+    return strlen(*output);
+}
+
 

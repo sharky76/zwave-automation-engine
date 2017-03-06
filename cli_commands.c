@@ -759,7 +759,7 @@ bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)
     FILE* queue_out = fmemopen(queuebuf, 64999, "w+");
     zway_queue_inspect(zway, queue_out);
     fflush(queue_out);
-    vty_write(vty, queuebuf);
+    vty_write_multiline(vty, queuebuf);
 }
 
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params)
@@ -800,7 +800,12 @@ bool    cmd_show_banner(vty_t* vty, variant_stack_t* params)
     if(0 != banner_stop_char && NULL != banner)
     {
         vty_write(vty, "banner %c%s", banner_stop_char, VTY_NEWLINE(vty));
-        vty_write(vty, "%s%c%s", banner, banner_stop_char, VTY_NEWLINE(vty));
+
+        vty_write_multiline(vty, banner);
+
+        vty_write(vty, "%c%s", banner_stop_char, VTY_NEWLINE(vty));
+
+        //vty_write(vty, "%s%c%s", banner, banner_stop_char, VTY_NEWLINE(vty));
     }
     else
     {
@@ -945,11 +950,10 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
     // First rename current startup config to backup
     rename(config_loc, backup_loc);
 
-    vty_data_t file_vty_data = {
-        .desc.file = fopen(config_loc, "w")
-    };
+    vty_data_t* file_vty_data = malloc(sizeof(vty_data_t));
+    file_vty_data->desc.file = fopen(config_loc, "w");
 
-    vty_t* file_vty = vty_io_create(VTY_FILE, &file_vty_data);
+    vty_t* file_vty = vty_io_create(VTY_FILE, file_vty_data);
     vty_set_banner(file_vty, vty->banner);
     vty_set_history_size(file_vty, vty->history_size);
     file_vty->current_node = vty->current_node;

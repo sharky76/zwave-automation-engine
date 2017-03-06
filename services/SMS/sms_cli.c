@@ -38,7 +38,7 @@ void add_to_config_list_visitor(const char* phone, void* arg)
     data->start_index++;
 }
 
-char** sms_cli_get_config()
+char** sms_cli_get_config(vty_t* vty)
 {
     if(NULL != config_list)
     {

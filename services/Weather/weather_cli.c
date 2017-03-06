@@ -27,7 +27,7 @@ void    weather_cli_init(cli_node_t* parent_node)
     weather_zip = 0;
 }
 
-char**  weather_cli_get_config()
+char**  weather_cli_get_config(vty_t* vty)
 {
     if(NULL != config_list)
     {

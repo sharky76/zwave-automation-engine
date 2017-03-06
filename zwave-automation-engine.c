@@ -419,6 +419,13 @@ int main (int argc, char *argv[])
                             tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
                             zway_stop(zway);
                             zway_terminate(&zway);
+
+                            stack_for_each(client_socket_list, vty_variant)
+                            {
+                                vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, vty_variant);
+                                vty_free(vty_ptr);
+                            }
+
                             exit(0);
                         }
                     }

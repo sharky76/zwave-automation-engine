@@ -103,7 +103,7 @@ void show_vdev_config_helper(vdev_t* vdev, void* arg)
     if(NULL != vdev->get_config_callback)
     {
         vty_write(vty, "virtual-device %s%s", vdev->name, VTY_NEWLINE(vty));
-        char** vdev_config = vdev->get_config_callback();
+        char** vdev_config = vdev->get_config_callback(vty);
         int i = 0;
         char* cfg_string;
 
