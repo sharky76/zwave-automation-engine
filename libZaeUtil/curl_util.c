@@ -27,7 +27,7 @@ size_t write_cb(char *in, size_t size, size_t nmemb, void *out)
     return realsize;
 }
 
-void    curl_util_get_json(const char* request_url, void (response_parser)(const json_object*))
+void    curl_util_get_json(const char* request_url, void (response_parser)(const json_object*, void*), void* arg)
 {
     response_memory_t chunk;
     CURL *curl_handle;
@@ -69,7 +69,7 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
 
         if(NULL != response_parser)
         {
-            response_parser(response_obj);
+            response_parser(response_obj, arg);
         }
 
         json_object_put(response_obj);

@@ -15,15 +15,15 @@
 //                                              "path":"_______________________________________________________entry.cgi",
 //                                              "requestFormat":"JSON"}},
 //  "success":true}
-void process_query_response(const json_object* obj);
+void process_query_response(const json_object* obj, void* arg);
 void SS_api_query()
 {
     char query_req_buf[512] = {0};
-    snprintf(query_req_buf, 511, "%s/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info", SS_base_url);
-    curl_util_get_json(query_req_buf, process_query_response);
+    snprintf(query_req_buf, 511, "%s/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info", SS_base_url);
+    curl_util_get_json(query_req_buf, process_query_response, NULL);
 }
 
-void process_query_response(const json_object* obj)
+void process_query_response(const json_object* obj, void* arg)
 {
     struct json_object* success_response;
     json_object_object_get_ex(obj, "success", &success_response);
@@ -115,15 +115,15 @@ void process_query_response(const json_object* obj)
 // Reply: {"data":  {"sid":"FFWEaNWGizqE.BCK3N02417"},
 //         "success":true
 //        }
-void process_auth_response(const json_object* obj);
+void process_auth_response(const json_object* obj, void* arg);
 void SS_api_get_sid()
 {
     char auth_req_buf[512] = {0};
-    snprintf(auth_req_buf, 511, "%s/%s?api=SYNO.API.Auth&method=Login&version=2&account=%s&passwd=%s&session=SurveillanceStation&format=sid", SS_base_url, SS_auth_path, SS_user, SS_pass);
-    curl_util_get_json(auth_req_buf, process_auth_response);
+    snprintf(auth_req_buf, 511, "%s/webapi/%s?api=SYNO.API.Auth&method=Login&version=2&account=%s&passwd=%s&session=SurveillanceStation&format=sid", SS_base_url, SS_auth_path, SS_user, SS_pass);
+    curl_util_get_json(auth_req_buf, process_auth_response, NULL);
 }
 
-void process_auth_response(const json_object* obj)
+void process_auth_response(const json_object* obj, void* arg)
 {
     struct json_object* success_response;
     json_object_object_get_ex(obj, "success", &success_response);
@@ -156,8 +156,8 @@ void process_auth_response(const json_object* obj)
 void  SS_api_logout()
 {
     char logout_req_buf[512] = {0};
-    snprintf(logout_req_buf, 511, "%s/%s?api=SYNO.API.Auth&method=Logout&version=2&session=SurveillanceStation&_sid=%s", SS_base_url, SS_auth_path, SS_auth_sid);
-    curl_util_get_json(logout_req_buf, NULL);
+    snprintf(logout_req_buf, 511, "%s/webapi/%s?api=SYNO.API.Auth&method=Logout&version=2&session=SurveillanceStation&_sid=%s", SS_base_url, SS_auth_path, SS_auth_sid);
+    curl_util_get_json(logout_req_buf, NULL, NULL);
 
     free(SS_auth_sid);
     SS_auth_sid = NULL;
@@ -179,15 +179,16 @@ void  SS_api_logout()
 //              },
 //   "success":true
 //  }
-void    process_get_info_response(const json_object* obj);
+void    process_get_info_response(const json_object* obj, void* arg);
 void  SS_api_get_info()
 {
+    LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get System List");
     char get_info_req_buf[512] = {0};
-    snprintf(get_info_req_buf, 511, "%s/%s?api=SYNO.SurveillanceStation.Info&method=GetInfo&version=1&_sid=%s", SS_base_url, SS_info_path, SS_auth_sid);
-    curl_util_get_json(get_info_req_buf, process_get_info_response);
+    snprintf(get_info_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Info&method=GetInfo&version=1&_sid=%s", SS_base_url, SS_info_path, SS_auth_sid);
+    curl_util_get_json(get_info_req_buf, process_get_info_response, NULL);
 }
 
-void    process_get_info_response(const json_object* obj)
+void    process_get_info_response(const json_object* obj, void* arg)
 {
     struct json_object* success_response;
     json_object_object_get_ex(obj, "success", &success_response);
@@ -222,7 +223,7 @@ void    process_get_info_response(const json_object* obj)
 //                             "1-Family Room":49}},
 //           "total":49},
 //  "success":true}
-void process_motion_events_response(const json_object* obj);
+void process_motion_events_response(const json_object* obj, void* arg);
 
 void get_camera_id(SS_camera_info_t* cam_info, SS_event_keeper_t* ss_event)
 {
@@ -250,11 +251,11 @@ void get_camera_id(SS_camera_info_t* cam_info, SS_event_keeper_t* ss_event)
 void  SS_api_get_motion_events()
 {
     char motion_events_req_buf[512] = {0};
-    snprintf(motion_events_req_buf, 511, "%s/%s?api=SYNO.SurveillanceStation.Event&method=CountByCategory&reason=2,7&fromTime=%d&version=4&_sid=%s", SS_base_url, SS_event_path, time(NULL) - QUERY_RATE_SEC, SS_auth_sid);
-    curl_util_get_json(motion_events_req_buf, process_motion_events_response);
+    snprintf(motion_events_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Event&method=CountByCategory&reason=2,7&fromTime=%d&version=4&_sid=%s", SS_base_url, SS_event_path, time(NULL) - QUERY_RATE_SEC, SS_auth_sid);
+    curl_util_get_json(motion_events_req_buf, process_motion_events_response, NULL);
 }
 
-void process_motion_events_response(const json_object* obj)
+void process_motion_events_response(const json_object* obj, void* arg)
 {
     struct json_object* success_response;
     json_object_object_get_ex(obj, "success", &success_response);
@@ -288,6 +289,7 @@ void process_motion_events_response(const json_object* obj)
                                         ss_event->camera_name = strdup(cam_name);
                                         ss_event->event_count = event_count;
                                         ss_event->old_event_count = 0;
+                                        ss_event->events_info_stack = stack_create();
                                         variant_hash_insert(SS_event_keeper_table, crc, variant_create_ptr(DT_PTR, ss_event, NULL));
                                     }
                                     else
@@ -314,6 +316,132 @@ void process_motion_events_response(const json_object* obj)
         }
 
         //json_object_put(success_response);
+    }
+}
+
+/*
+{  
+   "data":{  
+      "events":[  
+         {  
+            "archived":false,
+            "archived_folder":"Family Room",
+            "audioCodec":"",
+            "audio_format":"",
+            "camIdOnRecServer":0,
+            "cameraId":1,
+            "camera_name":"Family Room",
+            "closing":false,
+            "deleted":false,
+            "dsId":0,
+            "eventId":26234,
+            "eventSize":6.003118515014648,
+            "event_size_bytes":6294726,
+            "fisheye_origin_view":false,
+            "fisheye_type":{  
+
+            },
+            "folder":"/volume1/surveillance/Family Room",
+            "for_rotation_only":false,
+            "frameCount":154,
+            "id":26234,
+            "idOnRecServer":0,
+            "imageEnhancement":{  
+               "brightness":0,
+               "contrast":0,
+               "saturation":0,
+               "sharpness":0
+            },
+            "imgHeight":480,
+            "imgWidth":640,
+            "is_complete":true,
+            "markAsDel":false,
+            "mode":1,
+            "mountId":0,
+            "mountSrcDsId":0,
+            "mount_type":0,
+            "mute":false,
+            "name":"20170307AM/Family Room20170307-084321-1488897801.mp4",
+            "path":"20170307AM/Family Room20170307-084321-1488897801.mp4",
+            "reason":2,
+            "recordId":"0_26234",
+            "recording":false,
+            "resoH":480,
+            "resoW":640,
+            "snapshot_medium":"/9j/4AAQSkZJRgABAQAAAQABARo1VhnYLtzx9aK7Iy5lc45Lldj/2Q==",
+            "startTime":1488897801,
+            "status":0,
+            "status_flags":0,
+            "stopTime":1488897821,
+            "update_time":3273,
+            "videoCodec":"MJPEG",
+            "video_type":1,
+            "volume":0
+         }
+      ],
+      "offset":0,
+      "timestamp":"1488898419",
+      "total":1
+   },
+   "success":true
+}*/
+
+void delete_ss_event_info(void* arg)
+{
+    SS_event_info_t* e = (SS_event_info_t*)arg;
+    free(e->path);
+    free(e->snapshot);
+    free(e);
+}
+
+void process_events_info_response(const json_object* obj, void* arg);
+void  SS_api_get_events_info(SS_event_keeper_t* ev)
+{
+    char events_info_req_buf[512] = {0};
+    snprintf(events_info_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Event&method=List&version=4&cameraIds=%d&fromTime=%d&locked=0&evtSrcType=2&_sid=%s", SS_base_url, SS_event_path, ev->camera_id, time(NULL) - QUERY_RATE_SEC, SS_auth_sid);
+    curl_util_get_json(events_info_req_buf, process_events_info_response, (void*)ev);
+}
+
+void process_events_info_response(const json_object* obj, void* arg)
+{
+    struct json_object* success_response;
+    json_object_object_get_ex(obj, "success", &success_response);
+    if(NULL != success_response)
+    {
+        if(TRUE == json_object_get_boolean(success_response))
+        {
+            struct json_object* data_object;
+            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            {
+                printf("Success response!\n");
+                struct json_object* events_array;
+                if(TRUE == json_object_object_get_ex(data_object, "events", &events_array))
+                {
+                    SS_event_keeper_t* ss_event = (SS_event_keeper_t*)(arg);
+                    stack_empty(ss_event->events_info_stack);
+                    struct json_object* event_entry;
+                    for (int i = 0; i < json_object_array_length(events_array); i++) 
+                    {
+                        event_entry = json_object_array_get_idx(events_array, i);
+                        SS_event_info_t* ss_event_info = calloc(1, sizeof(SS_event_info_t));
+
+                        struct json_object* event_id_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "eventId", &event_id_obj))
+                        {
+                            ss_event_info->event_id = json_object_get_int(event_id_obj);
+                        }
+
+                        struct json_object* event_size_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "event_size_bytes", &event_size_obj))
+                        {
+                            ss_event_info->event_size_bytes = json_object_get_int(event_size_obj);
+                        }
+
+                        stack_push_back(ss_event->events_info_stack, variant_create_ptr(DT_PTR, ss_event_info, &delete_ss_event_info));
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -374,17 +502,18 @@ void process_motion_events_response(const json_object* obj)
 //          "timestamp":"1462711434",
 //          "total":1},
 // "success":true}
-void process_camera_list_response(const json_object* obj);
+void process_camera_list_response(const json_object* obj, void* arg);
 void  SS_api_get_camera_list()
 {
+    LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera List");
     char camera_list_req_buf[512] = {0};
-    snprintf(camera_list_req_buf, 511, "%s/%s?privCamType=3&version=8&streamInfo=true&blPrivilege=false&start=0&api=SYNO.SurveillanceStation.Camera&basic=true&blFromCamList=true&camStm=1&method=List&_sid=%s", SS_base_url, SS_camera_path, SS_auth_sid);
-    curl_util_get_json(camera_list_req_buf, process_camera_list_response);
+    snprintf(camera_list_req_buf, 511, "%s/webapi/%s?privCamType=3&version=8&streamInfo=true&blPrivilege=false&start=0&api=SYNO.SurveillanceStation.Camera&basic=true&blFromCamList=true&camStm=1&method=List&_sid=%s", SS_base_url, SS_camera_path, SS_auth_sid);
+    curl_util_get_json(camera_list_req_buf, process_camera_list_response, NULL);
 }
 
-void process_camera_list_response(const json_object* obj)
+void process_camera_list_response(const json_object* obj, void* arg)
 {
-struct json_object* success_response;
+    struct json_object* success_response;
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
@@ -409,6 +538,13 @@ struct json_object* success_response;
                             //json_object_put(camera_id_object);
                         }
 
+                        const char* snapshot_path;
+                        struct json_object* snapthot_path_obj;
+                        if(TRUE == json_object_object_get_ex(camera_entry, "snapshot_path", &snapthot_path_obj))
+                        {
+                            snapshot_path = json_object_get_string(snapthot_path_obj);
+                        }
+
                         struct json_object* camera_name_object;
                         if(TRUE == json_object_object_get_ex(camera_entry, "name", &camera_name_object))
                         {
@@ -419,6 +555,7 @@ struct json_object* success_response;
                                 SS_camera_info_t* cam_info = calloc(1, sizeof(SS_camera_info_t));
                                 cam_info->id = cam_id;
                                 cam_info->name = strdup(json_object_get_string(camera_name_object));
+                                cam_info->snapshot_path = strdup(snapshot_path);
                                 LOG_DEBUG(DT_SURVEILLANCE_STATION, "Found camera %d: %s", cam_info->id, cam_info->name);
                                 variant_hash_insert(SS_camera_info_table, cam_id, variant_create_ptr(DT_PTR, cam_info, NULL));
                             }

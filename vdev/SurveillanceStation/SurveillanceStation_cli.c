@@ -77,6 +77,7 @@ bool    cmd_set_auth(vty_t* vty, variant_stack_t* params)
 
     if(SS_device_started)
     {
+        SS_api_logout();
         SS_api_query();
         SS_api_get_sid();
         SS_api_get_info();
@@ -90,6 +91,7 @@ bool    cmd_set_url(vty_t* vty, variant_stack_t* params)
 
     if(SS_device_started)
     {
+        SS_api_logout();
         SS_api_query();
         SS_api_get_sid();
         SS_api_get_info();

@@ -1,4 +1,5 @@
 #include <hash.h>
+#include <stack.h>
 
 /**
  * SurveillanceStation configuration
@@ -16,12 +17,23 @@ extern char* SS_camera_path;
 extern char* SS_info_path;
 extern int   SS_camera_count;
 
+typedef struct SS_event_info_t
+{
+    int event_id;
+    int event_size_bytes;
+    int imgHeight;
+    int imgWidth;
+    char* path;
+    char* snapshot;
+} SS_event_info_t;
+
 typedef struct SS_event_keeper_t
 {
     int     camera_id;
     char*   camera_name;
     int     event_count;
     int     old_event_count;
+    variant_stack_t*    events_info_stack;
 } SS_event_keeper_t;
 
 extern hash_table_t* SS_event_keeper_table;
@@ -30,6 +42,7 @@ typedef struct SS_camera_info_t
 {
     int     id;
     char*   name;
+    char*   snapshot_path;
 } SS_camera_info_t;
 
 extern hash_table_t* SS_camera_info_table;

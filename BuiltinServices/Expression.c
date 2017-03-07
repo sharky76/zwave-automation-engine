@@ -123,12 +123,14 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
             ++tokens;
         }
 
+        //printf("Converted template: %s\n", result_string);
         //variant_free(token_table_var);
+        return variant_create_string(result_string);
     }
 
     // Remove last space...
     //result_string[strlen(result_string)] = 0;
-    return variant_create_string(result_string);
+    return NULL;
 }
 
 variant_t*  unescape_impl(struct service_method_t* method, va_list args)

@@ -24,6 +24,8 @@ static int timer_tick_counter;
 variant_t*  get_motion_events(va_list args);
 variant_t*  get_camera_list(va_list args);
 variant_t*  get_camera_name_by_id(va_list args);
+variant_t*  get_snapshot_path(va_list args);
+variant_t*  get_events_info(va_list args);
 
 void        device_start(); 
 void        timer_tick_handler(const char* event_name, event_t* pevent);
@@ -34,6 +36,8 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_COMMAND("GetEvents", 1, get_motion_events, "Get Motion event count (arg: id)")
     VDEV_ADD_COMMAND("GetCameraName", 1, get_camera_name_by_id, "Get Camera name (arg: id)")
     VDEV_ADD_COMMAND("GetCameraList", 0, get_camera_list, "Get Camera list")
+    VDEV_ADD_COMMAND("GetSnapshotPath", 1, get_snapshot_path, "Get camera snapshot path (arg: id)")
+    VDEV_ADD_COMMAND("GetEventsInfo", 1, get_events_info, "Get most recent events info (arg: id)")
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
     VDEV_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_handler);
 
@@ -79,6 +83,48 @@ variant_t*  get_motion_events(va_list args)
     }
 
     return variant_create_int32(DT_INT32, 0);
+}
+
+variant_t*  get_events_info(va_list args)
+{
+    variant_t* camera_id_var = va_arg(args, variant_t*);
+    int cam_id = variant_get_int(camera_id_var);
+
+    variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, cam_id);
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
+
+    if(cam_info != NULL)
+    {
+        uint32_t key = crc32(0, cam_info->name, strlen(cam_info->name));
+        variant_t* keeper_var = variant_hash_get(SS_event_keeper_table, key);
+    
+        if(NULL != keeper_var)
+        {
+            SS_event_keeper_t* keeper = (SS_event_keeper_t*)variant_get_ptr(keeper_var);
+        }
+    }
+    //SS_api_get_events_info(cam_id);
+}
+
+variant_t* get_snapshot_path(va_list args)
+{
+    variant_t* camera_id_var = va_arg(args, variant_t*);
+    int cam_id = variant_get_int(camera_id_var);
+
+    variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, cam_id);
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
+
+    if(cam_info != NULL)
+    {
+        char buf[512] = {0};
+        //SS_api_get_sid();
+        snprintf(buf, 511, "%s%s&_sid=%s", SS_base_url, cam_info->snapshot_path, SS_auth_sid);
+        return variant_create_string(strdup(buf));
+    }
+    else
+    {
+        return variant_create_string(strdup(""));
+    }
 }
 
 variant_t*  get_camera_name_by_id(va_list args)
@@ -138,9 +184,9 @@ void delete_camera_list(void* arg)
 
 variant_t*  get_camera_list(va_list args)
 {
-    SS_api_get_sid();
+    //SS_api_get_sid();
     SS_api_get_camera_list();
-    SS_api_logout();
+    //SS_api_logout();
 
     //char** cam_list = malloc(sizeof(char*) * (SS_camera_info_table->count + 1));
 
@@ -164,7 +210,7 @@ void    device_start()
     SS_api_get_sid();
     SS_api_get_info();
     SS_api_get_camera_list();
-    SS_api_logout();
+    //SS_api_logout();
 
     LOG_INFO(DT_SURVEILLANCE_STATION, "Surveillance Station device started");
     SS_device_started = true;
@@ -177,6 +223,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
     if(ev->event_count > ev->old_event_count)
     {
+        SS_api_get_events_info(ev);
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
         vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, (void*)ev);
     }
@@ -193,9 +240,10 @@ void        timer_tick_handler(const char* event_name, event_t* pevent)
         timer_tick_counter = 0;
 
         // Check for outstanding motion events...
-        SS_api_get_sid();
+        //SS_api_get_sid();
         SS_api_get_motion_events();
-        SS_api_logout();
+        //SS_api_logout();
         variant_hash_for_each(SS_event_keeper_table, process_motion_event_table, NULL);
     }
 }
+

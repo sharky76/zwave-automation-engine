@@ -162,6 +162,7 @@ void scene_exec(scene_t* scene)
     
         if(NULL != condition && variant_get_bool(condition))
         {
+            LOG_ADVANCED(Scene, "Scene %s condition match", scene->name);
             // The condition is true - execute scene triggers!
             stack_for_each(scene->actions, action_data)
             {
@@ -175,6 +176,10 @@ void scene_exec(scene_t* scene)
             }
 
             variant_free(condition);
+        }
+        else
+        {
+            LOG_ADVANCED(Scene, "Scene %s condition mismatch", scene->name);
         }
     }
 
