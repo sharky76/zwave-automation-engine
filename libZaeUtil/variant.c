@@ -23,6 +23,11 @@ void    variant_delete_variant(void* ptr)
     variant_free(v);
 }
 
+void variant_delete_list(void* ptr)
+{
+    stack_free((variant_stack_t*)ptr);
+}
+
 int variant_compare_bool(const variant_t* v, const variant_t* other)
 {
     return !(v->storage.bool_data == other->storage.bool_data);
@@ -89,6 +94,11 @@ variant_t*  variant_create(VariantDataType type, void* data)
         new_variant->compare_cb = &variant_compare_ptr;
         new_variant->storage.ptr_data = data;
         new_variant->delete_cb = &variant_delete_default;
+        break;
+    case DT_LIST:
+        new_variant->delete_cb = &variant_delete_list;
+        new_variant->storage.ptr_data = data;
+        new_variant->compare_cb = &variant_compare_ptr;
         break;
     default:
         new_variant->storage.ptr_data = data;
@@ -164,6 +174,11 @@ variant_t*  variant_create_float(double data)
 variant_t*  variant_create_string(const char* string)
 {
     return variant_create(DT_STRING, (void*)string);
+}
+
+variant_t*  variant_create_list(variant_stack_t* list)
+{
+    return variant_create(DT_LIST, list);
 }
 
 void        variant_free(variant_t* variant)
@@ -311,9 +326,13 @@ bool variant_to_string(variant_t* variant, char** string)
 
             stack_for_each(list, list_entry_variant)
             {
-                const char* string_entry = variant_get_string(list_entry_variant);
-                strcat(*string, string_entry);
-                strncat(*string, br, 2);
+                char* string_entry;
+                if(variant_to_string(list_entry_variant, &string_entry))
+                {
+                    strcat(*string, string_entry);
+                    strncat(*string, br, 2);
+                    free(string_entry);
+                }
             }
         }
         break;

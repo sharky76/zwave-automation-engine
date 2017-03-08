@@ -46,6 +46,8 @@ typedef struct variant_t
     int     (*compare_cb)(const struct variant_t* v, const struct variant_t* other);
 } variant_t;
 
+typedef struct variant_stack_t variant_stack_t;
+
 #define VARIANT_GET_PTR(_type_, _var_)  \
     (_type_*)variant_get_ptr(_var_)
 
@@ -60,6 +62,7 @@ variant_t*  variant_create_ptr(int type, void* ptr, void (*delete_cb)(void* arg)
 variant_t*  variant_create_variant(int type, variant_t* variant);
 variant_t*  variant_create_float(double data);
 variant_t*  variant_create_string(const char* string);
+variant_t*  variant_create_list(variant_stack_t* list);
 void        variant_free(variant_t* variant);
 
 bool        variant_get_bool(variant_t* variant);

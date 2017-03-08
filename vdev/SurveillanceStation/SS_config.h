@@ -23,6 +23,8 @@ typedef struct SS_event_info_t
     int event_size_bytes;
     int imgHeight;
     int imgWidth;
+    int start_time;
+    int stop_time;
     char* path;
     char* snapshot;
 } SS_event_info_t;

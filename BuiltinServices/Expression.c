@@ -51,6 +51,11 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
 
         // Replace all tokens starting with "$" with matching values from token table
         char* template = (char*)variant_get_string(template_var);
+        if(NULL == template)
+        {
+            return NULL;
+        }
+
         char* tokens = template;
         int initial_len = strlen(template);
     
@@ -122,7 +127,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
     
             ++tokens;
         }
-
+        result_string[result_size] = 0;
         //printf("Converted template: %s\n", result_string);
         //variant_free(token_table_var);
         return variant_create_string(result_string);

@@ -278,6 +278,7 @@ void process_motion_events_response(const json_object* obj, void* arg)
                             {
                                 if(strcmp(cam_name, "-1"))
                                 {
+                                    //printf("Inserting motion event with cam_name %s\n", cam_name);
                                     int event_count = json_object_get_int(event_count_object);
                                     uint32_t crc = crc32(0, cam_name, strlen(cam_name));
                                     variant_t* ss_event_variant = variant_hash_get(SS_event_keeper_table, crc);
@@ -410,15 +411,15 @@ void process_events_info_response(const json_object* obj, void* arg)
     {
         if(TRUE == json_object_get_boolean(success_response))
         {
+            //printf("process_events_info_response - success\n");
             struct json_object* data_object;
             if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
             {
-                printf("Success response!\n");
                 struct json_object* events_array;
                 if(TRUE == json_object_object_get_ex(data_object, "events", &events_array))
                 {
                     SS_event_keeper_t* ss_event = (SS_event_keeper_t*)(arg);
-                    stack_empty(ss_event->events_info_stack);
+                    //stack_empty(ss_event->events_info_stack);
                     struct json_object* event_entry;
                     for (int i = 0; i < json_object_array_length(events_array); i++) 
                     {
@@ -429,12 +430,49 @@ void process_events_info_response(const json_object* obj, void* arg)
                         if(TRUE == json_object_object_get_ex(event_entry, "eventId", &event_id_obj))
                         {
                             ss_event_info->event_id = json_object_get_int(event_id_obj);
+                            //printf("process_events_info_response - got event id %d\n", ss_event_info->event_id);
                         }
 
                         struct json_object* event_size_obj;
                         if(TRUE == json_object_object_get_ex(event_entry, "event_size_bytes", &event_size_obj))
                         {
                             ss_event_info->event_size_bytes = json_object_get_int(event_size_obj);
+                        }
+
+                        struct json_object* event_path_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "path", &event_path_obj))
+                        {
+                            ss_event_info->path = strdup(json_object_get_string(event_path_obj));
+                        }
+
+                        struct json_object* event_snapshot_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "snapshot_medium", &event_snapshot_obj))
+                        {
+                            ss_event_info->snapshot = strdup(json_object_get_string(event_snapshot_obj));
+                        }
+                         
+                        struct json_object* event_height_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "imgHeight", &event_height_obj))
+                        {
+                            ss_event_info->imgHeight = json_object_get_int(event_height_obj);
+                        }
+
+                        struct json_object* event_width_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "imgWidth", &event_width_obj))
+                        {
+                            ss_event_info->imgWidth = json_object_get_int(event_width_obj);
+                        }
+
+                        struct json_object* event_start_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "startTime", &event_start_obj))
+                        {
+                            ss_event_info->start_time = json_object_get_int(event_start_obj);
+                        }
+
+                        struct json_object* event_stop_obj;
+                        if(TRUE == json_object_object_get_ex(event_entry, "stopTime", &event_stop_obj))
+                        {
+                            ss_event_info->stop_time = json_object_get_int(event_stop_obj);
                         }
 
                         stack_push_back(ss_event->events_info_stack, variant_create_ptr(DT_PTR, ss_event_info, &delete_ss_event_info));
