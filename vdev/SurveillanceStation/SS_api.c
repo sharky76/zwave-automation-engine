@@ -399,7 +399,7 @@ void process_events_info_response(const json_object* obj, void* arg);
 void  SS_api_get_events_info(SS_event_keeper_t* ev)
 {
     char events_info_req_buf[512] = {0};
-    snprintf(events_info_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Event&method=List&version=4&cameraIds=%d&fromTime=%d&locked=0&evtSrcType=2&_sid=%s", SS_base_url, SS_event_path, ev->camera_id, time(NULL) - QUERY_RATE_SEC, SS_auth_sid);
+    snprintf(events_info_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Event&method=List&version=4&cameraIds=%d&fromTime=%d&locked=0&evtSrcType=2&blIncludeSnapshot=true&_sid=%s", SS_base_url, SS_event_path, ev->camera_id, time(NULL) - QUERY_RATE_SEC, SS_auth_sid);
     curl_util_get_json(events_info_req_buf, process_events_info_response, (void*)ev);
 }
 

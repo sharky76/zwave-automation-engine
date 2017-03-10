@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 static dfa_transition_t    dfa_transitions[] = {
-    // From start
     {STATE_START,   A_ALPHA,       STATE_ALPHA},
     {STATE_START,   A_DIGIT,       STATE_DIGIT},
     {STATE_START,   A_RIGHT_PAREN, STATE_RIGHT_PAREN},
@@ -59,6 +58,7 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_LEFT_PAREN,   A_RIGHT_PAREN,  STATE_RIGHT_PAREN},
     {STATE_LEFT_PAREN,   A_LEFT_PAREN,   STATE_LEFT_PAREN},
     {STATE_LEFT_PAREN,   A_SPACE,        STATE_START},
+    {STATE_LEFT_PAREN,   A_MINUS,        STATE_UNARY_MINUS},
     {STATE_LEFT_PAREN,   A_QUOTE,        STATE_CAPTURE_STRING},
 
     // From right parenthesis
@@ -103,6 +103,10 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_MINUS, A_DIGIT,        STATE_DIGIT},
     {STATE_MINUS, A_LEFT_PAREN,   STATE_LEFT_PAREN},
     {STATE_MINUS, A_SPACE,        STATE_START},
+
+    // From MINUS
+    {STATE_UNARY_MINUS, A_DIGIT,        STATE_DIGIT},
+    {STATE_UNARY_MINUS, A_LEFT_PAREN,   STATE_LEFT_PAREN},
 
     // From CMP
     {STATE_CMP,   A_ALPHA,        STATE_ALPHA},
@@ -181,7 +185,7 @@ State           parser_dfa_next_state(State source_state, AlphabetToken token)
 
 AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
 {
-    if(isalpha(*str) || *str == '$' || *str == ':')
+    if(isalpha(*str) || *str == '$' || *str == ':' || *str == '"')
     {
         return A_ALPHA;
     }

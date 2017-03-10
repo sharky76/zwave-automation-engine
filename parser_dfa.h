@@ -182,7 +182,9 @@ typedef enum State_e
     STATE_MORE,
     STATE_PLUS,
     STATE_MINUS,
+    STATE_UNARY_MINUS,
     STATE_CAPTURE_STRING,
+    STATE_ACCEPT_TOKEN,     // The do nothing state, just wait for the next token
     STATE_ERROR,
     STATE_END,
     STATE_INVALID

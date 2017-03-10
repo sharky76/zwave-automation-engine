@@ -159,6 +159,18 @@ variant_t*   stack_peek_front(variant_stack_t* stack)
     }
 }
 
+variant_t*      stack_peek_back(variant_stack_t* stack)
+{
+    if(stack->count > 0)
+    {
+        return stack->tail->data;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
 variant_t*   stack_peek_at(variant_stack_t* stack, int index)
 {
     if(index >= stack->count)

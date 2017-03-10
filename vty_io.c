@@ -155,76 +155,14 @@ int   file_read_cb(vty_t* vty, char** str)
 void    std_write_cb(vty_t* vty, const char* buf, size_t len)
 {
     write(fileno(vty->data->desc.io_pair[OUT]), buf, len);
+    fflush(vty->data->desc.io_pair[OUT]);
 }
 
 int   std_read_cb(vty_t* vty, char** str)
 {
-    *str = malloc(sizeof(char));
-    *str[0] = fgetc(vty->data->desc.io_pair[IN]);
-    return 1;
+    *str = calloc(1, sizeof(char));
 
-    /*if(!vty->echo)
-    {
-        fprintf(vty->data->desc.io_pair[OUT], "%s", vty->prompt);
-        fflush(vty->data->desc.io_pair[OUT]);
-
-        *line = calloc(128, sizeof(char));
-        fgets(line, 127, vty->data->desc.io_pair[IN]);
-        fprintf(vty->data->desc.io_pair[OUT], VTY_NEWLINE(vty));
-        fflush(vty->data->desc.io_pair[OUT]);
-
-        return strlen(str);
-    }
-    else if(vty->multi_line)
-    {
-        int ch = 0;
-        memset(vty->buffer, 0, vty->buf_size);
-        vty->buf_size = 0;
-        while(true)
-        {
-            // Read multiple lines of input into buffer until \n.\n is found
-            ch = fgetc(vty->data->desc.io_pair[IN]);
-            if(ch == EOF)
-            {
-                return NULL;
-            }
-            
-            if(ch == 127)
-            {
-                if(vty->buf_size > 0)
-                {
-                    vty->buffer[--vty->buf_size] = 0;
-                    fprintf(vty->data->desc.io_pair[OUT], "\b \b");
-                    fflush(vty->data->desc.io_pair[OUT]);
-                }
-                continue;
-            }
-            if(ch == vty->multiline_stop_char)
-            {
-                break;
-            }
-            fprintf(vty->data->desc.io_pair[OUT], "%c", ch);
-            fflush(vty->data->desc.io_pair[OUT]);
-            if(vty->buf_size + 1 < BUFSIZE)
-            {
-                vty->buffer[vty->buf_size++] = ch;
-            }
-        }
-        return vty->buffer;
-    }
-    else
-    {
-        char* line = readline(vty->prompt);
-        if(NULL != line && vty->echo)
-        {
-            if('\0' != *line && *line != '\n' && vty->type == VTY_STD)
-            {
-                add_history(line);
-            }
-        }
-        return *line;
-    }*/
-    //return rl_line_buffer;
+    return read(fileno(vty->data->desc.io_pair[IN]), *str, 1);
 }
 
 void std_erase_cb(vty_t* vty)

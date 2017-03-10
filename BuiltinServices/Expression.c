@@ -4,6 +4,9 @@
 #include "service_args.h"
 #include <crc32.h>
 #include <ctype.h>
+#include "logger.h"
+
+USING_LOGGER(BuiltinService)
 
 variant_t*  eval_impl(struct service_method_t* method, va_list args);
 variant_t*  process_template_impl(struct service_method_t* method, va_list args);
@@ -99,13 +102,16 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
                     }
 
                     int replacement_len = strlen(replacement);
-                    if(result_size + replacement_len + 1 >= expected_size)
+                    while(result_size + replacement_len + 1 >= expected_size)
                     {
                         // Need to realloc our string...
                         expected_size *= 2;
                         result_string = realloc(result_string, expected_size);
+                        //printf("new expect size = %d\n, result: %d", expected_size, result_size + replacement_len + 1);
+
                     }
 
+                    result_string[result_size] = 0;
                     strncat(result_string, replacement, expected_size-result_size);
                     //strcat(result_string, " ");
                     result_size += replacement_len;
@@ -128,7 +134,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
             ++tokens;
         }
         result_string[result_size] = 0;
-        //printf("Converted template: %s\n", result_string);
+        LOG_DEBUG(BuiltinService, "Converted template: %s", result_string);
         //variant_free(token_table_var);
         return variant_create_string(result_string);
     }

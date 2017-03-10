@@ -15,11 +15,12 @@ variant_t*   op_plus(operator_t* op, ...);
 variant_t*   op_minus(operator_t* op, ...);
 variant_t*   op_device_function(operator_t* op, ...);
 variant_t*   op_service_method(operator_t* op, ...);
+variant_t*   op_unary_minus(operator_t* op, ...);
 
-int unary_argument_count(void* operator_data);
-int binary_argument_count(void* operator_data);
-int function_argument_count(void* operator_data);
-int service_method_argument_count(void* operator_data);
+int unary_argument_count(struct operator_t* op);
+int binary_argument_count(struct operator_t* op);
+int function_argument_count(struct operator_t* op);
+int service_method_argument_count(struct operator_t* op);
 
 static operator_t   operator_list[] = {
     {OP_DEVICE_FUNCTION, NULL, &function_argument_count, &op_device_function},
@@ -33,6 +34,7 @@ static operator_t   operator_list[] = {
     {OP_OR,       NULL, &binary_argument_count, &op_or},
     {OP_PLUS,     NULL, &binary_argument_count, &op_plus},
     {OP_MINUS,    NULL, &binary_argument_count, &op_minus},
+    {OP_UNARY_MINUS, NULL, &unary_argument_count, &op_unary_minus}
 };
 
 operator_t* operator_create(OperatorType type, void* operator_data)
@@ -141,6 +143,17 @@ variant_t*   op_minus(operator_t* op, ...)
     return variant_subtract(arg1, arg2);
 }
 
+variant_t*   op_unary_minus(operator_t* op, ...)
+{
+    va_list args;
+    va_start(args, op);
+
+    variant_t* arg1 = va_arg(args, variant_t*);
+    variant_t* arg0 = variant_create_int32(DT_INT32, 0);
+    variant_t* result = variant_subtract(arg0, arg1);
+    variant_free(arg0);
+    return result;
+}
 
 variant_t*   op_device_function(operator_t* op, ...)
 {
@@ -163,19 +176,19 @@ variant_t*   op_service_method(operator_t* op, ...)
     return method->eval_callback(method, args);
 }
 
-int unary_argument_count(void* operator_data)
+int unary_argument_count(struct operator_t* op)
 {
     return 1;
 }
 
-int binary_argument_count(void* operator_data)
+int binary_argument_count(struct operator_t* op)
 {
     return 2;
 }
 
-int function_argument_count(void* operator_data)
+int function_argument_count(struct operator_t* op)
 {
-    function_operator_data_t* op_data = (function_operator_data_t*)operator_data;
+    function_operator_data_t* op_data = (function_operator_data_t*)op->operator_data;
 
     command_method_t* supported_methods = op_data->command_class->supported_method_list;
 
@@ -190,9 +203,9 @@ int function_argument_count(void* operator_data)
     return 0;
 }
 
-int service_method_argument_count(void* operator_data)
+int service_method_argument_count(struct operator_t* op)
 {
-    service_method_t* method = (service_method_t*)operator_data;
+    service_method_t* method = (service_method_t*)op->operator_data;
     return method->args;
 }
 

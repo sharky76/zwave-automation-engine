@@ -39,6 +39,7 @@ void            stack_empty(variant_stack_t* stack);
 void            stack_push_front(variant_stack_t* stack, variant_t* value);
 variant_t*      stack_pop_front(variant_stack_t* stack);
 variant_t*      stack_peek_front(variant_stack_t* stack);
+variant_t*      stack_peek_back(variant_stack_t* stack);
 variant_t*      stack_peek_at(variant_stack_t* stack, int index);
 void            stack_push_back(variant_stack_t* stack, variant_t* value);
 variant_t*      stack_pop_back(variant_stack_t* stack);

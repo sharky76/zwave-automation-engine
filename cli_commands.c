@@ -244,6 +244,13 @@ char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, var
 
     if(cmd_matches)
     {
+        char** first_cmd = cmd_matches;
+        while(NULL != *first_cmd)
+        {
+            free(*first_cmd);
+            first_cmd++;
+        }
+
         free(cmd_matches);
     }
     

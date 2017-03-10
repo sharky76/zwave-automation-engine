@@ -87,6 +87,7 @@ State    state_and(state_context_t* state_context, void* priv);
 State    state_or(state_context_t* state_context, void* priv);
 State    state_plus(state_context_t* state_context, void* priv);
 State    state_minus(state_context_t* state_context, void* priv);
+State    state_unary_minus(state_context_t* state_context, void* priv);
 State    state_cmp(state_context_t* state_context, void* priv);
 State    state_less(state_context_t* state_context, void* priv);
 State    state_more(state_context_t* state_context, void* priv);
@@ -94,6 +95,7 @@ State    state_capture_string(state_context_t* state_context, void* priv);
 State    state_error(state_context_t* state_context, void* priv);
 State    state_end(state_context_t* state_context, void* priv);
 State    state_invalid(state_context_t* state_context, void* priv);
+State    state_accept_token(state_context_t* state_context, void* priv);
 
 typedef struct parser_data_t
 {
@@ -114,10 +116,12 @@ static state_descriptor_t state_map[] = {
     {STATE_OR,      &state_or},
     {STATE_PLUS,    &state_plus},
     {STATE_MINUS,   &state_minus},
+    {STATE_UNARY_MINUS, &state_unary_minus},
     {STATE_CMP,     &state_cmp},
     {STATE_LESS,    &state_less},
     {STATE_MORE,    &state_more},
     {STATE_CAPTURE_STRING,  &state_capture_string},
+    {STATE_ACCEPT_TOKEN, &state_accept_token},
     {STATE_ERROR,   &state_error},
     {STATE_END,     &state_end},
     {STATE_INVALID, &state_invalid}
@@ -171,6 +175,9 @@ bool process_state_transition(State current_state, state_context_t* state_contex
         case STATE_MINUS:
             process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_MINUS);
             break;
+        case STATE_UNARY_MINUS:
+            process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_UNARY_MINUS);
+            break;
         case STATE_CMP:
             process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_CMP);
             break;
@@ -181,9 +188,8 @@ bool process_state_transition(State current_state, state_context_t* state_contex
             process_operator_token(parser_data->operator_stack, parser_data->operand_queue, OP_MORE);
             break;
         case STATE_END:
-            break;
         case STATE_START:
-            break;
+        case STATE_ACCEPT_TOKEN:
         case STATE_ERROR:
             break;
         default:
@@ -209,6 +215,19 @@ State    state_start(state_context_t* state_context, void* priv)
 
     return (ret_val)? parser_dfa_next_state(STATE_START, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
 }
+
+State    state_accept_token(state_context_t* state_context, void* priv)
+{
+    bool ret_val = true;
+
+    if(state_context->current_state != STATE_ACCEPT_TOKEN)
+    {
+        ret_val = process_state_transition(STATE_ACCEPT_TOKEN, state_context, priv);
+    }
+
+    return (ret_val)? parser_dfa_next_state(STATE_ACCEPT_TOKEN, parser_dfa_read_next_token(state_context)) : STATE_ERROR;
+}
+
 
 State    state_alpha(state_context_t* state_context, void* priv)
 {
@@ -293,6 +312,13 @@ State    state_minus(state_context_t* state_context, void* priv)
 {
     return (process_state_transition(STATE_MINUS, state_context, priv))?
                 parser_dfa_next_state(STATE_MINUS, parser_dfa_read_next_token(state_context)) :
+                STATE_ERROR;
+}
+
+State    state_unary_minus(state_context_t* state_context, void* priv)
+{
+    return (process_state_transition(STATE_UNARY_MINUS, state_context, priv))?
+                parser_dfa_next_state(STATE_UNARY_MINUS, parser_dfa_read_next_token(state_context)) :
                 STATE_ERROR;
 }
 
@@ -398,14 +424,15 @@ then pop o2 off the operator stack, onto the output queue;
 push o1 onto the operator stack.
 */
 
-// NOTE: All our operators are left-associative
+// NOTE: All our operators are left-associative except UNARY-MINUS
 void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token)
 {
     variant_t* stack_front = stack_peek_front(operator_stack);
     while(NULL != stack_front)
     {
         operator_t* stacked_operator = (operator_t*)variant_get_ptr(stack_front);
-        if(op_token >= stacked_operator->type && stack_front->type != T_PARETHESIS)
+        if((op_token >= stacked_operator->type || (OP_UNARY_MINUS == op_token && op_token > stacked_operator->type)) 
+           && stack_front->type != T_PARETHESIS)
         {
             stack_front = stack_pop_front(operator_stack);
             stack_push_back(operand_queue, stack_front);
@@ -816,7 +843,7 @@ bool eval(variant_stack_t* work_stack, variant_t* op)
     bool retVal = true;
     operator_t* operator = (operator_t*)variant_get_ptr(op);
 
-    int arg_count = operator->argument_count(operator->operator_data);
+    int arg_count = operator->argument_count(operator);
     variant_t* result = NULL;
 
     if(arg_count > work_stack->count)

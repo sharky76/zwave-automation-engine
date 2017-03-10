@@ -53,7 +53,7 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
     field, so we provide one */ 
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
     
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 30);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);
 
     //curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 4L);
     /* get it! */ 

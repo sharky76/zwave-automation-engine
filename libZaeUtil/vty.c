@@ -149,7 +149,7 @@ char*   vty_read(vty_t* vty)
         vty_clear_buffer(vty);
     }
 
-    char* ch;
+    char* ch = NULL;
     vty_set_command_received(vty, false);
 
     //while(true)

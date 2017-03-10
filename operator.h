@@ -13,8 +13,9 @@ typedef enum OperatorType_e
     OP_SERVICE_METHOD,
     OP_LEFT_PARETHESIS,
     OP_RIGHT_PARETHESIS,
-    OP_PLUS,
+    OP_UNARY_MINUS,
     OP_MINUS,
+    OP_PLUS,
     OP_LESS,
     OP_MORE,
     OP_CMP,
@@ -26,7 +27,7 @@ typedef struct operator_t
 {
     OperatorType    type;
     void*           operator_data;
-    int             (*argument_count)(void*);
+    int             (*argument_count)(struct operator_t*);
     variant_t*      (*eval_callback)(struct operator_t*, ...);
 } operator_t;
 

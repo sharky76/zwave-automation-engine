@@ -118,7 +118,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
 
         int len_so_far = strlen(log_format_buffer);
 
-        strncat(log_format_buffer, format, MAX_LOG_ENTRY_LEN-len_so_far-1);
+        strncat(log_format_buffer, format, MAX_LOG_ENTRY_LEN-len_so_far-2);
         strcat(log_format_buffer, "\r\n");
 
         char buf[1024] = {0};
@@ -232,7 +232,10 @@ void stdout_logger_data_init(logger_handle_t* handle)
 void    do_file_log(logger_handle_t* handle, const char* line)
 {
    //fprintf(handle->fh, "%s", line);
-    write(handle->fd, line, strlen(line));
+    if(NULL != line)
+    {
+        write(handle->fd, line, strlen(line));
+    }
 }
 
 void    do_stdout_log(logger_handle_t* handle, const char* line)
