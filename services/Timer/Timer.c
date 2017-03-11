@@ -6,6 +6,7 @@
 #include <logger.h>
 #include "timer_cli.h"
 #include "timer_config.h"
+#include "event.h"
 
 // Config variables
 bool timer_enabled;
@@ -16,6 +17,7 @@ int DT_TIMER;
 variant_t*  timer_start(service_method_t* method, va_list args);
 variant_t*  timer_stop(service_method_t* method, va_list args);
 variant_t*  timer_start_interval(service_method_t* method, va_list args);
+//variant_t*  timer_send_event(service_method_t* method, va_list args);
 
 void alarm_expire_handler(int sig);
 
@@ -26,6 +28,7 @@ void service_create(service_t** service, int service_id)
     SERVICE_ADD_METHOD(Stop, timer_stop, 1, "Timer name (string)");   // Timer.Stop(<Name>)
     SERVICE_ADD_METHOD(StartInterval, timer_start_interval, 2, "Timer name (string), Interval period in seconds (int)"); // Timer.StartInterval(<Name>, <Secs>)
     SERVICE_ADD_METHOD(StopInterval, timer_stop, 1, "Timer name (string)");   // Timer.StopInterval(<Name>)
+    //SERVICE_ADD_METHOD(QueueEvent, timer_send_event, 2, "Event name (string), Timeout in seconds (int)");
 
     timer_list = stack_create();
     //self = *service;
@@ -67,6 +70,7 @@ variant_t*  timer_start(service_method_t* method, va_list args)
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
             timer->name = strdup(variant_get_string(name_variant));
+            timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
             timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
             timer->singleshot = true;
         
@@ -146,7 +150,7 @@ void alarm_expire_handler(int sig)
             timer_info_t* timer = variant_get_ptr(timer_variant);
             if(--timer->ticks_left == 0)
             {
-                service_post_event(DT_TIMER, timer->name);
+                service_post_event(DT_TIMER, timer->event_name, variant_create_string(strdup(timer->name)));
     
                 if(timer->singleshot)
                 {
@@ -160,7 +164,7 @@ void alarm_expire_handler(int sig)
             }
         }
     
-        service_post_event(DT_TIMER, "tick");
+        service_post_event(DT_TIMER, TIMER_TICK_EVENT, NULL);
     }
 
     alarm(1);
@@ -171,5 +175,17 @@ void timer_delete_timer(void* arg)
     timer_info_t* timer = (timer_info_t*)arg;
 
     free(timer->name);
+    free(timer->event_name);
     free(timer);
 }
+
+variant_t* call_timer_start(service_method_t* method, ...)
+{
+    va_list args;
+    va_start(args, method);
+    variant_t* result = timer_start(method, args);
+    va_end(args);
+
+    return result;
+}
+

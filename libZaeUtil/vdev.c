@@ -15,7 +15,6 @@ void    vdev_post_event(int vdev_id, int event_id, int instance_id, void* data)
     event_data->event_id = event_id;
     event_data->instance_id = instance_id;
     event_data->data = data;
-    event_t* new_event = event_create(DT_VDEV, 
-                                      variant_create_ptr(DT_VDEV_EVENT_DATA, event_data, vdev_delete_event));
+    event_t* new_event = event_create(DT_VDEV, VDEV_DATA_CHANGE_EVENT, variant_create_ptr(DT_VDEV_EVENT_DATA, event_data, vdev_delete_event));
     event_post(new_event);
 }

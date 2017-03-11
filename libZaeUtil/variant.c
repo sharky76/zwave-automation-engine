@@ -136,6 +136,11 @@ variant_t*  variant_create_bool(bool data)
 
 variant_t*  variant_create_ptr(int type, void* ptr, void (*delete_cb)(void* arg))
 {
+    if(NULL == ptr)
+    {
+        return NULL;
+    }
+
     variant_t* ret = variant_create(DT_PTR, ptr);
     ret->type = type;
 

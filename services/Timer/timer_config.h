@@ -5,6 +5,7 @@
 typedef struct timer_info_t
 {
     char*       name;
+    char*       event_name;
     bool        singleshot;
     uint32_t    timeout;
     uint32_t    ticks_left;

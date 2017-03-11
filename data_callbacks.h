@@ -3,6 +3,7 @@
 #include <ZWayLib.h>
 #include <ZData.h>
 
+#define SENSOR_DATA_CHANGE_EVENT   "SensorDataChangeEvent"
 /*
     This file holds callback(s) to handle data changes. Each data change is considered to be
     scene event and an appropriate scene definition lookup is performed and, if found,

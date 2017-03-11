@@ -261,3 +261,19 @@ variant_stack_t*    stack_sort(variant_stack_t* stack, int (*compare_cb)(const v
     free(sorted_array);
     return sorted_stack;
 }
+
+bool            stack_is_exists(variant_stack_t* stack, bool (*match_cb)(variant_t*, void* arg), void* arg)
+{
+    bool retVal = false;
+    stack_for_each(stack, element_var)
+    {
+        if(match_cb(element_var, arg))
+        {
+            retVal = true;
+            break;
+        }
+    }
+
+    return retVal;
+}
+

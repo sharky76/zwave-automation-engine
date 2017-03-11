@@ -27,11 +27,12 @@ size_t write_cb(char *in, size_t size, size_t nmemb, void *out)
     return realsize;
 }
 
-void    curl_util_get_json(const char* request_url, void (response_parser)(const json_object*, void*), void* arg)
+bool    curl_util_get_json(const char* request_url, void (response_parser)(const json_object*, void*), void* arg)
 {
     response_memory_t chunk;
     CURL *curl_handle;
     CURLcode res;
+    bool retVal = true;
 
     chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */ 
     chunk.size = 0;    /* no data at this point */ 
@@ -53,7 +54,7 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
     field, so we provide one */ 
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
     
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 30);
 
     //curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 4L);
     /* get it! */ 
@@ -62,6 +63,7 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
     /* check for errors */ 
     if(res != CURLE_OK) 
     {
+        retVal = false;
     }
     else 
     {
@@ -82,4 +84,6 @@ void    curl_util_get_json(const char* request_url, void (response_parser)(const
     
     /* we're done with libcurl, so clean it up */ 
     curl_global_cleanup();
+
+    return retVal;
 }

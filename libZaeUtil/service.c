@@ -14,13 +14,9 @@ void    delete_service_event_data(void* arg)
     free(e);
 }
 
-void    service_post_event(int service_id, const char* data)
+void    service_post_event(int service_id, const char* name, variant_t* data)
 {
-    service_event_data_t* event_data = calloc(1, sizeof(service_event_data_t));
-    event_data->data = strdup(data);
-
-    event_t* new_event = event_create(service_id, 
-                                      variant_create_ptr(DT_SERVICE_EVENT_DATA, event_data, delete_service_event_data));
+    event_t* new_event = event_create(service_id, name, variant_create_ptr(DT_SERVICE_EVENT_DATA, data, delete_service_event_data));
     event_post(new_event);
 }
 
@@ -50,3 +46,22 @@ service_t*  service_self(const char* service_name)
     return variant_get_ptr(service_variant);
 }
 
+service_t*  service_by_id(int service_id)
+{
+    hash_iterator_t* it = variant_hash_begin(service_table);
+    service_t* retVal = NULL;
+
+    while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
+    {
+        service_t* service = (service_t*)variant_get_ptr(variant_hash_iterator_value(it));
+
+        if(service->service_id == service_id)
+        {
+            retVal = service;
+            break;
+        }
+    }
+
+    free(it);
+    return retVal;
+}

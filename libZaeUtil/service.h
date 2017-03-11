@@ -25,6 +25,12 @@ typedef struct service_method_t
 
 #define SENSOR_EVENT_SOURCE "Sensor"
 
+typedef struct service_event_data_t
+{
+    char*   data;
+} service_event_data_t;
+void    delete_service_event_data(void* arg);
+
 typedef struct event_subscription_t
 {
     char*   source;
@@ -71,8 +77,9 @@ service_method_t* _method_name = (service_method_t*)malloc(sizeof(service_method
 
 void    service_create(service_t** service, int service_id);
 void    service_cli_create(cli_node_t* parent_node);
-void    service_post_event(int service_id, const char* data);
+void    service_post_event(int service_id, const char* name, variant_t* data);
 
 service_t*  service_self(const char* service_name);
+service_t*  service_by_id(int service_id);
 variant_t*  service_call_method(const char* service_name, const char* method_name, ...);
 

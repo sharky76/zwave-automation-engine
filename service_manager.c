@@ -86,7 +86,7 @@ void    service_manager_init(const char* service_dir)
         closedir(dp);
         LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
 
-        event_register_handler(service_manager_on_event);
+        //event_register_handler(ServiceManager, VDEV_EVENT, service_manager_on_event);
     }
     else
     {
@@ -183,7 +183,7 @@ void    service_manager_for_each_method(const char* service_class, void (*visito
  * 
  * @param event 
  */
-void    service_manager_on_event(event_t* event)
+/*void    service_manager_on_event(event_t* event)
 {
     switch(event->data->type)
     {
@@ -240,4 +240,4 @@ void    service_manager_on_event(event_t* event)
     default:
         break;
     }
-}
+}*/

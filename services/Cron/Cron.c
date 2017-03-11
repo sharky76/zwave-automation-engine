@@ -8,7 +8,7 @@
 int DT_CRON;
 
 static int timer_tick_counter = 0;
-void  timer_tick_event(const char* name, event_t* pevent);
+void  timer_tick_event(event_t* pevent);
 
 void  service_create(service_t** service, int service_id)
 {
@@ -17,7 +17,8 @@ void  service_create(service_t** service, int service_id)
     DT_CRON = service_id;
 
     (*service)->get_config_callback = cron_cli_get_config;
-    SERVICE_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_event);
+    //SERVICE_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_event);
+    event_register_handler(DT_CRON, TIMER_TICK_EVENT, timer_tick_event);
 
     // Test
     /*
@@ -160,11 +161,11 @@ void    service_cli_create(cli_node_t* parent_node)
  * @param name 
  * @param pevent 
  */
-void  timer_tick_event(const char* name, event_t* pevent)
+void  timer_tick_event(event_t* pevent)
 {
-    service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
+    //service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
 
-    if(strcmp(timer_event_data->data, "tick") == 0 && ++timer_tick_counter > 59)
+    if(++timer_tick_counter > 59)
     {
         timer_tick_counter = 0;
     
@@ -188,7 +189,7 @@ void  timer_tick_event(const char* name, event_t* pevent)
             stack_for_each(scene_list, scene_variant)
             {
                 LOG_DEBUG(DT_CRON, "Sending event for scene %s", variant_get_string(scene_variant));
-                service_post_event(DT_CRON, variant_get_string(scene_variant));
+                service_post_event(DT_CRON, SCENE_ACTIVATION_EVENT, scene_variant);
             }
 
             stack_free(scene_list);

@@ -102,17 +102,23 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
                     }
 
                     int replacement_len = strlen(replacement);
-                    while(result_size + replacement_len + 1 >= expected_size)
+                    if(result_size + replacement_len + 1 >= expected_size)
                     {
                         // Need to realloc our string...
-                        expected_size *= 2;
+                        expected_size = (result_size + replacement_len + 1) * 2;
                         result_string = realloc(result_string, expected_size);
+                        if(NULL == result_string)
+                        {
+                            LOG_ERROR(BuiltinService, "Memory allocation error, tried %d bytes", expected_size);
+                            return NULL;
+                        }
+                        result_string[result_size] = 0;
                         //printf("new expect size = %d\n, result: %d", expected_size, result_size + replacement_len + 1);
 
                     }
 
-                    result_string[result_size] = 0;
-                    strncat(result_string, replacement, expected_size-result_size);
+                    
+                    memcpy((char*)result_string+result_size, replacement, replacement_len);
                     //strcat(result_string, " ");
                     result_size += replacement_len;
                     free(replacement);

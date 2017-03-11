@@ -45,3 +45,5 @@ void            stack_push_back(variant_stack_t* stack, variant_t* value);
 variant_t*      stack_pop_back(variant_stack_t* stack);
 void            stack_remove(variant_stack_t* stack, variant_t* value);
 variant_stack_t*    stack_sort(variant_stack_t* stack, int (*compare_cb)(const void* left, const void* right));
+bool            stack_is_exists(variant_stack_t* stack, bool (*match_cb)(variant_t*, void* arg), void* arg);
+

@@ -4,6 +4,8 @@
 #include <crc32.h>
 #include <logger.h>
 #include <ctype.h>
+#include "event.h"
+#include "service.h"
 
 // API Query: http://192.168.1.77:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
 // Reply: 

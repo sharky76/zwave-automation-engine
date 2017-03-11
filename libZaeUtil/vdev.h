@@ -37,7 +37,7 @@ typedef struct vdev_t
     void  (*start)();
     char**      (*get_config_callback)(vty_t*);
     variant_stack_t*  supported_method_list;
-    variant_stack_t*  event_subscriptions;
+    //variant_stack_t*  event_subscriptions;
     void* command_class_ptr;    // For compatibility with ZWAVE device function operators
 } vdev_t;
 
@@ -47,7 +47,7 @@ typedef struct vdev_t
 (*vdev)->name = strdup(_name);      \
 (*vdev)->start = _start;    \
 (*vdev)->supported_method_list = stack_create();    \
-(*vdev)->event_subscriptions = stack_create();
+//(*vdev)->event_subscriptions = stack_create();
 
 #define VDEV_ADD_COMMAND(_name, _nargs, _callback, _help)  \
 {   \
@@ -62,6 +62,7 @@ stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, 
 #define VDEV_ADD_CONFIG_PROVIDER(_config)    \
 (*vdev)->get_config_callback = _config;
 
+/*
 #define VDEV_SUBSCRIBE_TO_EVENT_SOURCE(_source_, _handler_) \
     {   \
         event_subscription_t* es = (event_subscription_t*)malloc(sizeof(event_subscription_t)); \
@@ -69,6 +70,9 @@ stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, 
         es->on_event = _handler_;   \
         stack_push_back((*vdev)->event_subscriptions, variant_create_ptr(DT_PTR, es, variant_delete_none)); \
     }
+*/
+
+#define VDEV_DATA_CHANGE_EVENT  "VirtualDeviceDataChangeEvent"
 
 void    vdev_create(vdev_t** vdev, int vdev_id);
 void    vdev_cli_create(cli_node_t* parent_node);

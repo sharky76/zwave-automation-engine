@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <logger.h>
 #include <crc32.h>
+#include <event.h>
 
 char* SS_user;
 char* SS_pass;
@@ -29,8 +30,10 @@ variant_t*  get_event_list(va_list args);
 variant_t*  get_event_snapshot(va_list args);
 variant_t*  get_event_snapshot_range(va_list args);
 
+void    ss_event_handler(event_t* event);
+
 void        device_start(); 
-void        timer_tick_handler(const char* event_name, event_t* pevent);
+void        timer_tick_handler(event_t* pevent);
 
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
@@ -44,9 +47,10 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_COMMAND("GetEventSnapshotRange", 3, get_event_snapshot_range, "Get list of event snapshots in range (arg: camid, startTime, endTime)")
 
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
-    VDEV_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_handler);
-
+    
     DT_SURVEILLANCE_STATION = vdev_id;
+    event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler);
+
 
     SS_user = NULL;
     SS_pass = NULL;
@@ -288,12 +292,13 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     ev->old_event_count = ev->event_count;
 }
 
-void        timer_tick_handler(const char* event_name, event_t* pevent)
+void        timer_tick_handler(event_t* pevent)
 {
     service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
 
-    if(++timer_tick_counter > QUERY_RATE_SEC && strcmp(timer_event_data->data, "tick") == 0)
+    if(++timer_tick_counter > QUERY_RATE_SEC)
     {
+        LOG_DEBUG(DT_SURVEILLANCE_STATION, "Timer event received");
         timer_tick_counter = 0;
 
         // Check for outstanding motion events...
@@ -302,5 +307,10 @@ void        timer_tick_handler(const char* event_name, event_t* pevent)
         //SS_api_logout();
         variant_hash_for_each(SS_event_keeper_table, process_motion_event_table, NULL);
     }
+    /*else if(strcmp(timer_event_data->data, "GetCameraList") == 0)
+    {
+        LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera List event received");
+        SS_api_get_camera_list();
+    }*/
 }
 

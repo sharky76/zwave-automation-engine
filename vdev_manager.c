@@ -93,7 +93,7 @@ void    vdev_manager_init(const char* vdev_dir)
         closedir(dp);
         LOG_ADVANCED(VDevManager, "Virtual device manager initialized with %d devices", vdev_table->count);
 
-        event_register_handler(vdev_manager_on_event);
+        //event_register_handler(vdev_manager_on_event);
     }
     else
     {
@@ -232,7 +232,7 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
     return NULL;
 }
 
-void                vdev_manager_on_event(event_t* event)
+/*void                vdev_manager_on_event(event_t* event)
 {
     switch(event->data->type)
     {
@@ -289,4 +289,4 @@ void                vdev_manager_on_event(event_t* event)
     default:
         break;
     }
-}
+}*/
