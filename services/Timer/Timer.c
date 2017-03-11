@@ -121,6 +121,7 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
             timer->name = strdup(variant_get_string(name_variant));
+            timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
             timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
             timer->singleshot = false;
         
