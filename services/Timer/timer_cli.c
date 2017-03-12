@@ -90,6 +90,7 @@ bool    cmd_timer_set_timeout(vty_t* vty, variant_stack_t* params)
     timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
     timer->timeout = variant_get_int(stack_peek_at(params, 1));
     timer->name = strdup(scene_name);
+    timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
     timer->singleshot = true;
     stack_push_back(timer_list_static, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
     
@@ -107,6 +108,7 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
     timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
     timer->timeout = variant_get_int(stack_peek_at(params, 1));
     timer->name = strdup(scene_name);
+    timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
     timer->singleshot = false;
     stack_push_back(timer_list_static, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
 

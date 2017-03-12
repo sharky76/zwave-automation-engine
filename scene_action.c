@@ -223,7 +223,10 @@ void scene_action_exec_command(action_t* action)
                     if(NULL != env_value)
                     {
                         uint32_t key = crc32(0, env->name, strlen(env->name));
-                        LOG_DEBUG(Scene, "Inserting value with name %s and key %u, and val: %s", env->name, key, variant_get_string(env_value));
+                        char* val;
+                        variant_to_string(env_value, &val);
+                        LOG_DEBUG(Scene, "Inserting value with name %s and key %u, and val: %s", env->name, key, val);
+                        free(val);
                         service_args_stack_add(env->stack_name, key, env_value);
                     }
                 }

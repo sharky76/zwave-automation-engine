@@ -188,8 +188,9 @@ void  timer_tick_event(event_t* pevent)
             LOG_ADVANCED(DT_CRON, "Found %d matching scenes", scene_list->count);
             stack_for_each(scene_list, scene_variant)
             {
-                LOG_DEBUG(DT_CRON, "Sending event for scene %s", variant_get_string(scene_variant));
-                service_post_event(DT_CRON, SCENE_ACTIVATION_EVENT, scene_variant);
+                const char* scene_name = variant_get_string(scene_variant);
+                LOG_DEBUG(DT_CRON, "Sending event for scene %s", scene_name);
+                service_post_event(DT_CRON, SCENE_ACTIVATION_EVENT, variant_create_string(strdup(scene_name)));
             }
 
             stack_free(scene_list);

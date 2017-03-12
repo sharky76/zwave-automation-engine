@@ -14,9 +14,19 @@ void    delete_service_event_data(void* arg)
     free(e);
 }
 
+/**
+ * Post event from service. Note that even manager will try to 
+ * delete data variant 
+ * 
+ * @author alex (3/12/2017)
+ * 
+ * @param service_id 
+ * @param name 
+ * @param data 
+ */
 void    service_post_event(int service_id, const char* name, variant_t* data)
 {
-    event_t* new_event = event_create(service_id, name, variant_create_ptr(DT_SERVICE_EVENT_DATA, data, delete_service_event_data));
+    event_t* new_event = event_create(service_id, name, data);
     event_post(new_event);
 }
 

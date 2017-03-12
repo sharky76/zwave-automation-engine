@@ -242,6 +242,12 @@ variant_t*  variant_get_variant(variant_t* variant)
     return ret;
 }
 
+variant_t*  variant_clone(variant_t* variant)
+{
+    variant->ref_count++;
+    return variant;
+}
+
 int         variant_equal(variant_t* v1, variant_t* v2)
 {
     if(NULL != v1->compare_cb)
