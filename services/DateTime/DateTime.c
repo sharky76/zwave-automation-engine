@@ -40,9 +40,9 @@ variant_t*  datetime_get_time_string(service_method_t* method, va_list args)
     time_t t = time(NULL);
     struct tm* p_tm = localtime(&t);
 
-    char* timebuf = (char*)calloc(10, sizeof(char));
+    char* timebuf = (char*)calloc(200, sizeof(char));
 
-    strftime(timebuf, 10, datetime_time_format, p_tm);
+    strftime(timebuf, 200, datetime_time_format, p_tm);
 
     return variant_create_string(timebuf);
 }
@@ -65,8 +65,8 @@ variant_t*  datetime_time_less_than(service_method_t* method, va_list args)
 
     time_t t = time(NULL);
     struct tm* p_tm = localtime(&t);
-    char* timebuf = (char*)calloc(10, sizeof(char));
-    strftime(timebuf, 10, datetime_time_format, p_tm);
+    char* timebuf = (char*)calloc(200, sizeof(char));
+    strftime(timebuf, 200, datetime_time_format, p_tm);
     memset(&tm, 0, sizeof(struct tm));
     strptime(timebuf, datetime_time_format, &tm);
     int current_time = tm.tm_sec + tm.tm_min*60 + tm.tm_hour*3600;
@@ -88,8 +88,8 @@ variant_t*  datetime_time_greater_than(service_method_t* method, va_list args)
 
     time_t t = time(NULL);
     struct tm* p_tm = localtime(&t);
-    char* timebuf = (char*)calloc(10, sizeof(char));
-    strftime(timebuf, 10, datetime_time_format, p_tm);
+    char* timebuf = (char*)calloc(200, sizeof(char));
+    strftime(timebuf, 200, datetime_time_format, p_tm);
     memset(&tm, 0, sizeof(struct tm));
     strptime(timebuf, datetime_time_format, &tm);
     int current_time = tm.tm_sec + tm.tm_min*60 + tm.tm_hour*3600;
@@ -106,9 +106,9 @@ variant_t*  datetime_get_date_string(service_method_t* method, va_list args)
     time_t t = time(NULL);
     struct tm* p_tm = localtime(&t);
 
-    char* datebuf = (char*)calloc(15, sizeof(char));
+    char* datebuf = (char*)calloc(200, sizeof(char));
 
-    strftime(datebuf, 14, datetime_date_format, p_tm);
+    strftime(datebuf, 200, datetime_date_format, p_tm);
 
     LOG_DEBUG(DT_DATETIME, "Date %s with format %s", datebuf, datetime_date_format);
 

@@ -17,7 +17,9 @@ int DT_TIMER;
 variant_t*  timer_start(service_method_t* method, va_list args);
 variant_t*  timer_stop(service_method_t* method, va_list args);
 variant_t*  timer_start_interval(service_method_t* method, va_list args);
-//variant_t*  timer_send_event(service_method_t* method, va_list args);
+variant_t*  timer_invoke_command(service_method_t* method, va_list args);
+variant_t*  timer_interval_invoke_command(service_method_t* method, va_list args);
+variant_t*  timer_show_timers(service_method_t* method, va_list args);
 
 void alarm_expire_handler(int sig);
 
@@ -28,7 +30,9 @@ void service_create(service_t** service, int service_id)
     SERVICE_ADD_METHOD(Stop, timer_stop, 1, "Timer name (string)");   // Timer.Stop(<Name>)
     SERVICE_ADD_METHOD(StartInterval, timer_start_interval, 2, "Timer name (string), Interval period in seconds (int)"); // Timer.StartInterval(<Name>, <Secs>)
     SERVICE_ADD_METHOD(StopInterval, timer_stop, 1, "Timer name (string)");   // Timer.StopInterval(<Name>)
-    //SERVICE_ADD_METHOD(QueueEvent, timer_send_event, 2, "Event name (string), Timeout in seconds (int)");
+    SERVICE_ADD_METHOD(Invoke, timer_invoke_command, 2, "Command name with args (string), Timeout in seconds (int)");
+    SERVICE_ADD_METHOD(IntervalInvoke, timer_interval_invoke_command, 2, "Command name with args (string), Interval timeout in seconds (int)");
+    SERVICE_ADD_METHOD(Show, timer_show_timers, 0, "Display a list of pending timers");
 
     timer_list = stack_create();
     //self = *service;
@@ -58,30 +62,53 @@ void    service_cli_create(cli_node_t* parent_node)
     timer_cli_init(parent_node);
 }
 
+bool    add_timer_event(const char* name, int timeout, timer_event_type_t event_type, bool singleshot)
+{
+    timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
+
+    timer->name = strdup(name);
+
+    switch(event_type)
+    {
+    case SCENE:
+        timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
+        break;
+    case COMMAND:
+        timer->event_name = strdup(COMMAND_ACTIVATION_EVENT);
+        break;
+    }
+
+    timer->event_type = event_type;
+    timer->timeout = timer->ticks_left = timeout;
+    timer->singleshot = singleshot;
+
+    stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
+}
+
 variant_t*  timer_start(service_method_t* method, va_list args)
 {
     if(timer_enabled)
     {
-        timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
+        //timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
     
         variant_t* name_variant = va_arg(args, variant_t*);
         variant_t* timeout_variant = va_arg(args, variant_t*);
     
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
-            timer->name = strdup(variant_get_string(name_variant));
+            /*timer->name = strdup(variant_get_string(name_variant));
             timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
             timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
             timer->singleshot = true;
         
-            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
-        
+            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));*/
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), SCENE, true);
             return variant_create_bool(true);
         }
         else
         {
             LOG_ERROR(DT_TIMER, "Failed to create timer");
-            free(timer);
+            //free(timer);
             return variant_create_bool(false);
         }
     }
@@ -113,26 +140,27 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
 {
     if(timer_enabled)
     {
-        timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
+        //timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
     
         variant_t* name_variant = va_arg(args, variant_t*);
         variant_t* timeout_variant = va_arg(args, variant_t*);
     
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
-            timer->name = strdup(variant_get_string(name_variant));
+            /*timer->name = strdup(variant_get_string(name_variant));
             timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
             timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
             timer->singleshot = false;
         
-            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
+            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));*/
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), SCENE, false);
         
             return variant_create_bool(true);
         }
         else
         {
             LOG_ERROR(DT_TIMER, "Failed to create interval");
-            free(timer);
+            //free(timer);
             return variant_create_bool(false);
         }
     }
@@ -188,5 +216,73 @@ variant_t* call_timer_start(service_method_t* method, ...)
     va_end(args);
 
     return result;
+}
+
+variant_t*  timer_invoke_command(service_method_t* method, va_list args)
+{
+    if(timer_enabled)
+    {
+        variant_t* name_variant = va_arg(args, variant_t*);
+        variant_t* timeout_variant = va_arg(args, variant_t*);
+    
+        if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
+        {
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), COMMAND, true);
+            return variant_create_bool(true);
+        }
+        else
+        {
+            LOG_ERROR(DT_TIMER, "Failed to create interval");
+            return variant_create_bool(false);
+        }
+    }
+    else
+    {
+        return variant_create_bool(false);
+    }
+}
+
+variant_t*  timer_interval_invoke_command(service_method_t* method, va_list args)
+{
+    if(timer_enabled)
+    {
+        variant_t* name_variant = va_arg(args, variant_t*);
+        variant_t* timeout_variant = va_arg(args, variant_t*);
+    
+        if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
+        {
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), COMMAND, false);
+            return variant_create_bool(true);
+        }
+        else
+        {
+            LOG_ERROR(DT_TIMER, "Failed to create interval");
+            return variant_create_bool(false);
+        }
+    }
+    else
+    {
+        return variant_create_bool(false);
+    }
+}
+
+variant_t*  timer_show_timers(service_method_t* method, va_list args)
+{
+    if(timer_enabled)
+    {
+        variant_stack_t* result = stack_create();
+
+        stack_for_each(timer_list, timer_variant)
+        {
+            timer_info_t* timer = variant_get_ptr(timer_variant);
+            char buf[256] = {0};
+            snprintf(buf, 255, "%d %s: %s", timer->ticks_left, timer->event_name, timer->name);
+            stack_push_back(result, variant_create_string(strdup(buf)));
+        }
+
+        return variant_create_list(result);
+    }
+
+    return variant_create_bool(false);
 }
 

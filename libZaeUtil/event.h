@@ -36,8 +36,9 @@ typedef struct sensor_event_data_t
     unsigned long  last_update_time;
 } sensor_event_data_t;
 
-#define SCENE_ACTIVATION_EVENT  "SceneActivationEvent"
-#define TIMER_TICK_EVENT        "TimerTickEvent"
+#define SCENE_ACTIVATION_EVENT   "SceneActivationEvent"
+#define COMMAND_ACTIVATION_EVENT "CommandActivationEvent"
+#define TIMER_TICK_EVENT         "TimerTickEvent"
 
 void        event_manager_init();
 

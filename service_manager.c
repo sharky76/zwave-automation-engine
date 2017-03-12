@@ -12,11 +12,14 @@
 #include <event.h>
 #include <hash.h>
 #include <crc32.h>
+#include "command_parser.h"
 
 //static variant_stack_t* service_list;
 extern hash_table_t* service_table;
 
 DECLARE_LOGGER(ServiceManager)
+
+void service_manager_on_command_activation_event(event_t* event);
 
 void    service_manager_init(const char* service_dir)
 {
@@ -86,7 +89,7 @@ void    service_manager_init(const char* service_dir)
         closedir(dp);
         LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
 
-        //event_register_handler(ServiceManager, VDEV_EVENT, service_manager_on_event);
+        event_register_handler(ServiceManager, COMMAND_ACTIVATION_EVENT, service_manager_on_command_activation_event);
     }
     else
     {
@@ -172,6 +175,34 @@ void    service_manager_for_each_method(const char* service_class, void (*visito
             service_method_t* method = (service_method_t*)variant_get_ptr(method_variant);
             visitor(method, arg);
         }
+    }
+}
+
+void service_manager_on_command_activation_event(event_t* event)
+{
+    const char* cmd = variant_get_string(event->data);
+
+    LOG_ADVANCED(ServiceManager, "Command activation event from id %d with command %s", event->source_id, cmd);
+    bool isOk = true;
+    variant_stack_t* compiled = command_parser_compile_expression(cmd, &isOk);
+
+    if(isOk)
+    {
+        variant_t* result = command_parser_execute_expression(compiled);
+
+        if(NULL != result)
+        {
+            LOG_ADVANCED(ServiceManager, "Command %s executed successfully", cmd);
+            variant_free(result);
+        }
+        else
+        {
+            LOG_ERROR(ServiceManager, "Failed to execute command %s", cmd);
+        }
+    }
+    else
+    {
+        LOG_ERROR(ServiceManager, "Error parsing command %s", cmd);
     }
 }
 

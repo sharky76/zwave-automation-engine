@@ -89,7 +89,7 @@ void    vty_io_config(vty_t* vty)
 
 void    file_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    fprintf(vty->data->desc.file, buf);
+    fwrite(buf, len, 1, vty->data->desc.file);
 }
 
 int   file_read_cb(vty_t* vty, char** str)

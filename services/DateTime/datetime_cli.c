@@ -23,7 +23,7 @@ void    datetime_cli_init(cli_node_t* parent_node)
 
 char**  datetime_cli_get_config(vty_t* vty)
 {
-    if(NULL != config_list)
+    /*if(NULL != config_list)
     {
         char* cfg = NULL;
         int i = 0;
@@ -44,7 +44,14 @@ char**  datetime_cli_get_config(vty_t* vty)
     strcat(config_list[1], "date-format ");
     strcat(config_list[1], datetime_date_format);
 
-    return config_list;
+    return config_list;*/
+
+
+
+    vty_write(vty, " time-format %s%s", datetime_time_format, VTY_NEWLINE(vty));
+    vty_write(vty, " date-format %s%s", datetime_date_format, VTY_NEWLINE(vty));
+
+    return NULL;
 }
 
 bool    cmd_datetime_format(vty_t* vty, variant_stack_t* params)
