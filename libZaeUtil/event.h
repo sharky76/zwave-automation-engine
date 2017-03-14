@@ -27,15 +27,6 @@ typedef struct event_handler_t
     void (*event_handler)(event_t*);
 } event_handler_t;
 
-typedef struct sensor_event_data_t
-{
-    uint8_t  node_id;
-    uint8_t  instance_id;
-    uint8_t  command_id;
-    const char*   device_name;
-    unsigned long  last_update_time;
-} sensor_event_data_t;
-
 #define SCENE_ACTIVATION_EVENT   "SceneActivationEvent"
 #define COMMAND_ACTIVATION_EVENT "CommandActivationEvent"
 #define TIMER_TICK_EVENT         "TimerTickEvent"

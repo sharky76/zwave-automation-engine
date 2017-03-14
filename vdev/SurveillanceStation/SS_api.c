@@ -6,6 +6,9 @@
 #include <ctype.h>
 #include "event.h"
 #include "service.h"
+#include "base64.h"
+#include <math.h>
+
 
 // API Query: http://192.168.1.77:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
 // Reply: 
@@ -621,3 +624,25 @@ void process_camera_list_response(const json_object* obj, void* arg)
         //json_object_put(success_response);
     }
 }
+
+// http://192.168.1.1:5000/webapi/entry.cgi?camStm=1&version="8"&cameraId=18&api="SYNO.SurveillanceStation.Camera"&preview=true&method="GetSnapshot"
+void process_camera_snapshot_response(const char* data, int len, void* arg);
+
+void SS_api_get_camera_snapshot(int cam_id, char** snapshot)
+{
+    LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera Snapshot");
+    char camera_snapshot_req_buf[512] = {0};
+    snprintf(camera_snapshot_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Camera&version=8&cameraId=%d&camStm=1&method=GetSnapshot&_sid=%s", SS_base_url, SS_camera_path, cam_id, SS_auth_sid);
+    LOG_DEBUG(DT_SURVEILLANCE_STATION, camera_snapshot_req_buf);
+    curl_util_get_resource(camera_snapshot_req_buf, process_camera_snapshot_response, (void*)snapshot);
+}
+
+void process_camera_snapshot_response(const char* data, int len, void* arg)
+{
+    char** snapshot = (char**)arg;
+    *snapshot = calloc(((len+2)/3)*4, sizeof(char));
+
+    Base64encode(*snapshot, data, len);
+    LOG_DEBUG(DT_SURVEILLANCE_STATION, "Snapshot: %s", *snapshot);
+}
+

@@ -1,8 +1,12 @@
 #include "command_class.h"
 #include "data_callbacks.h"
 #include <logger.h>
+#include "event.h"
+#include "hash.h"
+#include "crc32.h"
 
 extern ZWay zway;
+extern hash_table_t*   data_holder_event_table;
 
 USING_LOGGER(DataCallback)
 
@@ -14,7 +18,7 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
 
 typedef struct zway_data_read_ctx_t
 {
-    device_record_t* record;
+    device_record_t*        record;
 } zway_data_read_ctx_t;
 
 void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void* arg);
@@ -35,6 +39,7 @@ static command_class_t command_class_table[] = {
 void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void* arg)
 {
     zway_data_read_ctx_t* ctx = (zway_data_read_ctx_t*)arg;
+
     LOG_DEBUG(DataCallback, "Data read success for device %s with function 0x%x",
               ctx->record->deviceName,
               functionId);
@@ -182,12 +187,10 @@ variant_t*   command_class_eval_binarysensor(const char* method, device_record_t
     if(strcmp(method, "Get") == 0)
     {
         variant_t* arg1 = va_arg(args, variant_t*);
-        /*zdata_acquire_lock(ZDataRoot(zway));
-        ZDataHolder dh = zway_find_device_instance_cc_data(zway, record->nodeId, record->instanceId, record->commandId, variant_get_string(arg1));
-        ZWBOOL bool_val;
+
+        /*ZWBOOL bool_val;
         zdata_get_boolean(dh, &bool_val);
         ret_val = variant_create_bool((bool)bool_val);
-        zdata_release_lock(ZDataRoot(zway));
         */
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;

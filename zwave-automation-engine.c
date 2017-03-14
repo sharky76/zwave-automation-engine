@@ -13,8 +13,8 @@
 #include "vty_io.h"
 #include <signal.h>
 #include <setjmp.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+//#include <readline/readline.h>
+//#include <readline/history.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -56,7 +56,7 @@ void sigtstp (int sig)
   cli_command_exec_default("end");
   
   /* Initialize readline. */
-  rl_initialize ();
+  //rl_initialize ();
   printf ("\n");
  
   /* Check jmpflag for duplicate siglongjmp(). */
@@ -73,9 +73,9 @@ void sigtstp (int sig)
 void
 sigint (int sig)
 {
-  rl_initialize ();
+  //rl_initialize ();
   printf ("\n");
-  rl_forced_update_display ();
+  //rl_forced_update_display ();
 }
 
 void sigpipe(int sig)
@@ -85,7 +85,7 @@ void sigpipe(int sig)
     return;
 
     jmpflag = 0;
-    rl_done = 1;
+    //rl_done = 1;
     //siglongjmp (jmpbuf, 1);
 }
 
@@ -283,10 +283,10 @@ int main (int argc, char *argv[])
 
             LOG_INFO(General, "Engine ready");
             
-            rl_editing_mode = 1;
-            rl_attempted_completion_function = &cli_command_completer;
-            rl_completion_entry_function = &null_function;
-            rl_bind_key ('?', (rl_command_func_t *) cli_command_describe);
+            //rl_editing_mode = 1;
+            //rl_attempted_completion_function = &cli_command_completer;
+            //rl_completion_entry_function = &null_function;
+            //rl_bind_key ('?', (rl_command_func_t *) cli_command_describe);
             //rl_pre_input_hook = &cli_print_prompt_function;
             signal_init();
             

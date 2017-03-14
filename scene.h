@@ -18,6 +18,7 @@ typedef struct scene_t
     variant_stack_t*    actions;
     bool                is_valid;
     bool                is_enabled;
+    int                 command_id;
 } scene_t;
 
 scene_t*    scene_create(const char* name);

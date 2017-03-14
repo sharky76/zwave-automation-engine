@@ -28,7 +28,7 @@ typedef struct command_class_st
 
 } command_class_t;
 
-void                init_command_classes();
+//void                init_command_classes();
 command_class_t*    get_command_class_by_id(ZWBYTE command_id);
 command_class_t*    get_command_class_by_name(const char* command_name);
 void                command_class_for_each(void (*visitor)(command_class_t*, void* arg), void* arg);

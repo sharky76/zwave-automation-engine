@@ -175,8 +175,15 @@ void    scene_manager_on_scene_activation_event(event_t* event)
             if(NULL != scene_variant)
             {
                 scene_t* scene = (scene_t*)variant_get_ptr(scene_variant);
-                LOG_ADVANCED(Scene, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
-                scene_exec(scene);
+                if(strcmp(scene->source, calling_service->service_name) == 0)
+                {
+                    LOG_ADVANCED(Scene, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
+                    scene_exec(scene);
+                }
+                else
+                {
+                    LOG_ERROR(Scene, "Scene %s source mismatch: %s", scene->name, calling_service->service_name);
+                }
             }
             else
             {

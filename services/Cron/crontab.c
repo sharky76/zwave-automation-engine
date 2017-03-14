@@ -235,7 +235,7 @@ variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
                     stack_for_each(e->child_array, scene_name_variant)
                     {
                         //printf("Pushing back %s\n", variant_get_string(scene_name_variant));
-                        stack_push_back(scene_array, scene_name_variant);
+                        stack_push_back(scene_array, variant_clone(scene_name_variant));
                     }
                 }
             }

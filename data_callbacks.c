@@ -8,12 +8,13 @@
 #include <stdio.h>
 #include "device_callbacks.h"
 #include <time.h>
+#include "hash.h"
+#include "crc32.h"
 
 extern ZWay zway;
+extern hash_table_t*   data_holder_event_table;
 
 DECLARE_LOGGER(DataCallback)
-
-void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg);
 
 void dump_data(const ZWay zway, ZDataHolder data)
 {
@@ -112,6 +113,7 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
     }
     else if(changeType == (Deleted & 0x0f) || changeType ==  (Invalidated & 0x0f))
     {
+        //zdata_remove_callback_ex(child->data, &value_change_event_callback)
         LOG_DEBUG(DataCallback, "Command removed node-id %d, instance-id %d, command-id %d", event_data->node_id, event_data->instance_id, event_data->command_id);
     }
 }
@@ -136,7 +138,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             event_data->last_update_time = time_msec;
             // Record event in history...
             // ...
-            event_t* event = event_create(DT_SENSOR, SENSOR_DATA_CHANGE_EVENT, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, variant_delete_none));
+            event_t* event = event_create(DataCallback, SENSOR_DATA_CHANGE_EVENT, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, variant_delete_none));
             event_post(event);
         }
     }

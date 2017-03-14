@@ -29,6 +29,7 @@ variant_t*  get_snapshot_path(va_list args);
 variant_t*  get_event_list(va_list args);
 variant_t*  get_event_snapshot(va_list args);
 variant_t*  get_event_snapshot_range(va_list args);
+variant_t*  get_camera_snapshot(va_list args);
 
 void    ss_event_handler(event_t* event);
 
@@ -42,6 +43,7 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_COMMAND("GetCameraName", 1, get_camera_name_by_id, "Get Camera name (arg: id)")
     VDEV_ADD_COMMAND("GetCameraList", 0, get_camera_list, "Get Camera list")
     VDEV_ADD_COMMAND("GetSnapshotUrl", 1, get_snapshot_path, "Get camera snapshot URL (arg: id)")
+    VDEV_ADD_COMMAND("GetCameraSnapshot", 1, get_camera_snapshot, "Get camera snapshot (arg: id)")
     VDEV_ADD_COMMAND("GetEventList", 1, get_event_list, "Get most recent list of event IDs (arg: id)")
     VDEV_ADD_COMMAND("GetEventSnapshot", 2, get_event_snapshot, "Get recent event snapshot (arg: camid, eventid: -1 = Last event ID)")
     VDEV_ADD_COMMAND("GetEventSnapshotRange", 3, get_event_snapshot_range, "Get list of event snapshots in range (arg: camid, startTime, endTime)")
@@ -163,7 +165,10 @@ variant_t*  get_event_snapshot(va_list args)
         {
             // Just return last snapshot
             SS_event_info_t* event_info = VARIANT_GET_PTR(SS_event_info_t, stack_peek_back(keeper->events_info_stack));
-            return variant_create_string(strdup(event_info->snapshot));
+            if(NULL != event_info)
+            {
+                return variant_create_string(strdup(event_info->snapshot));
+            }
         }
     }
 
@@ -312,5 +317,15 @@ void        timer_tick_handler(event_t* pevent)
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera List event received");
         SS_api_get_camera_list();
     }*/
+}
+
+variant_t*  get_camera_snapshot(va_list args)
+{
+    char* snapshot;
+    variant_t* camera_id_var = va_arg(args, variant_t*);
+    int cam_id = variant_get_int(camera_id_var);
+
+    SS_api_get_camera_snapshot(cam_id, &snapshot);
+    return variant_create_string(snapshot);
 }
 
