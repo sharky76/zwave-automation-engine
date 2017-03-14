@@ -15,6 +15,9 @@ variant_t*   command_class_eval_binarysensor(const char* method, device_record_t
 variant_t*   command_class_eval_battery(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_alarm(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_configuration(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_manufacturer_specific(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_wakeup(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -28,9 +31,11 @@ static command_class_t command_class_table[] = {
     {0x20, "Basic",        {"Get", 0, "level", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
     {0x30, "SensorBinary", {"Get", 1, "1.level", NULL, 0, NULL},                        &command_class_eval_binarysensor},
     {0x80, "Battery",      {"Get", 1, "last", NULL, 0, NULL},                           &command_class_eval_battery},
-    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>"},  &command_class_eval_alarm},
-    {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False"},              &command_class_eval_binaryswitch},
-
+    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>", NULL, 0, NULL},  &command_class_eval_alarm},
+    {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False", NULL, 0, NULL},              &command_class_eval_binaryswitch},
+    {0x70, "Configuration", {"Get", 1, "<parameter>", "Set", 3, "<parameter>, <value>, <size>", NULL, 0, NULL},       &command_class_eval_configuration},
+    {0x72, "Manufacturer Specific", {"Get", 0, "", NULL, 0, NULL},                                     &command_class_eval_manufacturer_specific},
+    {0x84, "Wakeup",       {"Get", 0, "", "Capabilities", 0, "", "Sleep", 0, "", "Set", 2, "<seconds>, <node ID>", NULL, 0, NULL},       &command_class_eval_wakeup},
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -168,12 +173,16 @@ variant_t*   command_class_eval_basic(const char* method, device_record_t* recor
         zdata_get_integer(dh, &int_val);
         ret_val = variant_create_int32(DT_INT32, int_val);
         zdata_release_lock(ZDataRoot(zway));*/
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        ctx->record = record;
+        ZWError err = zway_cc_basic_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)
     {
         variant_t* arg1 = va_arg(args, variant_t*);
-        zway_cc_basic_set(zway, record->nodeId, record->instanceId, variant_get_byte(arg1), NULL, NULL, NULL);
+        ZWError err = zway_cc_basic_set(zway, record->nodeId, record->instanceId, variant_get_byte(arg1), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
     }
 
     return ret_val;
@@ -217,14 +226,9 @@ variant_t*   command_class_eval_battery(const char* method, device_record_t* rec
     if(strcmp(method, "Get") == 0)
     {
         variant_t* arg1 = va_arg(args, variant_t*);
-        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        ZWError err = zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        if(err != NoError)
-        {
-            LOG_ERROR(DataCallback, "Unable to get sensor %s battery data", record->deviceName);
-        }*/
-
+        zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
 
@@ -240,15 +244,15 @@ variant_t*   command_class_eval_alarm(const char* method, device_record_t* recor
         variant_t* arg1 = va_arg(args, variant_t*);
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_alarm_get(zway, record->nodeId, record->instanceId, 0, 0, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        */
+        zway_cc_alarm_get(zway, record->nodeId, record->instanceId, 0, 0, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);*/
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)
     {
         variant_t* alarm_type = va_arg(args, variant_t*);
         variant_t* level = va_arg(args, variant_t*);
-        zway_cc_alarm_set(zway,record->nodeId, record->instanceId, variant_get_int(alarm_type), variant_get_int(level), NULL, NULL, NULL);
+        ZWError err = zway_cc_alarm_set(zway,record->nodeId, record->instanceId, variant_get_int(alarm_type), variant_get_int(level), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
     }
 
     return ret_val;
@@ -263,15 +267,91 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
     {
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        */
+        zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);*/
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)
     {
-        zway_cc_switch_binary_set(zway,record->nodeId, record->instanceId, variant_get_bool(arg1), NULL, NULL, NULL);
+        ZWError err = zway_cc_switch_binary_set(zway,record->nodeId, record->instanceId, variant_get_bool(arg1), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
     }
 
     return ret_val;
 }
 
+variant_t*   command_class_eval_configuration(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+    variant_t* param = va_arg(args, variant_t*);
+
+    if(strcmp(method, "Get") == 0)
+    {
+        char* param_str;
+        variant_to_string(param, &param_str);
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        ctx->record = record;
+        zway_cc_configuration_get(zway, record->nodeId, record->instanceId, variant_get_int(param), zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        ret_val = command_class_read_data(record, param_str);
+        free(param_str);
+    }
+    else if(strcmp(method, "Set") == 0)
+    {
+        variant_t* value = va_arg(args, variant_t*);
+        variant_t* size = va_arg(args, variant_t*);
+
+        ZWError err = zway_cc_configuration_set(zway,record->nodeId, record->instanceId, variant_get_int(param), variant_get_int(value), variant_get_int(size), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_manufacturer_specific(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    if(strcmp(method, "Get") == 0)
+    {
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        ctx->record = record;
+        zway_cc_manufacturer_specific_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        ret_val = command_class_read_data(record, NULL);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_wakeup(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    if(strcmp(method, "Get") == 0)
+    {
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        ctx->record = record;
+        zway_cc_wakeup_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        ret_val = command_class_read_data(record, NULL);
+    }
+    else if(strcmp(method, "Capabilities") == 0)
+    {
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        ctx->record = record;
+        zway_cc_wakeup_capabilities_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        ret_val = command_class_read_data(record, NULL);
+    }
+    else if(strcmp(method, "Sleep") == 0)
+    {
+        ZWError err = zway_cc_wakeup_sleep(zway, record->nodeId, record->instanceId, NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+    else if(strcmp(method, "Set") == 0)
+    {
+        variant_t* interval = va_arg(args, variant_t*);
+        variant_t* node_id = va_arg(args, variant_t*);
+
+        ZWError err = zway_cc_wakeup_set(zway, record->nodeId, record->instanceId, variant_get_int(interval), variant_get_int(node_id), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+
+    return ret_val;
+}

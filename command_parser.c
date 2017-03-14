@@ -50,7 +50,7 @@ bool process_service_method_operator(const char* ch, variant_stack_t* operator_s
 bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_stack);
 bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack);
 bool process_vdev_method_operator(const char* ch, variant_stack_t* operator_stack);
-void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
+bool process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
 void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
 bool process_parenthesis_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
@@ -151,8 +151,10 @@ bool process_state_transition(State current_state, state_context_t* state_contex
             *state_context->current_data_buf = 0;
             break;
         case STATE_DIGIT:
-            process_digit_token(state_context->current_data_buf, parser_data->operator_stack, parser_data->operand_queue);
-            *state_context->current_data_buf = 0;
+            if(process_digit_token(state_context->current_data_buf, parser_data->operator_stack, parser_data->operand_queue))
+            {
+                *state_context->current_data_buf = 0;
+            }
             break;
         case STATE_RIGHT_PAREN:
             retVal = process_parenthesis_token(parser_data->operator_stack, parser_data->operand_queue, OP_RIGHT_PARETHESIS);
@@ -573,7 +575,7 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
         }
         else
         {
-            if(resolver_has_name(tok))
+            if(resolver_has_name(tok) || isdigit(*tok))
             {
                 retVal = process_device_function_operator(function_string, operator_stack);
             }
@@ -616,33 +618,74 @@ bool process_device_function_operator(const char* ch, variant_stack_t* operator_
     bool    retVal = true;
 
     char* function_string = (char*)ch;
+
+    // count DOT separators
+    char* str = (char*)ch;
+    int dot_count = 0;
+    while(*str)
+    {
+        if(*str == '.')
+        {
+            dot_count++;
+        }
+
+        str++;
+    }
+
     char* tok = strtok(function_string, ".");
     int tok_count = 0;
+
+    // Memory leak here...
+    device_record_t*    record = calloc(1, sizeof(device_record_t));
+
     while(NULL != tok)
     {
-        // First argument is device name
-        switch(tok_count++)
+        if(dot_count == 3)
         {
-        case 0: // Device name
+            switch(tok_count++)
             {
-                device_record_t*    record = resolver_get_device_record(tok);
-                if(NULL != record)
-                {
-                    op_data->device_record = record;
-
-                    op_data->command_class = get_command_class_by_id(record->commandId);
-                }
-                else 
-                {
-                    // Error!
-                    LOG_ERROR(Parser, "Unresolved device %s", tok);
-                    retVal = false;
-                }
+            case 0:
+                record->nodeId = atoi(tok);
+                break;
+            case 1:
+                record->instanceId = atoi(tok);
+                break;
+            case 2:
+                record->commandId = atoi(tok);
+                op_data->device_record = record;
+                op_data->command_class = get_command_class_by_id(record->commandId);
+                break;
+            case 3:
+                strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
+                break;
             }
-            break;
-        case 1: // Command and arguments
-            strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
-            break;
+        }
+        else
+        {
+            // First argument is device name
+            switch(tok_count++)
+            {
+            case 0: // Device name
+                {
+                    device_record_t*    record = resolver_get_device_record(tok);
+                    if(NULL != record)
+                    {
+                        op_data->device_record = record;
+    
+                        op_data->command_class = get_command_class_by_id(record->commandId);
+                    }
+                    else 
+                    {
+                        // Error!
+                        LOG_ERROR(Parser, "Unresolved device %s", tok);
+                        retVal = false;
+                    }
+                }
+                break;
+            case 1: // Command and arguments
+                strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
+                break;
+            }
         }
 
         tok = strtok(NULL, ".");
@@ -777,23 +820,36 @@ bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_s
 }
 
 
-void process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue)
+bool process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue)
 {
     errno = 0;
-    long double val = strtold(ch, NULL);
+    bool retVal = true;
 
-    variant_t* number_variant;
+    char* endptr;
+    long double val = strtold(ch, &endptr);
 
-    if(val == (int)val)
+    if(*endptr == '.')
     {
-        number_variant = variant_create_int32(DT_INT32, (int)val);
+        // Its not a real number!
+        retVal = false;
     }
     else
     {
-        number_variant = variant_create_float(val);
+        variant_t* number_variant;
+    
+        if(val == (int)val)
+        {
+            number_variant = variant_create_int32(DT_INT32, (int)val);
+        }
+        else
+        {
+            number_variant = variant_create_float(val);
+        }
+    
+        stack_push_back(operand_queue, variant_create_ptr(T_OPERAND, number_variant, NULL));
     }
 
-    stack_push_back(operand_queue, variant_create_ptr(T_OPERAND, number_variant, NULL));
+    return retVal;
 }
 
 /*

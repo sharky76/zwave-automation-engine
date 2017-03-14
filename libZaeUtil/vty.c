@@ -277,6 +277,12 @@ char*   vty_read(vty_t* vty)
                         vty->command_completion_started = true;
                     }
                 }
+                else
+                {
+                    // No completions found, tab will display <CR>
+                    vty_write(vty, "%s<cr>%s", VTY_NEWLINE(vty), VTY_NEWLINE(vty));
+                    vty_redisplay(vty, vty->buffer);
+                }
             }
             else
             {   

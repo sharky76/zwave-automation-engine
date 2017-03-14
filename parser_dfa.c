@@ -49,6 +49,7 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_DIGIT,   A_LESS,         STATE_LESS},
     {STATE_DIGIT,   A_MORE,         STATE_MORE},
     {STATE_DIGIT,   A_DOT,          STATE_DIGIT},
+    {STATE_DIGIT,   A_ALPHA,        STATE_ALPHA},
     {STATE_DIGIT,   A_EOL,          STATE_END},
     {STATE_DIGIT,   A_SPACE,        STATE_START},
 
@@ -185,7 +186,7 @@ State           parser_dfa_next_state(State source_state, AlphabetToken token)
 
 AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
 {
-    if(isalpha(*str) || *str == '$' || *str == ':' || *str == '"')
+    if(isalpha(*str) || *str == '$' || *str == ':' || *str == '"' || *str == '[' || *str == ']' )
     {
         return A_ALPHA;
     }
