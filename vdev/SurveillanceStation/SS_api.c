@@ -640,7 +640,7 @@ void SS_api_get_camera_snapshot(int cam_id, char** snapshot)
 void process_camera_snapshot_response(const char* data, int len, void* arg)
 {
     char** snapshot = (char**)arg;
-    *snapshot = calloc(((len+2)/3)*4, sizeof(char));
+    *snapshot = calloc((ceil((float)len/3.0f))*4.0f, sizeof(char));
 
     Base64encode(*snapshot, data, len);
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Snapshot: %s", *snapshot);
