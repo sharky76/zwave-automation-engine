@@ -5,6 +5,7 @@
 #include <ZPlatform.h>
 #include "resolver.h"
 #include "config.h"
+#include "command_class.h"
 
 extern ZWay zway;
 
@@ -124,9 +125,19 @@ bool    cmd_sensor_show_nodes(vty_t* vty, variant_stack_t* params)
                     }
                     else
                     {
-                        vty_write(vty, "%-20s %-20d%d (0x%x)%-11s%-20s%-10s%s", "Unresolved", instances[j], commands[k], commands[k], "",
-                                  (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
-                                  (is_failed == TRUE)? "True" : "False", VTY_NEWLINE(vty));
+                        command_class_t* cmd_class = get_command_class_by_id(commands[k]);
+                        if(NULL == cmd_class)
+                        {
+                            vty_write(vty, "%-20s %-20d%d (0x%x)%-11s%-20s%-10s%s", "Unresolved", instances[j], commands[k], commands[k], "",
+                                      (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
+                                      (is_failed == TRUE)? "True" : "False", VTY_NEWLINE(vty));
+                        }
+                        else
+                        {
+                            vty_write(vty, "%-20s %-20d%d (0x%x)%-11s%-20s%-10s%s", cmd_class->command_name, instances[j], commands[k], commands[k], "",
+                                      (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
+                                      (is_failed == TRUE)? "True" : "False", VTY_NEWLINE(vty));
+                        }
                     }
     
                     k++;
@@ -154,9 +165,20 @@ bool    cmd_sensor_show_nodes(vty_t* vty, variant_stack_t* params)
                 }
                 else
                 {
-                    vty_write(vty, "%-20s%-20d%d (0x%x)%-11s%-20s%-10s%s", "Unresolved", 0, commands[k], commands[k], "",
-                              (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
-                              (is_failed == TRUE)? "True" : "False", VTY_NEWLINE(vty));
+                    command_class_t* cmd_class = get_command_class_by_id(commands[k]);
+
+                    if(NULL == cmd_class)
+                    {
+                        vty_write(vty, "%-20s%-20d%d (0x%x)%-11s%-20s%-10s%s", "Unresolved", 0, commands[k], commands[k], "",
+                                  (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
+                                  (is_failed == TRUE)? "True" : "False", VTY_NEWLINE(vty));
+                    }
+                    else
+                    {
+                        vty_write(vty, "%-20s %-20d%d (0x%x)%-11s%-20s%-10s%s", cmd_class->command_name, 0, commands[k], commands[k], "",
+                                      (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
+                                      (is_failed == TRUE)? "True" : "False", VTY_NEWLINE(vty));
+                    }
                 }
     
                 k++;

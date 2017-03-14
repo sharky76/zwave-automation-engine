@@ -194,8 +194,16 @@ variant_t*   command_class_eval_binarysensor(const char* method, device_record_t
         */
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_sensor_binary_get(zway, record->nodeId, record->instanceId, -1, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        */
+        ZWError err = zway_cc_sensor_binary_get(zway, record->nodeId, record->instanceId, -1, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        if(err != NoError)
+        {
+            LOG_ERROR(DataCallback, "Unable to get binary sensor %s data", record->deviceName);
+        }
+        else
+        {
+            LOG_DEBUG(DataCallback, "Binary sensor GET sent");
+        }*/
+
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
 
@@ -211,8 +219,12 @@ variant_t*   command_class_eval_battery(const char* method, device_record_t* rec
         variant_t* arg1 = va_arg(args, variant_t*);
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        */
+        ZWError err = zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        if(err != NoError)
+        {
+            LOG_ERROR(DataCallback, "Unable to get sensor %s battery data", record->deviceName);
+        }*/
+
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
 
