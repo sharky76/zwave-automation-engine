@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <logger.h>
 #include <event.h>
+#include "command_class.h"
 
 DECLARE_LOGGER(DeviceCallback)
 
@@ -51,6 +52,24 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
             event_data->instance_id = instance_id;
             event_data->last_update_time = 0;
             event_data->device_name = resolver_name_from_id(node_id, instance_id, command_id);
+
+            if(NULL == event_data->device_name)
+            {
+                char default_name[MAX_DEVICE_NAME_LEN] = {0};
+                command_class_t* cmd_class = get_command_class_by_id(command_id);
+                if(NULL != cmd_class)
+                {
+                    snprintf(default_name, MAX_DEVICE_NAME_LEN-1, "%d.%d.%s", node_id, instance_id, cmd_class->command_name);
+                }
+                else
+                {
+                    snprintf(default_name, MAX_DEVICE_NAME_LEN-1, "%d.%d.%d", node_id, instance_id, command_id);
+                }
+
+                LOG_ADVANCED(DeviceCallback, "Adding default name for device: %s", default_name);
+                resolver_add_entry(ZWAVE, default_name, node_id, instance_id, command_id);
+                event_data->device_name = resolver_name_from_id(node_id, instance_id, command_id);
+            }
 
             zdata_add_callback_ex(dataHolder, &data_change_event_callback, FALSE, event_data);
 

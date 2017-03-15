@@ -46,10 +46,10 @@ static reserved_word_t  reserved_words[] = {
 
 bool process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 void process_string_operand(const char* ch, variant_stack_t* operand_queue);
-bool process_service_method_operator(const char* ch, variant_stack_t* operator_stack);
-bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_stack);
-bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack);
-bool process_vdev_method_operator(const char* ch, variant_stack_t* operator_stack);
+bool process_service_method_operator(const char* class, const char* method, variant_stack_t* operator_stack);
+bool process_builtin_method_operator(const char* class, const char* method, variant_stack_t* operator_stack);
+bool process_device_function_operator(const char* device, const char* method, variant_stack_t* operator_stack);
+bool process_vdev_method_operator(const char* device, const char* method, variant_stack_t* operator_stack);
 bool process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
 void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
@@ -567,33 +567,41 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
     {
         // Now lets tokenize the string and extract data to build an operant_t structure
         char* function_string = strdup((char*)ch);
-        char* tok = strtok((char*)ch, ".");
+        //char* tok = strtok((char*)ch, ".");
+
+        char* tok = strrchr(ch, '.');
 
         if(NULL == tok)
         {
-            retVal = false;
+            //retVal = false;
+            process_string_operand(ch, operand_queue);
         }
         else
         {
-            if(resolver_has_name(tok) || isdigit(*tok))
+            // Take first part...
+            *tok = 0;
+            if(resolver_has_name(ch))
             {
-                retVal = process_device_function_operator(function_string, operator_stack);
+                //printf("DEVICE: %s, METHOD: %s\n", ch, tok+1);
+                retVal = process_device_function_operator(ch, tok+1, operator_stack);
             }
-            else if(service_manager_is_class_exists(tok))
+            else if(service_manager_is_class_exists(ch))
             {
-                retVal = process_service_method_operator(function_string, operator_stack);
+                retVal = process_service_method_operator(ch, tok+1, operator_stack);
             }
-            else if(builtin_service_manager_is_class_exists(tok))
+            else if(builtin_service_manager_is_class_exists(ch))
             {
-                retVal = process_builtin_method_operator(function_string, operator_stack);
+                retVal = process_builtin_method_operator(ch, tok+1, operator_stack);
             }
-            else if(vdev_manager_is_vdev_exists(tok))
+            else if(vdev_manager_is_vdev_exists(ch))
             {
-                retVal = process_vdev_method_operator(function_string, operator_stack);
+                retVal = process_vdev_method_operator(ch, tok+1, operator_stack);
             }
             else
             {
                 // Well, this might be the only token in expression, save it as string
+                // restore string:
+                *tok = '.';
                 process_string_operand(ch, operand_queue);
             }
         }
@@ -611,158 +619,58 @@ void process_string_operand(const char* ch, variant_stack_t* operand_queue)
     stack_push_back(operand_queue, variant_create_variant(T_OPERAND, operand_token));
 }
 
-bool process_device_function_operator(const char* ch, variant_stack_t* operator_stack)
+bool process_device_function_operator(const char* device, const char* method, variant_stack_t* operator_stack)
 {
     function_operator_data_t* op_data = (function_operator_data_t*)calloc(1, sizeof(function_operator_data_t));
     operator_t* function_operator = operator_create(OP_DEVICE_FUNCTION, op_data);
     bool    retVal = true;
 
-    char* function_string = (char*)ch;
-
-    // count DOT separators
-    char* str = (char*)ch;
-    int dot_count = 0;
-    while(*str)
+    device_record_t*    record = resolver_get_device_record(device);
+    if(NULL != record)
     {
-        if(*str == '.')
-        {
-            dot_count++;
-        }
-
-        str++;
+        op_data->device_record = record;
+        op_data->command_class = get_command_class_by_id(record->commandId);
+        strncpy(op_data->command_method, method, MAX_METHOD_LEN-1);
+        stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
     }
-
-    char* tok = strtok(function_string, ".");
-    int tok_count = 0;
-
-    // Memory leak here...
-    device_record_t*    record = calloc(1, sizeof(device_record_t));
-
-    while(NULL != tok)
+    else 
     {
-        if(dot_count == 3)
-        {
-            switch(tok_count++)
-            {
-            case 0:
-                record->nodeId = atoi(tok);
-                break;
-            case 1:
-                record->instanceId = atoi(tok);
-                break;
-            case 2:
-                record->commandId = atoi(tok);
-                op_data->device_record = record;
-                op_data->command_class = get_command_class_by_id(record->commandId);
-                break;
-            case 3:
-                strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
-                break;
-            }
-        }
-        else
-        {
-            // First argument is device name
-            switch(tok_count++)
-            {
-            case 0: // Device name
-                {
-                    device_record_t*    record = resolver_get_device_record(tok);
-                    if(NULL != record)
-                    {
-                        op_data->device_record = record;
-    
-                        op_data->command_class = get_command_class_by_id(record->commandId);
-                    }
-                    else 
-                    {
-                        // Error!
-                        LOG_ERROR(Parser, "Unresolved device %s", tok);
-                        retVal = false;
-                    }
-                }
-                break;
-            case 1: // Command and arguments
-                strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
-                break;
-            }
-        }
-
-        tok = strtok(NULL, ".");
+        // Error!
+        LOG_ERROR(Parser, "Unresolved device %s", device);
+        retVal = false;
     }
-
-    stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
     return retVal;
 }
 
-bool process_vdev_method_operator(const char* ch, variant_stack_t* operator_stack)
+bool process_vdev_method_operator(const char* device, const char* method, variant_stack_t* operator_stack)
 {
     function_operator_data_t* op_data = (function_operator_data_t*)calloc(1, sizeof(function_operator_data_t));
     operator_t* function_operator = operator_create(OP_DEVICE_FUNCTION, op_data);
     bool    retVal = true;
 
-    char* function_string = (char*)ch;
-    char* tok = strtok(function_string, ".");
-    int tok_count = 0;
-    while(NULL != tok)
+    device_record_t*    record = vdev_manager_create_device_record(device);
+    if(NULL != record)
     {
-        // First argument is device name
-        switch(tok_count++)
-        {
-        case 0: // Device name
-            {
-                device_record_t*    record = vdev_manager_create_device_record(tok);
-                if(NULL != record)
-                {
-                    op_data->device_record = record;
-                    op_data->command_class = vdev_manager_get_command_class(record->nodeId);
-                }
-                else 
-                {
-                    // Error!
-                    LOG_ERROR(Parser, "Unresolved virtual device %s", tok);
-                    retVal = false;
-                }
-            }
-            break;
-        case 1: // Command and arguments
-            strncpy(op_data->command_method, tok, MAX_METHOD_LEN-1);
-            break;
-        }
+        op_data->device_record = record;
+        op_data->command_class = vdev_manager_get_command_class(record->nodeId);
+        strncpy(op_data->command_method, method, MAX_METHOD_LEN-1);
+        stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
 
-        tok = strtok(NULL, ".");
     }
-
-    stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
+    else 
+    {
+        // Error!
+        LOG_ERROR(Parser, "Unresolved virtual device %s", device);
+        retVal = false;
+    }
     return retVal;
 }
 
-bool  process_service_method_operator(const char* ch, variant_stack_t* operator_stack)
+bool  process_service_method_operator(const char* class, const char* method, variant_stack_t* operator_stack)
 {
-    char* function_string = (char*)ch;
-    char* tok = strtok(function_string, ".");
-    int tok_count = 0;
     bool    retVal = true;
 
-    char* service_class;
-    char* name;
-
-    while(NULL != tok)
-    {
-        switch(tok_count++)
-        {
-        case 0:
-            service_class = tok;
-            break;
-        case 1:
-            name = tok;
-            break;
-        }
-    
-        tok = strtok(NULL, ".");
-    }
-
-    service_method_t* service_method = service_manager_get_method(service_class, name);
+    service_method_t* service_method = service_manager_get_method(class, method);
 
     if(NULL != service_method)
     {
@@ -771,39 +679,17 @@ bool  process_service_method_operator(const char* ch, variant_stack_t* operator_
     }
     else
     {
-        LOG_ERROR(Parser, "Method not defined: %s.%s", service_class, name);
+        LOG_ERROR(Parser, "Method not defined: %s.%s", class, method);
         retVal = false;
     }
 
     return retVal;
 }
 
-bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_stack)
+bool process_builtin_method_operator(const char* class, const char* method, variant_stack_t* operator_stack)
 {
-    char* function_string = (char*)ch;
-    char* tok = strtok(function_string, ".");
-    int tok_count = 0;
-    bool    retVal = true;
-
-    char* service_class;
-    char* name;
-
-    while(NULL != tok)
-    {
-        switch(tok_count++)
-        {
-        case 0:
-            service_class = tok;
-            break;
-        case 1:
-            name = tok;
-            break;
-        }
-    
-        tok = strtok(NULL, ".");
-    }
-
-    service_method_t* service_method = builtin_service_manager_get_method(service_class, name);
+    bool retVal = true;
+    service_method_t* service_method = builtin_service_manager_get_method(class, method);
 
     if(NULL != service_method)
     {
@@ -812,7 +698,7 @@ bool process_builtin_method_operator(const char* ch, variant_stack_t* operator_s
     }
     else
     {
-        LOG_ERROR(Parser, "Method not defined: %s.%s", service_class, name);
+        LOG_ERROR(Parser, "Method not defined: %s.%s", class, method);
         retVal = false;
     }
 
@@ -828,7 +714,7 @@ bool process_digit_token(const char* ch, variant_stack_t* operator_stack, varian
     char* endptr;
     long double val = strtold(ch, &endptr);
 
-    if(*endptr == '.')
+    if(*endptr != 0)
     {
         // Its not a real number!
         retVal = false;
