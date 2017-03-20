@@ -459,14 +459,13 @@ int main (int argc, char *argv[])
                 else if(FD_ISSET(http_socket, &fds))
                 {
                     session_sock = accept(http_socket, NULL, NULL);
-                    vty_data_t vty_data = {
-                        .desc.socket = session_sock
-                    };
+                    vty_data_t* vty_data = malloc(sizeof(vty_data_t));
+                    vty_data->desc.socket = session_sock;
 
-                    vty_sock = vty_io_create(VTY_HTTP, &vty_data);
+                    vty_sock = vty_io_create(VTY_HTTP, vty_data);
+                    vty_set_echo(vty_sock, false);
                     char* str = vty_read(vty_sock);
                     cli_command_exec_custom_node(rest_root_node, vty_sock, str);
-
                     vty_free(vty_sock);
                 }
                 else

@@ -204,13 +204,13 @@ bool    cmd_sensor_guessed_info(vty_t* vty, variant_stack_t* params)
     {
         struct _ZGuessedProduct * pProduct = *guessedProduct;
         int savedScore = 4;
-        vty_write(vty, "%-10s%-45s%-45s%s", "Score", "Device", "Vendor", VTY_NEWLINE(vty));
+        vty_write(vty, "%-10s%-45s%-45s%-45s%s", "Score", "Device", "Vendor", "ZDDX", VTY_NEWLINE(vty));
         while(NULL != pProduct)
         {
             if(pProduct->score >= savedScore)
             {
                 //LOG_DEBUG("Guessed info: score %d, device: %s, vendor: %s", pProduct->score, pProduct->product, pProduct->vendor);
-                vty_write(vty, "%-10d%-45s%-45s%s", pProduct->score, pProduct->product, pProduct->vendor, VTY_NEWLINE(vty));
+                vty_write(vty, "%-10d%-45s%-45s%-45s%s", pProduct->score, pProduct->product, pProduct->vendor, pProduct->file_name, VTY_NEWLINE(vty));
             }
             guessedProduct++;
             pProduct = *guessedProduct;

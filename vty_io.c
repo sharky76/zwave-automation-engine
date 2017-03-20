@@ -22,6 +22,7 @@ void    std_cursor_right_cb(vty_t* vty);
 int     http_read_cb(vty_t* vty, char** str);
 void    http_write_cb(vty_t* vty, const char* buf, size_t len);
 void    http_flush_cb(vty_t* vty);
+void    http_free_priv_cb(vty_t* vty);
 
 vty_t*  vty_io_create(vty_type type, vty_data_t* data)
 {
@@ -58,6 +59,10 @@ void    vty_io_config(vty_t* vty)
         vty->write_cb = http_write_cb;
         vty->read_cb = http_read_cb;
         vty->flush_cb = http_flush_cb;
+        vty->free_priv_cb = http_free_priv_cb;
+        http_vty_priv_t* http_priv = calloc(1, sizeof(http_vty_priv_t));
+        vty->priv = http_priv;
+
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_SOCKET:
@@ -189,32 +194,49 @@ int   http_read_cb(vty_t* vty, char** str)
 {
     int socket = vty->data->desc.socket;
     char* resp = http_server_read_request(socket);
-    *str = strdup(resp);
-    return strlen(resp);
+
+    if(NULL != resp)
+    {
+        *str = strdup(resp);
+        return strlen(resp);
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 void    http_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    if(vty->buf_size + len < BUFSIZE)
-    {
-        vty->buf_size += len;
-        strncat(vty->buffer, buf, len);
-    }
-    else
-    {
-        http_flush_cb(vty);
-    }
+    http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
+    
+    http_priv->response = realloc(http_priv->response, http_priv->response_size + len + 1);
+    http_priv->response[http_priv->response_size] = 0;
+    strncat(http_priv->response, buf, len);
+    http_priv->response_size += len;
 }
 
 void    http_flush_cb(vty_t* vty)
 {
-    //if(vty->buf_size > 0)
-    {
-        int socket = vty->data->desc.socket;
-        http_server_write_response(socket, vty->buffer, vty->buf_size);
+    http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
+    int socket = vty->data->desc.socket;
 
-        vty->buf_size = 0;
-        *vty->buffer = 0;
+    if(http_priv->response_size > 0)
+    {
+        http_server_write_response(socket, http_priv);
+    
+        *http_priv->response = 0;
+        http_priv->response_size = 0;
     }
+    vty->buf_size = 0;
+    *vty->buffer = 0;
 }
 
+void    http_free_priv_cb(vty_t* vty)
+{
+    http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
+
+    free(http_priv->response);
+    free(http_priv->content_type);
+    free(http_priv);
+}

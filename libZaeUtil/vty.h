@@ -42,6 +42,7 @@ typedef struct vty_t
     void    (*show_history_cb)(struct vty_t*);
     void    (*cursor_left_cb)(struct vty_t*);
     void    (*cursor_right_cb)(struct vty_t*);
+    void    (*free_priv_cb)(struct vty_t*);
     vty_data_t* data;
     char*   prompt;
     bool    echo;
@@ -64,6 +65,7 @@ typedef struct vty_t
     bool    command_received;
     bool    shutdown;
     bool    is_authenticated;
+    void*   priv;
 } vty_t;
 
 #define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET) ? "\r\n" : "\n")

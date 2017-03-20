@@ -154,7 +154,7 @@ char* http_server_read_request(int client_socket)
 		}
 	}
 
-    char* request_body = &buffer[5];
+    char* request_body = &buffer[0];
 
 	for(i = 0; i < strlen(request_body); i++) 
     { 
@@ -195,16 +195,48 @@ char* http_server_read_request(int client_socket)
         return NULL;
     }
 
-    // ok, we have request
     return request_body;
 }
 
-void  http_server_write_response(int client_socket, const char* data, int size)
+void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
 {
     static char buffer[BUFSIZE+1];
-    LOG_DEBUG(HTTPServer, "Sending %d bytes", size);
-    sprintf(buffer, "HTTP/1.1 200 OK\nServer: zae/0.%d\nContent-Length: %ld\nConnection: close\nContent-Type: text/plain\n\n", 1, size); /* Header + a blank line */
+    LOG_DEBUG(HTTPServer, "Sending %d bytes", http_priv->response_size);
+
+    switch(http_priv->resp_code)
+    {
+    case HTTP_RESP_OK:
+        sprintf(buffer, "HTTP/1.1 200 OK\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
+        sprintf(buffer + strlen(buffer), "Cache-Control: %s, max-age=%d", (http_priv->can_cache)? "public" : "no-cache", http_priv->cache_age);
+        break;
+    case HTTP_RESP_USER_ERR:
+        sprintf(buffer, "HTTP/1.1 400 BAD REQUEST\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
+        break;
+    case HTTP_RESP_SERVER_ERR:
+        sprintf(buffer, "HTTP/1.1 500 SERVER ERROR\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
+        break;
+
+    }
+
+
     write(client_socket, buffer, strlen(buffer));
-    write(client_socket, data, size);
+    write(client_socket, "\n\n", 2);
+    write(client_socket, http_priv->response, http_priv->response_size);
+}
+
+void  http_set_response(http_vty_priv_t* http_priv, int http_resp)
+{
+    http_priv->resp_code = http_resp;
+}
+
+void  http_set_content_type(http_vty_priv_t* http_priv, const char* content_type)
+{
+    http_priv->content_type = strdup(content_type);
+}
+
+void  http_set_cache_control(http_vty_priv_t* http_priv, bool is_set, int max_age)
+{
+    http_priv->can_cache = is_set;
+    http_priv->cache_age = max_age;
 }
 

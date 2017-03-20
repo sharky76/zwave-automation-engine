@@ -80,6 +80,11 @@ void    vty_free(vty_t* vty)
         close(vty->data->desc.socket);
     }
 
+    if(NULL != vty->free_priv_cb)
+    {
+        vty->free_priv_cb(vty);
+    }
+
     free(vty->data);
     free(vty->prompt);
     free(vty->buffer);
@@ -501,7 +506,11 @@ void    vty_append_string(vty_t* vty, const char* format, ...)
         strncpy(vty->buffer + vty->buf_size, buf, len);
         vty->buf_size += len;
         vty->cursor_pos = vty->buf_size;
-        vty_write(vty, buf);
+
+        if(vty->echo)
+        {
+            vty_write(vty, buf);
+        }
     }
 }
 

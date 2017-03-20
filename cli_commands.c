@@ -6,7 +6,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <stack.h>
-//#include <cli.h>
+#include <cli.h>
 #include <ZWayLib.h>
 #include <ZData.h>
 #include <ZPlatform.h>
@@ -398,7 +398,7 @@ char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
     return NULL;
 }
 
-CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
+/*CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {
     CmdMatchStatus match_status = CMD_NO_MATCH;
 
@@ -529,7 +529,7 @@ CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd
     stack_free(cmd_vec);
 
     return match_status;
-}
+}*/
 
 CmdMatchStatus cli_get_command(vty_t* vty, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {

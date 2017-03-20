@@ -34,7 +34,7 @@ static command_class_t command_class_table[] = {
     {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>", NULL, 0, NULL},  &command_class_eval_alarm},
     {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False", NULL, 0, NULL},              &command_class_eval_binaryswitch},
     {0x70, "Configuration", {"Get", 1, "<parameter>", "Set", 3, "<parameter>, <value>, <size>", NULL, 0, NULL},       &command_class_eval_configuration},
-    {0x72, "Manufacturer Specific", {"Get", 0, "", NULL, 0, NULL},                                     &command_class_eval_manufacturer_specific},
+    {0x72, "ManufacturerSpecific", {"Get", 0, "", NULL, 0, NULL},                                     &command_class_eval_manufacturer_specific},
     {0x84, "Wakeup",       {"Get", 0, "", "Capabilities", 0, "", "Sleep", 0, "", "Set", 2, "<seconds>, <node ID>", NULL, 0, NULL},       &command_class_eval_wakeup},
 
     /* other standard command classes */
