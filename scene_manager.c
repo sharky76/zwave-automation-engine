@@ -130,7 +130,9 @@ void    scene_manager_on_sensor_event(event_t* event)
         LOG_DEBUG(Scene, "Matching command-class %s found for sensor %s", command_class->command_name, event_data->device_name);
 
     }
-    scene_source = event_data->device_name;
+
+    scene_source = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
+    //scene_source = event_data->device_name;
 
     if(NULL != scene_source)
     {

@@ -89,7 +89,7 @@ event_t*    event_receive()
     return event;
 }
 
-void        event_register_handler(int handler_id, const char* name, void (*event_handler)(event_t*))
+void        event_register_handler(int handler_id, const char* event_name, void (*event_handler)(event_t*))
 {
     /*if(!variant_hash_get(registered_handlers, handler_id))
     {
@@ -100,10 +100,10 @@ void        event_register_handler(int handler_id, const char* name, void (*even
         LOG_ERROR(Event, "Handler for id %d already registered", source_id);
     }*/
 
-    LOG_DEBUG(Event, "Register handler %d for event %s with callback %p\n", handler_id, name, event_handler);
+    LOG_DEBUG(Event, "Register handler %d for event %s with callback %p\n", handler_id, event_name, event_handler);
     event_handler_t* handler = malloc(sizeof(event_handler_t));
     handler->id = handler_id;
-    handler->name = strdup(name);
+    handler->name = strdup(event_name);
     handler->event_handler = event_handler;
 
     if(!stack_is_exists(registered_handlers, &event_handler_match, handler))
@@ -113,7 +113,7 @@ void        event_register_handler(int handler_id, const char* name, void (*even
     else
     {
         //printf("Handler id %d for event %s already registered\n", handler_id, name);
-        LOG_ERROR(Event, "Handler id %d for event %s already registered", handler_id, name);
+        LOG_ERROR(Event, "Handler id %d for event %s already registered", handler_id, event_name);
     }
 }
 

@@ -386,6 +386,8 @@
 		<F N="operator.h"/>
 		<F N="parser_dfa.c"/>
 		<F N="parser_dfa.h"/>
+		<F N="picohttpparser.c"/>
+		<F N="picohttpparser.h"/>
 		<F N="resolver.c"/>
 		<F N="resolver.h"/>
 		<F N="resolver.json"/>

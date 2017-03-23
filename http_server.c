@@ -13,6 +13,7 @@
 #include <logger.h>
 #include <base64.h>
 #include "user_manager.h"
+#include "picohttpparser.h"
 
 #define VERSION 23
 #define BUFSIZE 8096
@@ -23,6 +24,10 @@
 #define DENIED    401
 
 DECLARE_LOGGER(HTTPServer)
+
+char*       request_get_data(const char* request);
+char*       request_create_command(const char* req_url);
+int         header_find_value(const char* name, struct phr_header* headers, int header_size);
 
 int  http_server_get_socket(int port)
 {
@@ -74,34 +79,61 @@ void http_server_error_response(int type, int socket_fd)
 	}	
 }
 
-char* http_server_read_request(int client_socket)
+char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
 {
-    int j, file_fd, buflen;
+    int j, file_fd;
 	long i, ret, len;
 	char * fstr;
 	static char buffer[BUFSIZE+1]; /* static so zero filled */
 
-	ret = read(client_socket, buffer, BUFSIZE); 	/* read Web request in one go */
-	if(ret == 0 || ret == -1) 
-    {	/* read failure stop now */
-		http_server_error_response(FORBIDDEN, client_socket);
-        return NULL;
-	}
+	const char *method, *path;
+    int pret, minor_version;
+    struct phr_header headers[100];
+    size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
+    ssize_t rret;
 
-	if(ret > 0 && ret < BUFSIZE)	/* return code is valid chars */
-    {
-		buffer[ret]=0;		/* terminate the buffer */
-    }
-	else
-    {
-        buffer[0]=0;
-    }
-
-    for(i=0; i<ret; i++)	/* remove CF and LF characters */
-    {
-		if(buffer[i] == '\r' || buffer[i] == '\n')
+    while(1) {
+        /* read */
+        rret = recv(client_socket, buffer + buflen, sizeof(buffer) - buflen, MSG_WAITALL);
+        if (rret <= 0)
         {
-            buffer[i]=' ';
+            http_server_error_response(FORBIDDEN, client_socket);
+            return NULL;
+        }
+
+        
+        prevbuflen = buflen;
+        buflen += rret;
+
+        /* parse the request */
+        num_headers = sizeof(headers) / sizeof(headers[0]);
+        pret = phr_parse_request(buffer, buflen, &method, &method_len, &path, &path_len,
+                                 &minor_version, headers, &num_headers, prevbuflen);
+        if (pret > 0)
+        {
+                break; /* successfully parsed the request */
+        }
+        else if(pret == -1)
+        {
+            http_server_error_response(FORBIDDEN, client_socket);
+            return NULL;
+        }
+    };
+
+    int content_len_index = header_find_value("Content-Length", headers, num_headers);
+    char* content = NULL;
+    if(-1 != content_len_index)
+    {
+        char content_len_buf[10] = {0};
+        strncpy(content_len_buf, headers[content_len_index].value, headers[content_len_index].value_len);
+        int content_len = atoi(content_len_buf);
+
+        if(content_len > 0)
+        {
+            content = malloc(content_len);
+            strncpy(content, request_get_data(buffer), content_len);
+            http_priv->post_data = content;
+            http_priv->post_data_size = content_len;
         }
     }
 
@@ -139,63 +171,22 @@ char* http_server_read_request(int client_socket)
 
     LOG_DEBUG(HTTPServer, "Request %s", buffer);
 
-	if( strncmp(buffer,"GET ",4) && strncmp(buffer,"get ",4) ) 
-    {
-		http_server_error_response(FORBIDDEN, client_socket);
-        return NULL;
-	}
-
-    for(i = 4; i < BUFSIZE; i++) 
-    { /* null terminate after the second space to ignore extra stuff */
-		if(buffer[i] == ' ') 
-        { /* string is "GET URL " +lots of other stuff */
-			buffer[i] = 0;
-			break;
-		}
-	}
-
-    char* request_body = &buffer[0];
-
-	for(i = 0; i < strlen(request_body); i++) 
-    { 
-		if(request_body[i] == '/') 
-        { 
-			request_body[i] = ' ';
-		}
-	}
-
-    // expression spaces will be encoded as %20 - we need to revert them back to ' '
-    // we will try to do in-place conversion...
-    int body_len = strlen(request_body);
-    int string_index = 0;
-    for(i = 0; i < body_len; i++,string_index++) 
-    {
-        if(i+2 < body_len)
-        {
-            if(request_body[i] == '%' && request_body[i+1] == '2' && request_body[i+2] == '0')
-            {
-                // forward i to past-%20 place
-                i += 2;
-                request_body[i] = ' ';
-            }
-        }
-
-        if(i != string_index)
-        {
-            request_body[string_index] = request_body[i];
-        }
-    }
-    // Now, add the last '\0' character
-    request_body[string_index] = '\0';
-
     // Browsers really like to get favicon.ico - tell them to fuck off
-    if(strcmp(request_body, "favicon.ico") == 0)
+    if(strstr(method, "favicon.ico") != 0)
     {
         http_server_error_response(NOTFOUND, client_socket);
         return NULL;
     }
 
-    return request_body;
+    char* request_body = calloc(method_len + path_len + 2, sizeof(char));
+    strncat(request_body, method, method_len);
+    strncat(request_body, " ", 1);
+    strncat(request_body, path, path_len);
+
+    char* request_command = request_create_command(request_body);
+    free(request_body);
+
+    return request_command;
 }
 
 void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
@@ -238,5 +229,68 @@ void  http_set_cache_control(http_vty_priv_t* http_priv, bool is_set, int max_ag
 {
     http_priv->can_cache = is_set;
     http_priv->cache_age = max_age;
+}
+
+char*       request_create_command(const char* req_url)
+{
+    char* command = strdup(req_url);
+
+    for(int i = 0; i < strlen(req_url); i++) 
+    { 
+		if(req_url[i] == '/') 
+        { 
+			command[i] = ' ';
+		}
+	}
+
+    // expression spaces will be encoded as %20 - we need to revert them back to ' '
+    // we will try to do in-place conversion...
+    int body_len = strlen(command);
+    int string_index = 0;
+    for(int i = 0; i < body_len; i++,string_index++) 
+    {
+        if(i+2 < body_len)
+        {
+            if(command[i] == '%' && command[i+1] == '2' && command[i+2] == '0')
+            {
+                // forward i to past-%20 place
+                i += 2;
+                command[i] = ' ';
+            }
+        }
+
+        if(i != string_index)
+        {
+            command[string_index] = command[i];
+        }
+    }
+
+    command[string_index] = '\0';
+
+    return command;
+}
+
+char*       request_get_data(const char* request)
+{
+    char* start_data = strstr(request, "\r\n\r\n");
+    if(NULL == start_data)
+    {
+        return NULL;
+    }
+
+    return start_data + 4;
+}
+
+int       header_find_value(const char* name, struct phr_header* headers, int header_size)
+{
+    for (int i = 0; i < header_size; i++)
+    {
+        if(strncmp(headers[i].name, name, headers[i].name_len) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
 }
 

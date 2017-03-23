@@ -17,18 +17,29 @@ Example: http://x.x.x.x:NN/show/running-config
 #define CONTENT_TYPE_JSON   "application/json"
 #define CONTENT_TYPE_TEXT   "text/plain"
 
+typedef enum RequestType
+{
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    UNKNOWN
+} RequestType;
+
 typedef struct http_vty_priv_t
 {
     char* response;
     int   response_size;
     char* content_type;
+    char* post_data;
+    int   post_data_size;
     int   resp_code;
     bool  can_cache;
     int   cache_age;
 } http_vty_priv_t;
 
 int   http_server_get_socket(int port);
-char* http_server_read_request(int client_socket);
+char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv);
 void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv);
 void  http_set_response(http_vty_priv_t* http_priv, int http_resp);
 void  http_set_content_type(http_vty_priv_t* http_priv, const char* content_type);

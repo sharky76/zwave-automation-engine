@@ -38,7 +38,7 @@ void        event_manager_init();
 // Multiple handlers can registed to handle same event
 void        event_register_handler(int handler_id, const char* name, void (*event_handler)(event_t*));
 
-event_t*    event_create(int source_id, const char* name, variant_t* data);
+event_t*    event_create(int source_id, const char* event_name, variant_t* data);
 void        event_delete(event_t* event);
 void        event_post(event_t* event);
 event_t*    event_receive();

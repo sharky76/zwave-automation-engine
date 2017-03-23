@@ -226,7 +226,7 @@ float       variant_get_float(variant_t* variant)
 
 const char* variant_get_string(const variant_t* variant)
 {
-    return (NULL != variant)? (const char*)variant->storage.string_data : NULL;
+    return (NULL != variant && variant->type == DT_STRING)? (const char*)variant->storage.string_data : NULL;
 }
 
 void*       variant_get_ptr(variant_t* variant)

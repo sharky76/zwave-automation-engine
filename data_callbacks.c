@@ -107,6 +107,7 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
         ZDataIterator child = zdata_first_child(data);
         while (child != NULL)
         {
+            LOG_DEBUG(DataCallback, "Adding callback for path: %s", zdata_get_path(child->data));
             zdata_add_callback_ex(child->data, &value_change_event_callback, TRUE, event_data);
             child = zdata_next_child(child);
         }
@@ -121,7 +122,7 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
 void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg)
 {
     sensor_event_data_t* event_data = (sensor_event_data_t*)arg;
-    event_data->device_name = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
+    //event_data->device_name = resolver_name_from_id(event_data->node_id, event_data->instance_id, event_data->command_id);
 
     if(changeType == Updated)
     {
@@ -130,7 +131,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
        
         unsigned long time_msec = tp.tv_sec * 1000 + tp.tv_nsec / 1000000L;
 
-        LOG_DEBUG(DataCallback, "Value changed for device %s time: %lu, old time: %lu", event_data->device_name, time_msec, event_data->last_update_time);
+        LOG_DEBUG(DataCallback, "Value changed for device %s time: %lu, old time: %lu, dh name: %s", event_data->device_name, time_msec, event_data->last_update_time, zdata_get_name(data));
 
         if(time_msec >  event_data->last_update_time + 100)
         {

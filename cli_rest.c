@@ -12,21 +12,25 @@
 extern ZWay zway;
 cli_node_t*     rest_node;
 
-
+void data_holder_to_json(json_object* root, ZDataHolder data);
 
 bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params);
+bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
+bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 
 cli_command_t   rest_root_list[] = {
-    {"GET rest v1 sensors",  cmd_get_sensors,  "Get list of sensors"},
-    {"GET rest v1 sensors INT",  cmd_get_sensor_node_id,  "Get sensor instances info"},
-    {"GET rest v1 sensors INT instances",  cmd_get_sensor_node_id,  "Get sensor instances info"},
-    {"GET rest v1 sensors INT instances INT",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
-    {"GET rest v1 sensors INT instances INT command-classes",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
-    {"GET rest v1 sensors INT instances INT command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
-
+    {"GET rest v1 devices",  cmd_get_sensors,  "Get list of sensors"},
+    {"GET rest v1 devices INT",  cmd_get_sensor_node_id,  "Get sensor instances info"},
+    {"GET rest v1 devices INT instances",  cmd_get_sensor_node_id,  "Get sensor instances info"},
+    {"GET rest v1 devices INT instances INT",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
+    {"GET rest v1 devices INT instances INT command-classes",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
+    {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
+    {"GET rest v1 command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
+    {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
+    {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
     {NULL,                     NULL,                            NULL}
 };
 
@@ -295,53 +299,41 @@ bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
 */
 bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 4));
 
     json_object* json_resp = json_object_new_object();
     json_object* command_class = json_object_new_object();
     json_object_object_add(json_resp, "command_class", command_class);
 
-    const char* device_name = resolver_name_from_id(node_id, instance_id, command_id);
-
-    if(NULL != device_name)
+    command_class_t* cmd_class = get_command_class_by_id(command_id);
+    if(NULL == cmd_class)
     {
-        command_class_t* cmd_class = get_command_class_by_id(command_id);
-        if(NULL == cmd_class)
-        {
-            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
-        }
-        else
-        {
-            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
-            json_object_object_add(command_class, "command_id", json_object_new_int(cmd_class->command_id));
-            json_object_object_add(command_class, "name", json_object_new_string(cmd_class->command_name));
-            json_object_object_add(command_class, "device_name", json_object_new_string(device_name));
-
-            json_object* supported_methods_array = json_object_new_array();
-
-            command_method_t* supported_methods = cmd_class->supported_method_list;
-            while(supported_methods->name)
-            {
-                //command_method_t* m = &cmd_class->supported_method_list[i];
-
-                json_object* new_method = json_object_new_object();
-                json_object_object_add(new_method, "name", json_object_new_string(supported_methods->name));
-                json_object_object_add(new_method, "help", json_object_new_string(supported_methods->help));
-                json_object_object_add(new_method, "args", json_object_new_int(supported_methods->nargs));
-                json_object_array_add(supported_methods_array, new_method);
-
-
-                supported_methods++;
-            }
-
-            json_object_object_add(command_class, "methods", supported_methods_array);
-        }
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
     }
     else
     {
-        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+        json_object_object_add(command_class, "command_id", json_object_new_int(cmd_class->command_id));
+        json_object_object_add(command_class, "name", json_object_new_string(cmd_class->command_name));
+
+        json_object* supported_methods_array = json_object_new_array();
+
+        command_method_t* supported_methods = cmd_class->supported_method_list;
+        while(supported_methods->name)
+        {
+            //command_method_t* m = &cmd_class->supported_method_list[i];
+
+            json_object* new_method = json_object_new_object();
+            json_object_object_add(new_method, "name", json_object_new_string(supported_methods->name));
+            json_object_object_add(new_method, "help", json_object_new_string(supported_methods->help));
+            json_object_object_add(new_method, "args", json_object_new_int(supported_methods->nargs));
+            json_object_array_add(supported_methods_array, new_method);
+
+
+            supported_methods++;
+        }
+
+        json_object_object_add(command_class, "methods", supported_methods_array);
     }
     
     http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
@@ -352,5 +344,157 @@ bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
     json_object_put(json_resp);
 
     return 0;
+}
+
+bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
+{
+    json_object* json_resp = json_object_new_object();
+
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+
+    zdata_acquire_lock(ZDataRoot(zway));
+    ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, command_id, ".");
+    
+    if(NULL == dh)
+    {
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+    }
+    else
+    {
+        json_object* device_data = json_object_new_object();
+        data_holder_to_json(device_data, dh);
+        json_object_object_add(json_resp, "device_data", device_data);
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+    }
+    zdata_release_lock(ZDataRoot(zway));
+
+    http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
+    http_set_cache_control((http_vty_priv_t*)vty->priv, true, 3600);
+
+    vty_write(vty, json_object_to_json_string(json_resp));
+    
+    json_object_put(json_resp);
+
+    return 0;
+}
+
+/*
+       "NAME" : value,
+ 
+*/
+void data_holder_to_json(json_object* root, ZDataHolder data)
+{
+    ZDataIterator child = zdata_first_child(data);
+    while (child != NULL)
+    {
+        const char* name = zdata_get_name(child->data);
+
+        ZWDataType type;
+        zdata_get_type(child->data, &type);
+    
+        ZWBOOL bool_val;
+        int int_val;
+        float float_val;
+        ZWCSTR str_val;
+        const ZWBYTE *binary;
+        const int *int_arr;
+        const float *float_arr;
+        const ZWCSTR *str_arr;
+        size_t len, i;
+    
+        switch (type) 
+        {
+        case Empty:
+            json_object_object_add(root, name, json_object_new_string("Empty"));
+                break;
+            case Boolean:
+                zdata_get_boolean(child->data, &bool_val);
+                json_object_object_add(root, name, json_object_new_boolean(bool_val));
+                break;
+            case Integer:
+                zdata_get_integer(child->data, &int_val);
+                json_object_object_add(root, name, json_object_new_int(int_val));
+                break;
+            case Float:
+                zdata_get_float(child->data, &float_val);
+                json_object_object_add(root, name, json_object_new_double(float_val));
+                break;
+        case String:
+                zdata_get_string(child->data, &str_val);
+                json_object_object_add(root, name, json_object_new_string(str_val));
+                break;
+            case Binary:
+                zdata_get_binary(child->data, &binary, &len);
+                json_object* bin_array = json_object_new_array();
+                for(int i = 0; i < len; i++)
+                {
+                    json_object_array_add(bin_array, json_object_new_int(binary[i]));
+                }
+    
+                json_object_object_add(root, name, bin_array);
+                break;
+            case ArrayOfInteger:
+                zdata_get_integer_array(data, &int_arr, &len);
+                json_object* int_array = json_object_new_array();
+                for(int i = 0; i < len; i++)
+                {
+                    json_object_array_add(int_array, json_object_new_int(int_arr[i]));
+                }
+                json_object_object_add(root, name, int_array);
+                break;
+            case ArrayOfFloat:
+                zdata_get_float_array(data, &float_arr, &len);
+                json_object* float_array = json_object_new_array();
+                for(int i = 0; i < len; i++)
+                {
+                    json_object_array_add(float_array, json_object_new_double(float_arr[i]));
+                }
+                json_object_object_add(root, name, float_array);
+                break;
+            case ArrayOfString:
+                zdata_get_string_array(data, &str_arr, &len);
+                json_object* string_array = json_object_new_array();
+                for(int i = 0; i < len; i++)
+                {
+                    json_object_array_add(string_array, json_object_new_string(str_arr[i]));
+                }
+                json_object_object_add(root, name, string_array);
+                break;
+            default:
+                break;
+        }
+    
+        ZDataIterator nested_child = zdata_first_child(child->data);
+        if (nested_child != NULL)
+        {
+            // Nested child: create nested JSON structure
+            const char* name = zdata_get_name(child->data);
+            json_object* nested_data = json_object_new_object();
+            data_holder_to_json(nested_data, child->data);
+            json_object_object_add(root, name, nested_data);
+        }
+
+        child = zdata_next_child(child);
+    }
+}
+
+bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
+{
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+
+    const char* device_name = resolver_name_from_id(node_id, instance_id, command_id);
+
+    if(NULL == device_name)
+    {
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+    }
+    else
+    {
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+    }
 }
 

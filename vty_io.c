@@ -193,11 +193,12 @@ void    std_cursor_right_cb(vty_t* vty)
 int   http_read_cb(vty_t* vty, char** str)
 {
     int socket = vty->data->desc.socket;
-    char* resp = http_server_read_request(socket);
+    http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
+    char* resp = http_server_read_request(socket, http_priv);
 
     if(NULL != resp)
     {
-        *str = strdup(resp);
+        *str = resp;
         return strlen(resp);
     }
     else
@@ -238,5 +239,6 @@ void    http_free_priv_cb(vty_t* vty)
 
     free(http_priv->response);
     free(http_priv->content_type);
+    free(http_priv->post_data);
     free(http_priv);
 }
