@@ -13,12 +13,15 @@ extern ZWay zway;
 cli_node_t*     rest_node;
 
 void data_holder_to_json(json_object* root, ZDataHolder data);
+void command_class_to_json(command_class_t* cmd_class, void* arg);
 
 bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
+bool    cmd_get_sensor_command_class_list(vty_t* vty, variant_stack_t* params);
+
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 
 cli_command_t   rest_root_list[] = {
@@ -28,6 +31,7 @@ cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices INT instances INT",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
     {"GET rest v1 devices INT instances INT command-classes",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
     {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
+    {"GET rest v1 command-classes",  cmd_get_sensor_command_class_list,  "Get list of supported command classes"},
     {"GET rest v1 command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
     {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
     {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
@@ -227,8 +231,12 @@ bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
     ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
 
     json_object* json_resp = json_object_new_object();
-    json_object* command_class_array = json_object_new_array();
+    //json_object* command_class_array = json_object_new_array();
+    //json_object_object_add(json_resp, "command_classes", command_class_array);
+
+    json_object* command_class_array = json_object_new_object();
     json_object_object_add(json_resp, "command_classes", command_class_array);
+
 
     ZWCommandClassesList commands = zway_command_classes_list(zway, node_id, instance_id);
     int k = 0;
@@ -241,21 +249,12 @@ bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
             const char* device_name = resolver_name_from_id(node_id, instance_id, commands[k]);
             command_class_t* cmd_class = get_command_class_by_id(commands[k]);
     
-            json_object* new_command_class = json_object_new_object();
-            json_object_object_add(new_command_class, "command_id", json_object_new_int(commands[k]));
-    
+            //json_object* new_command_class = json_object_new_object();
             if(NULL != cmd_class)
             {
-                json_object_object_add(new_command_class, "name", json_object_new_string(cmd_class->command_name));
+                command_class_to_json(cmd_class, (void*)command_class_array);
             }
-            else
-            {
-                json_object_object_add(new_command_class, "name", json_object_new_string("Unknown"));
-            }
-    
-            json_object_object_add(new_command_class, "device_name", json_object_new_string(device_name));
-            json_object_array_add(command_class_array, new_command_class);
-    
+   
             k++;
         }
     
@@ -278,6 +277,62 @@ bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
     json_object_put(json_resp);
 
     return 0;
+}
+
+bool    cmd_get_sensor_command_class_list(vty_t* vty, variant_stack_t* params)
+{
+    json_object* json_resp = json_object_new_object();
+    //json_object* command_class_array = json_object_new_array();
+    //json_object_object_add(json_resp, "command_classes", command_class_array);
+    json_object* command_class_array = json_object_new_object();
+    json_object_object_add(json_resp, "command_classes", command_class_array);
+
+    command_class_for_each(command_class_to_json, command_class_array);
+
+    http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+    http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
+    http_set_cache_control((http_vty_priv_t*)vty->priv, true, 3600);
+
+    vty_write(vty, json_object_to_json_string(json_resp));
+    
+    json_object_put(json_resp);
+
+    return 0;
+}
+
+void command_class_to_json(command_class_t* cmd_class, void* arg)
+{
+    json_object* json_array = (json_object*)arg;
+
+    json_object* cmd_class_obj = json_object_new_object();
+
+    json_object_object_add(cmd_class_obj, "dec_id", json_object_new_int(cmd_class->command_id));
+    json_object_object_add(cmd_class_obj, "name", json_object_new_string(cmd_class->command_name));
+
+    //json_object* supported_methods_array = json_object_new_array();
+    json_object* supported_methods_array = json_object_new_object();
+
+    command_method_t* supported_methods = cmd_class->supported_method_list;
+    while(supported_methods->name)
+    {
+        //command_method_t* m = &cmd_class->supported_method_list[i];
+
+        json_object* new_method = json_object_new_object();
+        json_object_object_add(new_method, "name", json_object_new_string(supported_methods->name));
+        json_object_object_add(new_method, "help", json_object_new_string(supported_methods->help));
+        json_object_object_add(new_method, "args", json_object_new_int(supported_methods->nargs));
+        //json_object_array_add(supported_methods_array, new_method);
+        json_object_object_add(supported_methods_array, supported_methods->name, new_method);
+
+
+        supported_methods++;
+    }
+
+    json_object_object_add(cmd_class_obj, "methods", supported_methods_array);
+
+    char buf[6] = {0};
+    snprintf(buf, 5, "0x%x", cmd_class->command_id);
+    json_object_object_add(json_array, buf, cmd_class_obj);
 }
 
 /* 
@@ -313,27 +368,7 @@ bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
     else
     {
         http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
-        json_object_object_add(command_class, "command_id", json_object_new_int(cmd_class->command_id));
-        json_object_object_add(command_class, "name", json_object_new_string(cmd_class->command_name));
-
-        json_object* supported_methods_array = json_object_new_array();
-
-        command_method_t* supported_methods = cmd_class->supported_method_list;
-        while(supported_methods->name)
-        {
-            //command_method_t* m = &cmd_class->supported_method_list[i];
-
-            json_object* new_method = json_object_new_object();
-            json_object_object_add(new_method, "name", json_object_new_string(supported_methods->name));
-            json_object_object_add(new_method, "help", json_object_new_string(supported_methods->help));
-            json_object_object_add(new_method, "args", json_object_new_int(supported_methods->nargs));
-            json_object_array_add(supported_methods_array, new_method);
-
-
-            supported_methods++;
-        }
-
-        json_object_object_add(command_class, "methods", supported_methods_array);
+        command_class_to_json(cmd_class, (void*)command_class);
     }
     
     http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
@@ -487,8 +522,9 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
 
     const char* device_name = resolver_name_from_id(node_id, instance_id, command_id);
+    const char* json_data = ((http_vty_priv_t*)vty->priv)->post_data;
 
-    if(NULL == device_name)
+    if(NULL == device_name || NULL == json_data)
     {
         http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
     }
@@ -496,5 +532,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     {
         http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
     }
+
+    struct json_object* response_obj = json_tokener_parse(json_data);
 }
 

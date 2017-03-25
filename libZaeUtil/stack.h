@@ -19,9 +19,9 @@ typedef struct variant_stack_t
 } variant_stack_t;
 
 #define stack_for_each(_stack, _value)  \
-int __i__;  \
+int __i__##_value;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
-for(__i__ = 0; __i__ < _stack->count; __i__++, _value = stack_peek_at(_stack, __i__))   \
+for(__i__##_value = 0; __i__##_value < _stack->count; __i__##_value++, _value = stack_peek_at(_stack, __i__##_value))   \
 
 #define stack_for_each_reverse(_stack, _value)  \
 int __i__;  \

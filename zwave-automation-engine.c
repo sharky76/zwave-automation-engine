@@ -282,33 +282,9 @@ int main (int argc, char *argv[])
             zway_discover(zway);
 
             LOG_INFO(General, "Engine ready");
-            
-            //rl_editing_mode = 1;
-            //rl_attempted_completion_function = &cli_command_completer;
-            //rl_completion_entry_function = &null_function;
-            //rl_bind_key ('?', (rl_command_func_t *) cli_command_describe);
-            //rl_pre_input_hook = &cli_print_prompt_function;
+           
             signal_init();
             
-            /*vty_data_t data = {
-                .desc.io_pair[0] = stdin,
-                .desc.io_pair[1] = stdout
-            };*/
-            //vty_t* vty_console = vty_create(VTY_STD, &data);
-            //cli_set_vty(vty_console);
-            
-            /* Preparation for longjmp() in sigtstp(). */
-            
-            
-
-            /*while(keep_running)
-            {
-                char* str = vty_read(vty_console);
-                cli_command_exec(vty_console, str);
-                free(str);
-            }*/
-            
-
 
             int cli_sock = socket(AF_INET, SOCK_STREAM, 0);
             struct sockaddr_in addr;
@@ -335,6 +311,7 @@ int main (int argc, char *argv[])
             vty_t* vty_sock;
 
             variant_stack_t* client_socket_list = stack_create();
+            variant_stack_t* http_socket_list = stack_create();
             
             // Create STD vty
             vty_t* vty_std = NULL;
@@ -373,9 +350,15 @@ int main (int argc, char *argv[])
                 FD_SET(cli_sock,    &fds);    
                 FD_SET(http_socket, &fds);
                 
-                stack_for_each(client_socket_list, vty_variant)
+                stack_for_each(client_socket_list, cli_vty_variant)
                 {
-                    vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, vty_variant);
+                    vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
+                    FD_SET(vty_ptr->data->desc.socket, &fds);
+                }
+
+                stack_for_each(http_socket_list, http_vty_variant)
+                {
+                    vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, http_vty_variant);
                     FD_SET(vty_ptr->data->desc.socket, &fds);
                 }
 
@@ -464,15 +447,28 @@ int main (int argc, char *argv[])
 
                     vty_sock = vty_io_create(VTY_HTTP, vty_data);
                     vty_set_echo(vty_sock, false);
-                    char* str = vty_read(vty_sock);
-                    cli_command_exec_custom_node(rest_root_node, vty_sock, str);
-                    vty_free(vty_sock);
+
+                    stack_push_back(http_socket_list, variant_create_ptr(DT_PTR, vty_sock, NULL));
                 }
                 else
                 {
-                    stack_for_each(client_socket_list, vty_variant)
+                    stack_for_each(http_socket_list, http_vty_variant)
                     {
-                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, vty_variant);
+                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, http_vty_variant);
+                        if(FD_ISSET(vty_ptr->data->desc.socket, &fds))
+                        {
+                            char* str = vty_read(vty_ptr);
+                            cli_command_exec_custom_node(rest_root_node, vty_ptr, str);
+
+                            LOG_ADVANCED(General, "HTTP request completed");
+                            vty_free(vty_ptr);
+                            stack_remove(http_socket_list, http_vty_variant);
+                        }
+                    }
+
+                    stack_for_each(client_socket_list, cli_vty_variant)
+                    {
+                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
                         if(FD_ISSET(vty_ptr->data->desc.socket, &fds))
                         {
                             char* str = vty_read(vty_ptr);
@@ -488,14 +484,14 @@ int main (int argc, char *argv[])
                             {
                                 LOG_ERROR(General, "Socket error");
                                 vty_free(vty_ptr);
-                                stack_remove(client_socket_list, vty_variant);
+                                stack_remove(client_socket_list, cli_vty_variant);
                             }
 
                             if(vty_is_shutdown(vty_ptr))
                             {
                                 LOG_ADVANCED(General, "Remote client disconnected");
                                 vty_free(vty_ptr);
-                                stack_remove(client_socket_list, vty_variant);
+                                stack_remove(client_socket_list, cli_vty_variant);
                             }
                         }
                     }

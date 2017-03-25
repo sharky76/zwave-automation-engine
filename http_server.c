@@ -192,7 +192,7 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
 void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
 {
     static char buffer[BUFSIZE+1];
-    LOG_DEBUG(HTTPServer, "Sending %d bytes", http_priv->response_size);
+    LOG_DEBUG(HTTPServer, "Sending %d bytes: %s", http_priv->response_size, http_priv->response);
 
     switch(http_priv->resp_code)
     {
@@ -206,7 +206,9 @@ void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
     case HTTP_RESP_SERVER_ERR:
         sprintf(buffer, "HTTP/1.1 500 SERVER ERROR\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
         break;
-
+    default:
+        sprintf(buffer, "HTTP/1.1 400 BAD REQUEST\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
+        break;
     }
 
 
