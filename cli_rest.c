@@ -88,7 +88,7 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
     http_set_cache_control((http_vty_priv_t*)vty->priv, true, 3600);
 
     json_object* json_resp = json_object_new_object();
-    json_object* sensor_array = json_object_new_array();
+    json_object* sensor_array = json_object_new_object();
     json_object_object_add(json_resp, "sensors", sensor_array);
 
     ZWDevicesList node_array;
@@ -116,7 +116,9 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             json_object_object_add(new_sensor, "name", json_object_new_string(str_val));
             json_object_object_add(new_sensor, "is_failed", json_object_new_boolean(is_failed == TRUE));
 
-            json_object_array_add(sensor_array, new_sensor);
+            char buf[4] = {0};
+            snprintf(buf, 3, "%d", node_array[i]);
+            json_object_object_add(sensor_array, buf, new_sensor);
         }
 
         i++;
@@ -165,17 +167,12 @@ bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params)
     if(NULL != instances)
     {
         // Add 0 instance
-        json_object* new_instance = json_object_new_object();
-        json_object_object_add(new_instance, "instance_id", json_object_new_int(0));
-        json_object_array_add(instance_array, new_instance);
+        json_object_array_add(instance_array, json_object_new_int(0));
     
         // Add all the rest    
         while(instances[j])
         {
-            json_object* new_instance = json_object_new_object();
-            json_object_object_add(new_instance, "instance_id", json_object_new_int(instances[j]));
-            json_object_array_add(instance_array, new_instance);
-    
+            json_object_array_add(instance_array, json_object_new_int(instances[j]));
             j++;
         }
 
