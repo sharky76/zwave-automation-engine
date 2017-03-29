@@ -85,11 +85,11 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
 {
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
     http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
-    http_set_cache_control((http_vty_priv_t*)vty->priv, true, 3600);
+    http_set_cache_control((http_vty_priv_t*)vty->priv, false, 3600);
 
     json_object* json_resp = json_object_new_object();
     json_object* sensor_array = json_object_new_object();
-    json_object_object_add(json_resp, "sensors", sensor_array);
+    json_object_object_add(json_resp, "devices", sensor_array);
 
     ZWDevicesList node_array;
     node_array = zway_devices_list(zway);
@@ -111,10 +111,9 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             ZWCSTR str_val;
             zdata_get_string(dh, &str_val);
 
-
             json_object_object_add(new_sensor, "node_id", json_object_new_int(node_array[i]));
             json_object_object_add(new_sensor, "name", json_object_new_string(str_val));
-            json_object_object_add(new_sensor, "is_failed", json_object_new_boolean(is_failed == TRUE));
+            json_object_object_add(new_sensor, "failed", json_object_new_boolean(is_failed == TRUE));
 
             char buf[4] = {0};
             snprintf(buf, 3, "%d", node_array[i]);
@@ -385,6 +384,9 @@ bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
     ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
     ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+
+    const char* resolver_name = resolver_name_from_id(node_id, instance_id, command_id);
+    json_object_object_add(json_resp, "name", json_object_new_string(resolver_name));
 
     zdata_acquire_lock(ZDataRoot(zway));
     ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, command_id, ".");

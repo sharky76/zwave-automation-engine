@@ -33,6 +33,8 @@ typedef struct http_vty_priv_t
     char* content_type;
     char* post_data;
     int   post_data_size;
+    char* headers;
+    int   headers_size;
     int   resp_code;
     bool  can_cache;
     int   cache_age;
@@ -44,6 +46,7 @@ void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv);
 void  http_set_response(http_vty_priv_t* http_priv, int http_resp);
 void  http_set_content_type(http_vty_priv_t* http_priv, const char* content_type);
 void  http_set_cache_control(http_vty_priv_t* http_priv, bool is_set, int max_age);
+void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* value);
 
 
 

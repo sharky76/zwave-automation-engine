@@ -6,80 +6,62 @@
 #include <string.h>
 #include <unistd.h>
 #include "hash.h"
+#include "vty.h"
 
 #define MAX_LOG_ENTRY_LEN   512
+
+typedef struct logger_vty_t
+{
+    vty_t* vty;
+    bool   is_online;
+} logger_vty_t;
 
 // Global handle
 typedef struct logger_handle_t
 {
-    LogLevel    level;
-    LogTarget   target;
+    variant_stack_t*    registered_targets;
+
     bool        enabled;
-    FILE*       fh;
-    int         fd;
     hash_table_t*   logger_service_table;
-
-    bool        console;
-
     int log_buffer_size;
     variant_stack_t*    log_buffer;
-
-    void    (*do_log)(struct logger_handle_t*, const char*);
-
-    union {
-        file_logger_data_t*      file;
-        syslog_logger_data_t*    syslog;
-        stdout_logger_data_t*    stdout;
-    } data;
 } logger_handle_t;
 
 logger_handle_t*    logger_handle = NULL;
 
-void file_logger_data_init(logger_handle_t* handle);
-void syslog_logger_data_init(logger_handle_t* handle);
-void stdout_logger_data_init(logger_handle_t* handle);
-
-void    do_file_log(logger_handle_t* handle, const char* line);
-void    do_syslog_log(logger_handle_t* handle, const char* line);
-void    do_stdout_log(logger_handle_t* handle, const char* line);
 void    valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel level, const char* format, va_list args);
 
 void    logger_add_buffer(const char* line);
 
-void logger_init(LogLevel level, LogTarget target, void* data)
+void logger_init()
 {
     logger_handle = (logger_handle_t*)malloc(sizeof(logger_handle_t));
-
-    logger_handle->level = level;
-    logger_handle->target = target;
     logger_handle->enabled = true;
-    
     logger_handle->logger_service_table = variant_hash_init();
-
     logger_handle->log_buffer_size = 100;
     logger_handle->log_buffer = stack_create();
-
-    logger_handle->console = false;
-
-    logger_set_data(data);
+    logger_handle->registered_targets = stack_create();
 }
 
-void logger_set_data(void* data)
+void logger_register_target(vty_t* vty)
 {
-    switch(logger_handle->target)
+    logger_vty_t* new_vty = malloc(sizeof(logger_vty_t));
+    new_vty->vty = vty;
+    new_vty->is_online = false;
+    stack_push_back(logger_handle->registered_targets, variant_create_ptr(DT_PTR, new_vty, NULL));
+}
+
+void logger_unregister_target(vty_t* vty)
+{
+    stack_for_each(logger_handle->registered_targets, log_target_variant)
     {
-    case LOG_TARGET_FILE:
-        logger_handle->data.file = (file_logger_data_t*)data;
-        file_logger_data_init(logger_handle);
-        break;
-    case LOG_TARGET_SYSLOG:
-        logger_handle->data.syslog = (syslog_logger_data_t*)data;
-        syslog_logger_data_init(logger_handle);
-        break;
-    case LOG_TARGET_STDOUT:
-        logger_handle->data.stdout = (stdout_logger_data_t*)data;
-        stdout_logger_data_init(logger_handle);
-        break;
+        logger_vty_t* target_vty = VARIANT_GET_PTR(logger_vty_t, log_target_variant);
+        if(target_vty->vty == vty)
+        {
+            stack_remove(logger_handle->registered_targets, log_target_variant);
+            variant_free(log_target_variant);
+            break;
+        }
     }
 }
 
@@ -90,11 +72,12 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
     {
         time_t t = time(NULL);
         struct tm* ptime = localtime(&t);
-        char time_str[12] = {0};
+        char time_str[15] = {0};
 
-        strftime(time_str, sizeof(time_str), "%H:%M:%S %%%", ptime);
+        strftime(time_str, sizeof(time_str), "%H:%M:%S ", ptime);
         char log_format_buffer[MAX_LOG_ENTRY_LEN] = {0};
         strcat(log_format_buffer, time_str);
+        strcat(log_format_buffer, "%%");
         strcat(log_format_buffer, service->service_name);
         strcat(log_format_buffer, "-");
 
@@ -124,7 +107,17 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
         char buf[1024] = {0};
         vsnprintf(buf, 1023, log_format_buffer, args);
         logger_add_buffer(buf);
-        handle->do_log(handle, buf);
+        //handle->do_log(handle, buf);
+
+        stack_for_each(handle->registered_targets, vty_variant)
+        {
+            logger_vty_t* logger_vty = VARIANT_GET_PTR(logger_vty_t, vty_variant);
+
+            if(logger_vty->is_online)
+            {
+                vty_write(logger_vty->vty, buf);
+            }
+        }
     }
 }
 
@@ -210,47 +203,6 @@ LogLevel    logger_get_level(int serviceId)
     return service->level;
 }
 
-void file_logger_data_init(logger_handle_t* handle)
-{
-    handle->fh = fopen(handle->data.file->filename, "a+");
-    handle->do_log = &do_file_log;
-}
-
-void syslog_logger_data_init(logger_handle_t* handle)
-{
-    openlog("ZAE", LOG_PID, LOG_USER);
-    handle->do_log = &do_syslog_log;
-}
-
-void stdout_logger_data_init(logger_handle_t* handle)
-{
-    //handle->fh = fdopen(handle->data.stdout->fd, "rw");
-    handle->fd = handle->data.stdout->fd;
-    handle->do_log = &do_stdout_log;
-}
-
-void    do_file_log(logger_handle_t* handle, const char* line)
-{
-   //fprintf(handle->fh, "%s", line);
-    if(NULL != line)
-    {
-        write(handle->fd, line, strlen(line));
-    }
-}
-
-void    do_stdout_log(logger_handle_t* handle, const char* line)
-{
-    if(handle->console)
-    {
-        do_file_log(handle, line);
-    }
-}
-
-void    do_syslog_log(logger_handle_t* handle, const char* line)
-{
-    syslog(handle->data.syslog->priority, line);
-}
-
 void logger_register_service(int* serviceId, const char* name)
 {
     *serviceId = variant_get_next_user_type();
@@ -263,7 +215,7 @@ void logger_register_service_with_id(int serviceId, const char* name)
     new_service->service_id = serviceId;
     new_service->service_name = strdup(name);
     new_service->enabled = true;
-    new_service->level = logger_handle->level;
+    new_service->level = LOG_LEVEL_BASIC;
     variant_hash_insert(logger_handle->logger_service_table, serviceId, variant_create_ptr(DT_PTR, new_service, variant_delete_default));
 }
 
@@ -332,22 +284,25 @@ int  logger_get_buffer_size()
     return logger_handle->log_buffer_size;
 }
 
-void logger_set_console(bool is_console)
+void logger_set_online(vty_t* vty, bool is_online)
 {
-    logger_handle->console = is_console;
+    stack_for_each(logger_handle->registered_targets, log_target_variant)
+    {
+        logger_vty_t* target_vty = VARIANT_GET_PTR(logger_vty_t, log_target_variant);
+        if(target_vty->vty == vty)
+        {
+            target_vty->is_online = is_online;
+            break;
+        }
+    }
 }
 
-void logger_print_buffer()
+void logger_print_buffer(vty_t* vty)
 {
-    bool saved_console = logger_handle->console;
-    logger_handle->console = true;
-
     stack_for_each(logger_handle->log_buffer, log_variant)
     {
-        logger_handle->do_log(logger_handle, variant_get_string(log_variant));
+        vty_write(vty, "%s", variant_get_string(log_variant));
     }
-
-    logger_handle->console = saved_console;
 }
 
 void logger_clear_buffer()

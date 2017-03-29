@@ -15,13 +15,6 @@ typedef enum LogLevel_e
     LOG_LEVEL_DEBUG     = 0x8
 } LogLevel;
 
-typedef enum LogTarget_e
-{
-    LOG_TARGET_FILE,
-    LOG_TARGET_SYSLOG,
-    LOG_TARGET_STDOUT
-} LogTarget;
-
 // Registered services table
 typedef struct logger_service_t
 {
@@ -31,22 +24,8 @@ typedef struct logger_service_t
     LogLevel level;
 } logger_service_t;
 
-typedef struct file_logger_data_t
-{
-    char*   filename;
-} file_logger_data_t;
-
-typedef struct syslog_logger_data_t
-{
-    int priority;
-} syslog_logger_data_t;
-
-typedef struct stdout_logger_data_t
-{
-    int fd;
-} stdout_logger_data_t;
-
 typedef struct logger_handle_t logger_handle_t;
+typedef struct vty_t vty_t;
 extern logger_handle_t* logger_handle;
 
 #define LOG_ERROR(_id_, _format_, ...)    \
@@ -72,8 +51,9 @@ extern logger_handle_t* logger_handle;
     extern void LOG_##_logger_##_register(); \
     LOG_##_logger_##_register();
 
-void logger_init(LogLevel level, LogTarget target, void* data);
-void logger_set_data(void* data);
+void logger_init();
+void logger_register_target(vty_t* vty);
+void logger_unregister_target(vty_t* vty);
 
 void logger_register_service(int* serviceId, const char* name);
 void logger_register_service_with_id(int serviceId, const char* name);
@@ -89,7 +69,7 @@ bool logger_is_enabled();
 LogLevel    logger_get_level(int serviceId);
 void logger_set_buffer(int size);
 int  logger_get_buffer_size();
-void logger_set_console(bool is_console);
+void logger_set_online(vty_t* vty, bool is_online);
 void logger_print_buffer();
 void logger_clear_buffer();
 

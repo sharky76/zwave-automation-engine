@@ -120,6 +120,17 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         }
     };
 
+    LOG_DEBUG(HTTPServer, "Request %s", buffer);
+
+    if(strncmp(method, "OPTIONS", method_len) == 0)
+    {
+        http_set_response(http_priv, HTTP_RESP_OK);
+        http_set_content_type(http_priv, "application/json");
+        http_set_header(http_priv, "Access-Control-Allow-Headers", "x-requested-with");
+        http_server_write_response(client_socket, http_priv);
+        return NULL;
+    }
+
     int content_len_index = header_find_value("Content-Length", headers, num_headers);
     char* content = NULL;
     if(-1 != content_len_index)
@@ -169,8 +180,6 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         }
     }
 
-    LOG_DEBUG(HTTPServer, "Request %s", buffer);
-
     // Browsers really like to get favicon.ico - tell them to fuck off
     if(strstr(method, "favicon.ico") != 0)
     {
@@ -192,12 +201,16 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
 void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
 {
     static char buffer[BUFSIZE+1];
-    LOG_DEBUG(HTTPServer, "Sending %d bytes: %s", http_priv->response_size, http_priv->response);
+    //LOG_DEBUG(HTTPServer, "Sending %d bytes: %s", http_priv->response_size, http_priv->response);
 
+    http_set_header(http_priv, "Access-Control-Allow-Origin", "*");
+    http_set_header(http_priv, "Access-Control-Allow-Methods", "GET,POST");
     switch(http_priv->resp_code)
     {
     case HTTP_RESP_OK:
-        sprintf(buffer, "HTTP/1.1 200 OK\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
+        sprintf(buffer, "HTTP/1.1 200 OK\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\n%sContent-Type: %s\n", 
+                http_priv->response_size, 
+                (http_priv->headers_size == 0)? "" : http_priv->headers, http_priv->content_type); /* Header + a blank line */
         sprintf(buffer + strlen(buffer), "Cache-Control: %s, max-age=%d", (http_priv->can_cache)? "public" : "no-cache", http_priv->cache_age);
         break;
     case HTTP_RESP_USER_ERR:
@@ -212,9 +225,14 @@ void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
     }
 
 
+    LOG_DEBUG(HTTPServer, "Response %s\n\n%s", buffer, http_priv->response);
     write(client_socket, buffer, strlen(buffer));
-    write(client_socket, "\n\n", 2);
-    write(client_socket, http_priv->response, http_priv->response_size);
+
+    if(http_priv->response_size > 0)
+    {
+        write(client_socket, "\n\n", 2);
+        write(client_socket, http_priv->response, http_priv->response_size);
+    }
 }
 
 void  http_set_response(http_vty_priv_t* http_priv, int http_resp)
@@ -231,6 +249,17 @@ void  http_set_cache_control(http_vty_priv_t* http_priv, bool is_set, int max_ag
 {
     http_priv->can_cache = is_set;
     http_priv->cache_age = max_age;
+}
+
+void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* value)
+{
+    int header_size = strlen(name) + strlen(value) + 4;
+    http_priv->headers = realloc(http_priv->headers, http_priv->headers_size + header_size);
+
+    sprintf(http_priv->headers + http_priv->headers_size, "%s: %s\n", name, value);
+    http_priv->headers_size += header_size;
+    http_priv->headers[http_priv->headers_size] = 0;
+    http_priv->headers_size--;
 }
 
 char*       request_create_command(const char* req_url)

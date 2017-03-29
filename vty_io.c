@@ -44,8 +44,6 @@ void    vty_io_config(vty_t* vty)
         break;
     case VTY_STD:
         //rl_callback_handler_install (vty->prompt, cb_linehandler);
-        rl_instream = vty->data->desc.io_pair[IN];
-        rl_outstream = vty->data->desc.io_pair[OUT];
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
         vty->erase_char_cb = std_erase_cb;
@@ -240,5 +238,6 @@ void    http_free_priv_cb(vty_t* vty)
     free(http_priv->response);
     free(http_priv->content_type);
     free(http_priv->post_data);
+    free(http_priv->headers);
     free(http_priv);
 }

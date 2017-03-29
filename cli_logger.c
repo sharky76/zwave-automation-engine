@@ -171,13 +171,13 @@ bool    cmd_del_log_history(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_enable_console(vty_t* vty, variant_stack_t* params)
 {
-    logger_set_console(true);
+    logger_set_online(vty, true);
     vty_write(vty, "%% Console logging enabled%s", VTY_NEWLINE(vty));
 }
 
 bool    cmd_disable_console(vty_t* vty, variant_stack_t* params)
 {
-    logger_set_console(false);
+    logger_set_online(vty, false);
     vty_write(vty, "%% Console logging disabled%s", VTY_NEWLINE(vty));
 }
 
