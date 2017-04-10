@@ -30,9 +30,9 @@ void         zway_data_read_fail_cb(const ZWay zway, ZWBYTE functionId, void* ar
 static command_class_t command_class_table[] = {
     {0x20, "Basic",        {"Get", 0, "level", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
     {0x30, "SensorBinary", {"Get", 1, "<sensor>,<parameter>", NULL, 0, NULL},                        &command_class_eval_binarysensor},
-    {0x80, "Battery",      {"Get", 1, "last", NULL, 0, NULL},                           &command_class_eval_battery},
+    {0x80, "Battery",      {"Get", 0, "", NULL, 0, NULL},                           &command_class_eval_battery},
     {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>", NULL, 0, NULL},  &command_class_eval_alarm},
-    {0x25, "SwitchBinary", {"Get", 1, "1.level",  "Set", 1, "True/False", NULL, 0, NULL},              &command_class_eval_binaryswitch},
+    {0x25, "SwitchBinary", {"Get", 0, "",  "Set", 1, "Bool", NULL, 0, NULL},              &command_class_eval_binaryswitch},
     {0x70, "Configuration", {"Get", 1, "<parameter>", "Set", 3, "<parameter>, <value>, <size>", NULL, 0, NULL},       &command_class_eval_configuration},
     {0x72, "ManufacturerSpecific", {"Get", 0, "", NULL, 0, NULL},                                     &command_class_eval_manufacturer_specific},
     {0x84, "Wakeup",       {"Get", 0, "", "Capabilities", 0, "", "Sleep", 0, "", "Set", 2, "<seconds>, <node ID>", NULL, 0, NULL},       &command_class_eval_wakeup},
@@ -229,7 +229,7 @@ variant_t*   command_class_eval_battery(const char* method, device_record_t* rec
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        ret_val = command_class_read_data(record, variant_get_string(arg1));
+        ret_val = command_class_read_data(record, "last");
     }
 
     return ret_val;
@@ -268,10 +268,11 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);*/
-        ret_val = command_class_read_data(record, variant_get_string(arg1));
+        ret_val = command_class_read_data(record, "level");
     }
     else if(strcmp(method, "Set") == 0)
     {
+        LOG_ADVANCED(DataCallback, "Setting device %s to %d", record->deviceName, variant_get_bool(arg1));
         ZWError err = zway_cc_switch_binary_set(zway,record->nodeId, record->instanceId, variant_get_bool(arg1), NULL, NULL, NULL);
         ret_val = variant_create_bool(err == NoError);
     }

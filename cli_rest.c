@@ -386,23 +386,30 @@ bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
 
     const char* resolver_name = resolver_name_from_id(node_id, instance_id, command_id);
-    json_object_object_add(json_resp, "name", json_object_new_string(resolver_name));
-
-    zdata_acquire_lock(ZDataRoot(zway));
-    ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, command_id, ".");
-    
-    if(NULL == dh)
+    if(NULL != resolver_name)
     {
-        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+        json_object_object_add(json_resp, "name", json_object_new_string(resolver_name));
+    
+        zdata_acquire_lock(ZDataRoot(zway));
+        ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, command_id, ".");
+        
+        if(NULL == dh)
+        {
+            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+        }
+        else
+        {
+            json_object* device_data = json_object_new_object();
+            data_holder_to_json(device_data, dh);
+            json_object_object_add(json_resp, "device_data", device_data);
+            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+        }
+        zdata_release_lock(ZDataRoot(zway));
     }
     else
     {
-        json_object* device_data = json_object_new_object();
-        data_holder_to_json(device_data, dh);
-        json_object_object_add(json_resp, "device_data", device_data);
-        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
     }
-    zdata_release_lock(ZDataRoot(zway));
 
     http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
     http_set_cache_control((http_vty_priv_t*)vty->priv, true, 3600);
