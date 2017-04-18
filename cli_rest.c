@@ -20,6 +20,7 @@ bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
+bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_list(vty_t* vty, variant_stack_t* params);
 
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
@@ -34,6 +35,8 @@ cli_command_t   rest_root_list[] = {
     {"GET rest v1 command-classes",  cmd_get_sensor_command_class_list,  "Get list of supported command classes"},
     {"GET rest v1 command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
     {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
+    {"GET rest v1 devices INT INT INT",  cmd_get_sensor_command_class_data_short,  "Get sensor command classes data"},
+
     {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
     {NULL,                     NULL,                            NULL}
 };
@@ -107,9 +110,17 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             ZDataHolder dh = zway_find_device_data(zway,node_array[i], "isFailed");
             zdata_get_boolean(dh, &is_failed);
 
-            dh = zway_find_device_data(zway,node_array[i], "deviceTypeString");
             ZWCSTR str_val;
-            zdata_get_string(dh, &str_val);
+            const char* dev_name = resolver_name_from_node_id(node_array[i]);
+            if(NULL == dev_name)
+            {
+                dh = zway_find_device_data(zway,node_array[i], "deviceTypeString");
+                zdata_get_string(dh, &str_val);
+            }
+            else
+            {
+                str_val = dev_name;
+            }
 
             json_object_object_add(new_sensor, "node_id", json_object_new_int(node_array[i]));
             json_object_object_add(new_sensor, "name", json_object_new_string(str_val));
@@ -377,14 +388,9 @@ bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
     return 0;
 }
 
-bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
+bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instance_id, ZWBYTE command_id)
 {
     json_object* json_resp = json_object_new_object();
-
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
-
     const char* resolver_name = resolver_name_from_id(node_id, instance_id, command_id);
     if(NULL != resolver_name)
     {
@@ -419,6 +425,23 @@ bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     json_object_put(json_resp);
 
     return 0;
+}
+bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
+{
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+
+    return get_sensor_command_class_data(vty, node_id,instance_id,command_id);
+}
+
+bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* params)
+{
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
+
+    return get_sensor_command_class_data(vty, node_id,instance_id,command_id);
 }
 
 /*

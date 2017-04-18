@@ -98,6 +98,11 @@ const char* resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE comma
     return name;
 }
 
+const char* resolver_name_from_node_id(ZWBYTE nodeId)
+{
+    return resolver_name_from_id(nodeId, -1, -1);
+}
+
 bool resolver_has_name(const char* name)
 {
     return (resolver_get_device_record(name) != NULL);
@@ -138,6 +143,11 @@ void    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, ZWB
         resolver_remove_entry(name);
         resolver_add_entry(devtype, name, nodeId, instanceId, commandId);
     }
+}
+
+void resolver_add_device_entry(DeviceType devtype, const char* name, int nodeId)
+{
+    resolver_add_entry(devtype,name,nodeId,-1, -1);
 }
 
 void resolver_remove_entry(const char* name)

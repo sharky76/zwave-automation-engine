@@ -204,7 +204,7 @@ void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
     //LOG_DEBUG(HTTPServer, "Sending %d bytes: %s", http_priv->response_size, http_priv->response);
 
     http_set_header(http_priv, "Access-Control-Allow-Origin", "*");
-    http_set_header(http_priv, "Access-Control-Allow-Methods", "GET,POST");
+    http_set_header(http_priv, "Access-Control-Allow-Methods", "GET,POST,PUT");
     switch(http_priv->resp_code)
     {
     case HTTP_RESP_OK:

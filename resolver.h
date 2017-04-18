@@ -34,9 +34,11 @@ typedef struct device_record_t
 
 void                    resolver_init();
 void                    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, ZWBYTE instanceId, ZWBYTE commandId);
+void                    resolver_add_device_entry(DeviceType devtype, const char* name, int nodeId);
 void                    resolver_remove_entry(const char* name);
 bool                    resolver_has_name(const char* name);
 const char*             resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId);
+const char*             resolver_name_from_node_id(ZWBYTE nodeId);
 device_record_t*        resolver_get_device_record(const char* name);
 void                    resolver_for_each(void (*visitor)(device_record_t*, void*), void* arg);
 
