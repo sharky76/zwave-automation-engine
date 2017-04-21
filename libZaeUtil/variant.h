@@ -23,6 +23,7 @@ typedef enum VariantDataType
     DT_VDEV,
     DT_VDEV_EVENT_DATA,
     DT_LIST,
+    DT_EVENT_LOG_ENTRY,
     DT_NULL,
 
     DT_USER,
@@ -84,4 +85,5 @@ int         variant_get_next_user_type();
 variant_t*  variant_add(variant_t* arg1, variant_t* arg2);
 variant_t*  variant_subtract(variant_t* arg1, variant_t* arg2);
 
+void        variant_register_converter_string(VariantDataType source_type,  void (*converter)(struct variant_t*, char** str));
 #endif // VARIANT_H

@@ -79,6 +79,7 @@ static dfa_transition_t    dfa_transitions[] = {
     {STATE_COMMA,   A_ALPHA,        STATE_ALPHA},
     {STATE_COMMA,   A_DIGIT,        STATE_DIGIT},
     {STATE_COMMA,   A_LEFT_PAREN,   STATE_LEFT_PAREN},
+    {STATE_COMMA,   A_QUOTE,        STATE_CAPTURE_STRING},
     {STATE_COMMA,   A_SPACE,        STATE_START},
 
     // From AND

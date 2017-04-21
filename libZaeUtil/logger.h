@@ -12,7 +12,8 @@ typedef enum LogLevel_e
     LOG_LEVEL_ERROR     = 0x1,
     LOG_LEVEL_BASIC     = 0x2,
     LOG_LEVEL_ADVANCED  = 0x4,
-    LOG_LEVEL_DEBUG     = 0x8
+    LOG_LEVEL_DEBUG     = 0x8,
+    LOG_LEVEL_EVENT     = 0x10
 } LogLevel;
 
 // Registered services table

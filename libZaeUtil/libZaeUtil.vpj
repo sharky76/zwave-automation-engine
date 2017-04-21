@@ -220,6 +220,7 @@
 			<F N="cli.h"/>
 			<F N="curl_util.h"/>
 			<F N="event.h"/>
+			<F N="event_log.h"/>
 			<F N="logger.h"/>
 			<F N="service.h"/>
 			<F N="service_args.h"/>
@@ -245,6 +246,7 @@
 			<F N="cli.c"/>
 			<F N="curl_util.c"/>
 			<F N="event.c"/>
+			<F N="event_log.c"/>
 			<F N="logger.c"/>
 			<F N="service.c"/>
 			<F N="service_args.c"/>

@@ -10,6 +10,7 @@
 #include <time.h>
 #include "hash.h"
 #include "crc32.h"
+#include "command_class.h"
 
 extern ZWay zway;
 extern hash_table_t*   data_holder_event_table;

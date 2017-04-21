@@ -5,6 +5,7 @@
 #include "BuiltinServices/Expression.h"
 #include "BuiltinServices/Conditional.h"
 #include "BuiltinServices/List.h"
+#include "BuiltinServices/EventLog.h"
 
 USING_LOGGER(BuiltinService)
 
@@ -18,6 +19,7 @@ void              builtin_service_manager_init()
     expression_service_create(builtin_service_table);
     conditional_service_create(builtin_service_table);
     list_service_create(builtin_service_table);
+    event_log_service_create(builtin_service_table);
 }
 
 service_method_t* builtin_service_manager_get_method(const char* service_class, const char* method_name)

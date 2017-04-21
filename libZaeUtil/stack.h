@@ -18,20 +18,42 @@ typedef struct variant_stack_t
     stack_item_t*   tail;
 } variant_stack_t;
 
-#define stack_for_each(_stack, _value)  \
+/*#define stack_for_each(_stack, _value)  \
 int __i__##_value;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
 for(__i__##_value = 0; __i__##_value < _stack->count; __i__##_value++, _value = stack_peek_at(_stack, __i__##_value))   \
+*/
 
-#define stack_for_each_reverse(_stack, _value)  \
+
+#define stack_for_each(_stack, _value)  \
+stack_item_t* __head_item__##_value = _stack->head; \
+variant_t* _value = (__head_item__##_value == NULL)? NULL : __head_item__##_value->data;    \
+for(int __i__##_value = 0; __i__##_value < _stack->count; __i__##_value++, __head_item__##_value = __head_item__##_value->next, _value = (__head_item__##_value == NULL)? NULL : __head_item__##_value->data)  \
+
+
+
+/*#define stack_for_each_reverse(_stack, _value)  \
 int __i__;  \
 variant_t* _value = stack_peek_at(_stack, _stack->count-1);  \
-for(__i__ = _stack->count-1; __i__ >= 0; __i__--, _value = stack_peek_at(_stack, __i__))   \
+for(__i__ = _stack->count-1; __i__ >= 0; __i__--, _value = stack_peek_at(_stack, __i__))   \*/
 
-#define stack_for_each_range(_stack, _from, _to, _value)  \
+#define stack_for_each_reverse(_stack, _value)  \
+stack_item_t* __head_item__##_value = _stack->tail; \
+variant_t* _value = (__head_item__##_value == NULL)? NULL : __head_item__##_value->data;    \
+for(int __i__##_value = _stack->count-1; __i__##_value >= 0; __i__##_value--, __head_item__##_value = __head_item__##_value->prev, _value = (__head_item__##_value == NULL)? NULL : __head_item__##_value->data)  \
+
+
+/*#define stack_for_each_range(_stack, _from, _to, _value)  \
 int __i__;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
-for(__i__ = _from; __i__ <= MIN(_stack->count-1, _to); __i__++, _value = stack_peek_at(_stack, __i__))   \
+for(__i__ = _from; __i__ <= MIN(_stack->count-1, _to); __i__++, _value = stack_peek_at(_stack, __i__))   \*/
+
+#define stack_for_each_range(_stack, _from, _to, _value)  \
+stack_item_t* __head_item__##_value = _stack->head; \
+for(int __i__##_value = 0; __i__##_value < _from && __i__##_value < _stack->count; __i__##_value++) { __head_item__##_value = __head_item__##_value->next; }    \
+variant_t* _value = (__head_item__##_value == NULL)? NULL : __head_item__##_value->data;    \
+for(int __i__##_value = _from; __i__##_value <= MIN(_stack->count-1, _to); __i__##_value++, __head_item__##_value = __head_item__##_value->next, _value = (__head_item__##_value == NULL)? NULL : __head_item__##_value->data)  \
+
 
 variant_stack_t*        stack_create();
 void            stack_free(variant_stack_t* stack);

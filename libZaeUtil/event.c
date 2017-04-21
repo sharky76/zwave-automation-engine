@@ -20,7 +20,7 @@ void    event_destroy(void* arg);
 void    delete_event_handler(void* arg)
 {
     event_handler_t* e = (event_handler_t*)arg;
-    free(e->name);
+    free(e->event_name);
     free(e);
 }
 
@@ -28,7 +28,7 @@ bool    event_handler_match(variant_t* e, void* arg)
 {
     event_handler_t* ref = (event_handler_t*)arg;
     event_handler_t* h = VARIANT_GET_PTR(event_handler_t, e);
-    return (h->id == ref->id && !strcmp(h->name, ref->name));
+    return (h->id == ref->id && !strcmp(h->event_name, ref->event_name));
 }
 
 DECLARE_LOGGER(Event)
@@ -53,12 +53,12 @@ void event_manager_init()
     LOG_ADVANCED(Event, "Event manager initialized");
 }
 
-event_t*    event_create(int source_id, const char* name, variant_t* data)
+event_t*    event_create(int source_id, const char* event_name, variant_t* data)
 {
     event_t* new_event = (event_t*)malloc(sizeof(event_t));
     new_event->data = data;
     new_event->source_id = source_id;
-    new_event->name = strdup(name);
+    new_event->name = strdup(event_name);
     return new_event;
 }
 
@@ -103,7 +103,7 @@ void        event_register_handler(int handler_id, const char* event_name, void 
     LOG_DEBUG(Event, "Register handler %d for event %s with callback %p\n", handler_id, event_name, event_handler);
     event_handler_t* handler = malloc(sizeof(event_handler_t));
     handler->id = handler_id;
-    handler->name = strdup(event_name);
+    handler->event_name = strdup(event_name);
     handler->event_handler = event_handler;
 
     if(!stack_is_exists(registered_handlers, &event_handler_match, handler))
@@ -128,7 +128,7 @@ void* event_handle_event(void* arg)
         stack_for_each(registered_handlers, handler_var)
         {
             event_handler_t* event_handler = VARIANT_GET_PTR(event_handler_t, handler_var);
-            if(strcmp(event_handler->name, event->name) == 0)
+            if(strcmp(event_handler->event_name, event->name) == 0)
             {
                 //printf("Found registered event type with id %d and callback %p\n", event_handler->id, event_handler->event_handler);
                 LOG_DEBUG(Event, "Found registered event type with id %d", event_handler->id);

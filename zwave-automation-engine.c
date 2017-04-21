@@ -33,6 +33,7 @@
 #include <execinfo.h>
 #include "cli_rest.h"
 #include <termios.h>
+#include "event_log.h"
 
 #define DEFAULT_PORT 9231
 
@@ -250,6 +251,7 @@ int main (int argc, char *argv[])
     if(r == NoError)
     {
         LOG_INFO(General, "Zway API initialized");
+        event_log_init();
         event_manager_init();
         resolver_init();
         cli_init();

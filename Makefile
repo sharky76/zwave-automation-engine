@@ -23,8 +23,8 @@ OUTFILE=$(OUTDIR)/zwave-automation-engine
 CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
 CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
-	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
+COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
+	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
@@ -40,8 +40,8 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
-	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
+ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
+	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
@@ -120,8 +120,8 @@ OUTFILE=$(OUTDIR)/zwave-automation-engine
 CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
 CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
-	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
+COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
+	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
@@ -137,8 +137,8 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/Expression.o \
-	$(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
+ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
+	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
 	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \

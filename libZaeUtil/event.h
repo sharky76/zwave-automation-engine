@@ -23,7 +23,7 @@ typedef struct event_type_data_t
 typedef struct event_handler_t
 {
     int id;
-    char* name;
+    char* event_name;
     void (*event_handler)(event_t*);
 } event_handler_t;
 
@@ -36,7 +36,7 @@ void        event_manager_init();
 // Each module who wish to have events forwarded to it must register its handler method
 // Only events registered with the handler will be forwarded to it
 // Multiple handlers can registed to handle same event
-void        event_register_handler(int handler_id, const char* name, void (*event_handler)(event_t*));
+void        event_register_handler(int handler_id, const char* event_name, void (*event_handler)(event_t*));
 
 event_t*    event_create(int source_id, const char* event_name, variant_t* data);
 void        event_delete(event_t* event);

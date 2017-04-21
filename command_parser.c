@@ -824,6 +824,19 @@ bool eval(variant_stack_t* work_stack, variant_t* op)
         variant_free(arg2);
         variant_free(arg3);
     }
+    else if(arg_count == 4)
+    {
+        variant_t* arg1 = stack_pop_front(work_stack);
+        variant_t* arg2 = stack_pop_front(work_stack);
+        variant_t* arg3 = stack_pop_front(work_stack);
+        variant_t* arg4 = stack_pop_front(work_stack);
+
+        result = operator->eval_callback(operator, arg4, arg3, arg2, arg1);
+        variant_free(arg1);
+        variant_free(arg2);
+        variant_free(arg3);
+        variant_free(arg4);
+    }
     else
     {
         retVal = false;

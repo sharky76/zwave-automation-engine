@@ -281,6 +281,8 @@
 		<Folder Name="BuiltinServices">
 			<F N="BuiltinServices/Conditional.c"/>
 			<F N="BuiltinServices/Conditional.h"/>
+			<F N="BuiltinServices/EventLog.c"/>
+			<F N="BuiltinServices/EventLog.h"/>
 			<F N="BuiltinServices/Expression.c"/>
 			<F N="BuiltinServices/Expression.h"/>
 			<F N="BuiltinServices/List.c"/>

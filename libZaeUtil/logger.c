@@ -16,6 +16,20 @@ typedef struct logger_vty_t
     bool   is_online;
 } logger_vty_t;
 
+typedef struct logger_log_entry_t
+{
+    logger_service_t*   service;
+    LogLevel            level;
+    char*               line;
+} logger_log_entry_t;
+
+void    delete_logger_log_entry(void* arg)
+{
+    logger_log_entry_t* entry = (logger_log_entry_t*)arg;
+    free(entry->line);
+    free(entry);
+};
+
 // Global handle
 typedef struct logger_handle_t
 {
@@ -31,7 +45,7 @@ logger_handle_t*    logger_handle = NULL;
 
 void    valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel level, const char* format, va_list args);
 
-void    logger_add_buffer(const char* line);
+void    logger_add_buffer(logger_log_entry_t* entry);
 
 void logger_init()
 {
@@ -106,7 +120,14 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
 
         char buf[1024] = {0};
         vsnprintf(buf, 1023, log_format_buffer, args);
-        logger_add_buffer(buf);
+
+        logger_log_entry_t* new_entry = calloc(1, sizeof(logger_log_entry_t));
+        new_entry->service = service;
+        new_entry->level = level;
+        new_entry->line = strdup(buf);
+
+
+        logger_add_buffer(new_entry);
         //handle->do_log(handle, buf);
 
         stack_for_each(handle->registered_targets, vty_variant)
@@ -164,7 +185,7 @@ void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const
     }
 }
 
-void    logger_add_buffer(const char* line)
+void    logger_add_buffer(logger_log_entry_t* entry)
 {
     while(logger_handle->log_buffer->count > logger_handle->log_buffer_size)
     {
@@ -174,7 +195,8 @@ void    logger_add_buffer(const char* line)
 
     if(logger_handle->log_buffer_size > 0)
     {
-        stack_push_back(logger_handle->log_buffer, variant_create_string(strdup(line)));
+
+        stack_push_back(logger_handle->log_buffer, variant_create_ptr(DT_PTR, entry, &delete_logger_log_entry));
     }
 }
 
@@ -301,7 +323,8 @@ void logger_print_buffer(vty_t* vty)
 {
     stack_for_each(logger_handle->log_buffer, log_variant)
     {
-        vty_write(vty, "%s", variant_get_string(log_variant));
+        logger_log_entry_t* entry = VARIANT_GET_PTR(logger_log_entry_t, log_variant);
+        vty_write(vty, "%s", entry->line);
     }
 }
 
@@ -309,8 +332,8 @@ void logger_clear_buffer()
 {
     while(logger_handle->log_buffer->count > 0)
     {
-        variant_t* line = stack_pop_front(logger_handle->log_buffer);
-        variant_free(line);
+        variant_t* entry = stack_pop_front(logger_handle->log_buffer);
+        variant_free(entry);
     }
 }
 

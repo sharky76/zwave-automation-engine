@@ -4,8 +4,17 @@
 #include <stdio.h>
 #include <string.h>
 #include "stack.h"
+#include "hash.h"
 
 static int  auto_inc_data_type = DT_USER+1;
+
+typedef struct variant_converter_t
+{
+    VariantDataType type;
+    const void* (*converter_cb)(const struct variant_t*);
+} variant_converter_t;
+
+static hash_table_t*  variant_string_converter_table;
 
 void    variant_delete_default(void* ptr)
 {
@@ -292,6 +301,8 @@ bool        variant_is_null(variant_t* variant)
     return variant->storage.ptr_data == 0;
 }
 
+#include "event_log.h"
+
 bool variant_to_string(variant_t* variant, char** string)
 {
     bool retVal = true;
@@ -331,7 +342,7 @@ bool variant_to_string(variant_t* variant, char** string)
     case DT_LIST:
         {
             variant_stack_t* list = (variant_stack_t*)variant_get_ptr(variant);
-            *string = (char*)calloc(list->count * 128, sizeof(char));
+            *string = (char*)calloc(list->count * 256, sizeof(char));
 
             char* br = "\r\n";
 
@@ -340,7 +351,7 @@ bool variant_to_string(variant_t* variant, char** string)
                 char* string_entry;
                 if(variant_to_string(list_entry_variant, &string_entry))
                 {
-                    strcat(*string, string_entry);
+                    strncat(*string, string_entry, 253);
                     strncat(*string, br, 2);
                     free(string_entry);
                 }
@@ -348,7 +359,21 @@ bool variant_to_string(variant_t* variant, char** string)
         }
         break;
     default:
-        retVal = false;
+        {
+            variant_t* convert_cb_var = variant_hash_get(variant_string_converter_table, variant->type);
+    
+            if(NULL != convert_cb_var)
+            {
+                void (*ToStringConverter)(const struct variant_t*, char**);
+                ToStringConverter = VARIANT_GET_PTR(void, convert_cb_var);
+                ToStringConverter(variant, string);
+                retVal = true;
+            }
+            else
+            {
+                retVal = false;
+            }
+        }
     }
 
     return retVal;
@@ -418,3 +443,14 @@ int variant_get_next_user_type()
 {
     return auto_inc_data_type++;
 }
+
+void    variant_register_converter_string(VariantDataType type, void (*converter)(struct variant_t*, char** str))
+{
+    if(NULL == variant_string_converter_table)
+    {
+        variant_string_converter_table = variant_hash_init();
+    }
+
+    variant_hash_insert(variant_string_converter_table, type, variant_create_ptr(DT_PTR, converter, NULL));
+}
+

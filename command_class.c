@@ -28,7 +28,7 @@ void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void*
 void         zway_data_read_fail_cb(const ZWay zway, ZWBYTE functionId, void* arg);
 
 static command_class_t command_class_table[] = {
-    {0x20, "Basic",        {"Get", 0, "level", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
+    {0x20, "Basic",        {"Get", 0, "", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
     {0x30, "SensorBinary", {"Get", 1, "<sensor>,<parameter>", NULL, 0, NULL},                        &command_class_eval_binarysensor},
     {0x80, "Battery",      {"Get", 0, "", NULL, 0, NULL},                           &command_class_eval_battery},
     {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>", NULL, 0, NULL},  &command_class_eval_alarm},
@@ -355,4 +355,15 @@ variant_t*   command_class_eval_wakeup(const char* method, device_record_t* reco
     }
 
     return ret_val;
+}
+
+variant_t*  command_class_exec(command_class_t* cmd_class, const char* cmd_name, device_record_t* record, ...)
+{
+    variant_t* retVal = NULL;
+    va_list args;
+    va_start(args, record);
+    retVal = cmd_class->command_impl(cmd_name, record, args);
+    va_end(args);
+
+    return retVal;
 }

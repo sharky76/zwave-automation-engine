@@ -17,4 +17,5 @@ void logging_modules_init()
     REGISTER_LOGGER(BuiltinService)
     REGISTER_LOGGER(VDevManager)
     REGISTER_LOGGER(SocketIO)
+    REGISTER_LOGGER(EventLog)
 }
