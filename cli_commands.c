@@ -592,6 +592,7 @@ int     cli_command_quit(int count, int key)
 bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 {
     cmd_tree_node_t* cmd_node;
+    bool retVal = false;
 
     if(line == 0 || *line == 0 || *line == '\n' || *line == '\r')
     {
@@ -611,7 +612,7 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
     case CMD_FULL_MATCH:
         {
             //variant_stack_t* params = create_cmd_vec(line);
-            cmd_node->data->command->func(vty, params);
+            retVal = cmd_node->data->command->func(vty, params);
             //stack_free(params);
         }
         break;
@@ -624,6 +625,7 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
     }
 
     stack_free(params);
+    return retVal;
 }
 
 bool    cli_command_exec(vty_t* vty, char* line)

@@ -454,8 +454,12 @@ int main (int argc, char *argv[])
                         if(FD_ISSET(vty_ptr->data->desc.socket, &fds))
                         {
                             char* str = vty_read(vty_ptr);
-                            cli_command_exec_custom_node(rest_root_node, vty_ptr, str);
-    
+
+                            if(NULL != str)
+                            {
+                                cli_command_exec_custom_node(rest_root_node, vty_ptr, str);
+                            }
+
                             LOG_ADVANCED(General, "HTTP request completed");
                             vty_free(vty_ptr);
                             stack_remove(http_socket_list, http_vty_variant);
@@ -500,64 +504,6 @@ int main (int argc, char *argv[])
                     }
                 }
             }
-
-
-
-
-
-
-
-
-
-
-
-
-            //rl_ding();
-            /*rl_callback_handler_install ("# ", cli_command_exec_default);
-
-            // Create TCP socket for listening
-            int cli_sock = socket(AF_INET, SOCK_STREAM, 0);
-            struct sockaddr_in addr;
-            memset(&addr, 0, sizeof(struct sockaddr_in));
-            addr.sin_family = AF_INET;
-            addr.sin_port = htons(3333);
-            addr.sin_addr.s_addr = INADDR_ANY;
-            bind(cli_sock, &addr, sizeof(struct sockaddr_in));
-            listen(cli_sock, 1);
-
-            int client_sock = -1;
-            fd_set fds;
-            while (keep_running)
-            {
-              FD_ZERO (&fds);
-              FD_SET(fileno (rl_instream), &fds);    
-              FD_SET(cli_sock, &fds);
-
-              r = select (cli_sock+1, &fds, NULL, NULL, NULL);
-              if (r < 0)
-                {
-                  //perror ("rltest: select");
-                  //rl_callback_handler_remove ();
-                  //break;
-                }
-        
-              else if (FD_ISSET (fileno (rl_instream), &fds))
-              {
-                    rl_callback_read_char ();
-              }
-              else if(FD_ISSET(cli_sock, &fds))
-              {
-                  client_sock = accept(cli_sock, NULL, NULL);
-                  close(STDOUT_FILENO);
-                  dup2(client_sock, STDOUT_FILENO);
-                  close(STDIN_FILENO);
-                  dup2(client_sock, STDIN_FILENO);
-                  close(STDERR_FILENO);
-                  dup2(client_sock, STDERR_FILENO);
-              }
-            }*/
-
-            //vty_free(vty_console);
         }
         else
         {

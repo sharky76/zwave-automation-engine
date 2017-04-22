@@ -37,14 +37,6 @@ variant_t*  add_impl(struct service_method_t* method, va_list args)
 variant_t*  get_tail_impl(struct service_method_t* method, va_list args)
 {
     variant_t* num_lines_variant = va_arg(args, variant_t*);
-    variant_stack_t* result_list = stack_create();
-    variant_stack_t* event_log_list = event_log_get_list();
-
-    stack_for_each_range(event_log_list, 0, variant_get_int(num_lines_variant)-1, event_entry_var)
-    {
-        stack_push_back(result_list, variant_clone(event_entry_var));
-    }
-
-    return variant_create_list(result_list);
+    return variant_create_list(event_log_get_tail(variant_get_int(num_lines_variant)));
 }
 

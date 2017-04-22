@@ -8,6 +8,7 @@
 #include <ZData.h>
 #include <ZPlatform.h>
 #include "command_class.h"
+#include "event_log.h"
 
 extern ZWay zway;
 cli_node_t*     rest_node;
@@ -25,6 +26,8 @@ bool    cmd_get_sensor_command_class_list(vty_t* vty, variant_stack_t* params);
 
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 
+bool    cmd_get_events(vty_t* vty, variant_stack_t* params);
+
 cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices",  cmd_get_sensors,  "Get list of sensors"},
     {"GET rest v1 devices INT",  cmd_get_sensor_node_id,  "Get sensor instances info"},
@@ -38,6 +41,8 @@ cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices INT INT INT",  cmd_get_sensor_command_class_data_short,  "Get sensor command classes data"},
 
     {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
+
+    {"GET rest v1 events INT", cmd_get_events,  "Get event log entries"},
     {NULL,                     NULL,                            NULL}
 };
 
@@ -563,5 +568,54 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     }
 
     struct json_object* response_obj = json_tokener_parse(json_data);
+}
+
+bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
+{
+    int num_lines = variant_get_int(stack_peek_at(params, 4));
+
+    if(num_lines <= 0)
+    {
+        num_lines = 1;
+    }
+
+    variant_stack_t* event_list = event_log_get_tail(num_lines-1);
+
+    json_object* json_resp = json_object_new_object();
+    http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+
+    stack_for_each(event_list, event_entry_variant)
+    {
+        event_log_entry_t* event_entry = VARIANT_GET_PTR(event_log_entry_t, event_entry_variant);
+        const char* resolver_name = resolver_name_from_id(event_entry->node_id, event_entry->instance_id, event_entry->command_id);
+        if(NULL != resolver_name)
+        {
+            json_object* event_entry_data = json_object_new_object();
+            json_object_object_add(event_entry_data, "name", json_object_new_string(resolver_name));
+            json_object_object_add(event_entry_data, "node_id", json_object_new_int(event_entry->node_id));
+            json_object_object_add(event_entry_data, "instance_id", json_object_new_int(event_entry->instance_id));
+            json_object_object_add(event_entry_data, "command_id", json_object_new_int(event_entry->command_id));
+            json_object_object_add(event_entry_data, "event", json_object_new_string(event_entry->event_data));
+
+            struct tm* ptime = localtime(&event_entry->timestamp);
+            char time_str[15] = {0};
+            strftime(time_str, sizeof(time_str), "%H:%M:%S", ptime);
+            json_object_object_add(json_resp, time_str, event_entry_data);
+        }
+        else
+        {
+            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+            break;
+        }
+    }
+
+    http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
+    http_set_cache_control((http_vty_priv_t*)vty->priv, false, 0);
+
+    vty_write(vty, json_object_to_json_string(json_resp));
+    
+    json_object_put(json_resp);
+
+    return 0;
 }
 
