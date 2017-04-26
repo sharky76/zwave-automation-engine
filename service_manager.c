@@ -19,7 +19,7 @@ extern hash_table_t* service_table;
 
 DECLARE_LOGGER(ServiceManager)
 
-void service_manager_on_command_activation_event(event_t* event);
+void service_manager_on_command_activation_event(event_t* event, void* context);
 
 void    service_manager_init(const char* service_dir)
 {
@@ -89,7 +89,7 @@ void    service_manager_init(const char* service_dir)
         closedir(dp);
         LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
 
-        event_register_handler(ServiceManager, COMMAND_ACTIVATION_EVENT, service_manager_on_command_activation_event);
+        event_register_handler(ServiceManager, COMMAND_ACTIVATION_EVENT, service_manager_on_command_activation_event, NULL);
     }
     else
     {
@@ -178,7 +178,7 @@ void    service_manager_for_each_method(const char* service_class, void (*visito
     }
 }
 
-void service_manager_on_command_activation_event(event_t* event)
+void service_manager_on_command_activation_event(event_t* event, void* context)
 {
     const char* cmd = variant_get_string(event->data);
 

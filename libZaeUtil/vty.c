@@ -22,7 +22,7 @@
 #define KEY_CTRL_Z      0x1a
 #define KEY_CTRL_C      0x3
 
-vty_t*  vty_create(vty_type type, vty_data_t* data)
+vty_t*  vty_create(vty_type type, vty_io_data_t* data)
 {
     vty_t* vty = (vty_t*)calloc(1, sizeof(vty_t));
     vty->type = type;
@@ -35,6 +35,7 @@ vty_t*  vty_create(vty_type type, vty_data_t* data)
     vty->history_index = HISTORY_START;
     vty->buffer = calloc(BUFSIZE, sizeof(char));
     vty->completions = stack_create();
+    vty->in_use = false;
     return vty;
 }
 
@@ -65,6 +66,11 @@ void    vty_set_multiline(vty_t* vty, bool is_multiline, char stop_char)
 
 void    vty_free(vty_t* vty)
 {
+    if(vty->in_use)
+    {
+        return;
+    }
+
     if(NULL != vty->flush_cb)
     {
         vty->flush_cb(vty);
@@ -122,14 +128,14 @@ void    vty_display_banner(vty_t* vty)
     }
 }
 
-void    vty_write(vty_t* vty, const char* format, ...)
+bool    vty_write(vty_t* vty, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
     char buf[BUFSIZE+1] = {0};
     int len = vsnprintf(buf, BUFSIZE, format, args);
 
-    vty->write_cb(vty, buf, len);
+    return vty->write_cb(vty, buf, len);
 }
 
 void    vty_error(vty_t* vty, const char* format, ...)
@@ -373,12 +379,14 @@ char*   vty_read(vty_t* vty)
     return vty->buffer;
 }
 
-void    vty_flush(vty_t* vty)
+bool    vty_flush(vty_t* vty)
 {
     if(NULL != vty->flush_cb)
     {
-        vty->flush_cb(vty);
+        return vty->flush_cb(vty);
     }
+
+    return true;
 }
 
 void    vty_set_error(vty_t* vty, bool is_error)
@@ -724,4 +732,8 @@ int     vty_convert_multiline(vty_t* vty, char* buffer, char** output)
     return strlen(*output);
 }
 
+void    vty_set_in_use(vty_t* vty, bool in_use)
+{
+    vty->in_use = in_use;
+}
 

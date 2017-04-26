@@ -17,18 +17,18 @@ hash_table_t*   scene_table;
 
 USING_LOGGER(Scene)
 
-void    scene_manager_on_vdev_event(event_t* event);
-void    scene_manager_on_sensor_event(event_t* event);
-void    scene_manager_on_scene_activation_event(event_t* event);
+void    scene_manager_on_vdev_event(event_t* event, void* context);
+void    scene_manager_on_sensor_event(event_t* event, void* context);
+void    scene_manager_on_scene_activation_event(event_t* event, void* context);
 
 void scene_manager_init()
 {
     LOG_ADVANCED(Scene, "Initializing scene manager");
     //scene_list = stack_create();
     scene_table = variant_hash_init();
-    event_register_handler(Scene, VDEV_DATA_CHANGE_EVENT, scene_manager_on_vdev_event);
-    event_register_handler(Scene, SENSOR_DATA_CHANGE_EVENT, scene_manager_on_sensor_event);
-    event_register_handler(Scene, SCENE_ACTIVATION_EVENT, scene_manager_on_scene_activation_event);
+    event_register_handler(Scene, VDEV_DATA_CHANGE_EVENT, scene_manager_on_vdev_event, NULL);
+    event_register_handler(Scene, SENSOR_DATA_CHANGE_EVENT, scene_manager_on_sensor_event, NULL);
+    event_register_handler(Scene, SCENE_ACTIVATION_EVENT, scene_manager_on_scene_activation_event, NULL);
 }
 
 void scene_manager_add_scene(const char* name)
@@ -81,7 +81,7 @@ for(int i = 0; i < scene_list->count; i++)              \
     if(strcmp(_scene->name, _scene_name) == 0)               
 
 
-void    scene_manager_on_vdev_event(event_t* event)
+void    scene_manager_on_vdev_event(event_t* event, void* context)
 {
     vdev_event_data_t* event_data = (vdev_event_data_t*)variant_get_ptr(event->data);
     vdev_t* vdev = vdev_manager_get_vdev_by_id(event_data->vdev_id);
@@ -118,7 +118,7 @@ void    scene_manager_on_vdev_event(event_t* event)
     }
 }
 
-void    scene_manager_on_sensor_event(event_t* event)
+void    scene_manager_on_sensor_event(event_t* event, void* context)
 {
     const char* scene_source = NULL;
     sensor_event_data_t* event_data = (sensor_event_data_t*)variant_get_ptr(event->data);
@@ -156,7 +156,7 @@ void    scene_manager_on_sensor_event(event_t* event)
     }
 }
 
-void    scene_manager_on_scene_activation_event(event_t* event)
+void    scene_manager_on_scene_activation_event(event_t* event, void* context)
 {
     const char* scene_name = variant_get_string(event->data);
     service_t* calling_service = service_manager_get_class_by_id(event->source_id);

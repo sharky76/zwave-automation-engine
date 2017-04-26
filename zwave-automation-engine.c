@@ -329,7 +329,7 @@ int main (int argc, char *argv[])
                 new_opts.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOKE | ICRNL | ECHOCTL);
                 tcsetattr(STDIN_FILENO, TCSANOW, &new_opts);
 
-                vty_data_t* vty_data = calloc(1, sizeof(vty_data_t));
+                vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
                 vty_data->desc.io_pair[0] = stdin;
                 vty_data->desc.io_pair[1] = stdout;
                 vty_std = vty_io_create(VTY_STD, vty_data);
@@ -416,7 +416,7 @@ int main (int argc, char *argv[])
                 {
                     session_sock = accept(cli_sock, NULL, NULL);
                         
-                    vty_data_t* vty_data = calloc(1, sizeof(vty_data_t));
+                    vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
                     vty_data->desc.socket = session_sock;
                     vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
                     
@@ -439,7 +439,7 @@ int main (int argc, char *argv[])
                 if(FD_ISSET(http_socket, &fds))
                 {
                     session_sock = accept(http_socket, NULL, NULL);
-                    vty_data_t* vty_data = malloc(sizeof(vty_data_t));
+                    vty_io_data_t* vty_data = malloc(sizeof(vty_io_data_t));
                     vty_data->desc.socket = session_sock;
 
                     vty_sock = vty_io_create(VTY_HTTP, vty_data);
@@ -457,6 +457,11 @@ int main (int argc, char *argv[])
 
                             if(NULL != str)
                             {
+                                // HTTP request can take indefinite time (server-side events)
+                                // so it is better to handle each request asynchronously.
+                                // For SSE socket should not be closed therefore more return codes
+                                // should be present for cli_command_exec methods to indicate
+                                // whether command is completed or not
                                 cli_command_exec_custom_node(rest_root_node, vty_ptr, str);
                             }
 

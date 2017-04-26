@@ -9,6 +9,7 @@
 #include <ZPlatform.h>
 #include "command_class.h"
 #include "event_log.h"
+#include "event.h"
 
 extern ZWay zway;
 cli_node_t*     rest_node;
@@ -23,10 +24,15 @@ bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_list(vty_t* vty, variant_stack_t* params);
+bool    cmd_get_multisensor_command_class_data(vty_t* vty, variant_stack_t* params);
 
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 
+
 bool    cmd_get_events(vty_t* vty, variant_stack_t* params);
+bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params);
+
+void    sse_event_handler(event_t* event, void* context);
 
 cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices",  cmd_get_sensors,  "Get list of sensors"},
@@ -35,21 +41,30 @@ cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices INT instances INT",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
     {"GET rest v1 devices INT instances INT command-classes",  cmd_get_sensor_command_classes,  "Get sensor command classes info"},
     {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
+    {"GET rest v1 devices INT instances INT command-classes INT data WORD",  cmd_get_multisensor_command_class_data,  "Get sensor in a multi sensor command classes data"},
+
     {"GET rest v1 command-classes",  cmd_get_sensor_command_class_list,  "Get list of supported command classes"},
     {"GET rest v1 command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
-    {"GET rest v1 devices INT instances INT command-classes INT",  cmd_get_sensor_command_class_data,  "Get sensor command classes data"},
     {"GET rest v1 devices INT INT INT",  cmd_get_sensor_command_class_data_short,  "Get sensor command classes data"},
 
     {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
 
     {"GET rest v1 events INT", cmd_get_events,  "Get event log entries"},
+    {"GET rest v1 sse", cmd_subscribe_sse,  "Subscribe to Server side event bus"},
+
     {NULL,                     NULL,                            NULL}
 };
 
+static int CLI_REST_ID;
+static variant_stack_t*    sse_event_listener_list;
+
 void    cli_rest_init(cli_node_t* parent_node)
 {
+    CLI_REST_ID = variant_get_next_user_type();
+    sse_event_listener_list = stack_create();
     rest_cli_commands = stack_create();
     cli_install_custom_node(rest_cli_commands, &rest_root_node, NULL, rest_root_list, "", "config");
+    event_register_handler(CLI_REST_ID, EVENT_LOG_ADDED_EVENT, sse_event_handler, (void*)sse_event_listener_list);
 }
 
 //============================================================================================================================
@@ -393,7 +408,7 @@ bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
     return 0;
 }
 
-bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instance_id, ZWBYTE command_id)
+bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instance_id, ZWBYTE command_id, const char* path)
 {
     json_object* json_resp = json_object_new_object();
     const char* resolver_name = resolver_name_from_id(node_id, instance_id, command_id);
@@ -402,7 +417,7 @@ bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instanc
         json_object_object_add(json_resp, "name", json_object_new_string(resolver_name));
     
         zdata_acquire_lock(ZDataRoot(zway));
-        ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, command_id, ".");
+        ZDataHolder dh = zway_find_device_instance_cc_data(zway, node_id, instance_id, command_id, path);
         
         if(NULL == dh)
         {
@@ -437,7 +452,22 @@ bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
     ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
 
-    return get_sensor_command_class_data(vty, node_id,instance_id,command_id);
+    return get_sensor_command_class_data(vty, node_id,instance_id,command_id, ".");
+}
+
+bool    cmd_get_multisensor_command_class_data(vty_t* vty, variant_stack_t* params)
+{
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+
+    char* data_string;
+    variant_t* data_variant = stack_peek_at(params, 10);
+    variant_to_string(data_variant, &data_string);
+
+    bool retVal = get_sensor_command_class_data(vty, node_id,instance_id,command_id, data_string);
+    free(data_string);
+    return retVal;
 }
 
 bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* params)
@@ -446,7 +476,7 @@ bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* par
     ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
     ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
 
-    return get_sensor_command_class_data(vty, node_id,instance_id,command_id);
+    return get_sensor_command_class_data(vty, node_id,instance_id,command_id, ".");
 }
 
 /*
@@ -618,4 +648,74 @@ bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
 
     return 0;
 }
+
+/*
+    This event handler is called when new event log entry is added
+*/
+void    sse_event_handler(event_t* event, void* context)
+{
+    variant_stack_t* event_listeners = (variant_stack_t*)context;
+
+    stack_for_each(event_listeners, vty_variant)
+    {
+        vty_t* vty = VARIANT_GET_PTR(vty_t, vty_variant);
+        event_log_entry_t* e = VARIANT_GET_PTR(event_log_entry_t, event->data);
+        
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
+
+        // Add data...
+        vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":\"%s\"}\n\n", 
+                  e->event_id, 
+                  EVENT_LOG_ADDED_EVENT, 
+                  (e->device_type == ZWAVE)? "ZWAVE" : "VDEV",
+                  e->node_id,
+                  e->instance_id,
+                  e->command_id,
+                  e->event_data);
+
+        // Send data
+        if(!vty_flush(vty))
+        {
+            stack_remove(event_listeners, vty_variant);
+            vty_set_in_use(vty, false);
+            vty_free(vty);
+        }
+    }
+}
+
+bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
+{
+    http_set_content_type((http_vty_priv_t*)vty->priv, "text/event-stream");
+    http_set_cache_control((http_vty_priv_t*)vty->priv, false, 0);
+    http_set_header((http_vty_priv_t*)vty->priv, "Connection", "keep-alive");
+
+    char* accept_type;
+    if(http_request_find_header_value((http_vty_priv_t*)vty->priv, "Accept", &accept_type))
+    {
+        if(strstr(accept_type, "text/event-stream") != NULL)
+        {
+            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+
+            char* last_event_id;
+            if(http_request_find_header_value((http_vty_priv_t*)vty->priv, "last-event-id", &last_event_id))
+            {
+                // Send all pending events from last-event-id till latest event
+        
+                free(last_event_id);
+            }
+            else
+            {
+                // Send response with empty ID - this will reset
+                // client id counter too.
+                //vty_write(vty, "\n");
+                vty_flush(vty);
+            }
+
+            vty_set_in_use(vty, true); // Mark this VTY as "in use" so it will not be deleted
+            stack_push_back(sse_event_listener_list, variant_create_ptr(DT_PTR, vty, variant_delete_none));
+        }
+    }
+    return true;
+}
+
 

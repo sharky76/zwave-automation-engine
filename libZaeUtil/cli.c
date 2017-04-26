@@ -84,6 +84,7 @@ void    cmd_tree_node_delete(void* arg)
     free(node);
 }
 
+/*
 variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size)
 {
     variant_stack_t* cmd_vec = stack_create();
@@ -132,7 +133,7 @@ variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size)
 
     return cmd_vec;
 }
-
+*/
 variant_stack_t*    create_cmd_vec(const char* cmdline)
 {
     variant_stack_t* cmd_vec = stack_create();
@@ -146,9 +147,15 @@ variant_stack_t*    create_cmd_vec(const char* cmdline)
         return cmd_vec;
     }
 
+    bool in_quotes = false;
+
     while(ch = cmdline[index++])
     {
-        if(ch == ' ')
+        if(ch == '\"')
+        {
+            in_quotes = !in_quotes;
+        }
+        else if(ch == ' ' && !in_quotes)
         {
             if(cmd_index > 0)
             {

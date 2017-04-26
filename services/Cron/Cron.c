@@ -8,7 +8,7 @@
 int DT_CRON;
 
 static int timer_tick_counter = 0;
-void  timer_tick_event(event_t* pevent);
+void  timer_tick_event(event_t* pevent, void* context);
 
 void  service_create(service_t** service, int service_id)
 {
@@ -18,7 +18,7 @@ void  service_create(service_t** service, int service_id)
 
     (*service)->get_config_callback = cron_cli_get_config;
     //SERVICE_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_event);
-    event_register_handler(DT_CRON, TIMER_TICK_EVENT, timer_tick_event);
+    event_register_handler(DT_CRON, TIMER_TICK_EVENT, timer_tick_event, NULL);
 
     // Test
     /*
@@ -161,7 +161,7 @@ void    service_cli_create(cli_node_t* parent_node)
  * @param name 
  * @param pevent 
  */
-void  timer_tick_event(event_t* pevent)
+void  timer_tick_event(event_t* pevent, void* context)
 {
     //service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
 

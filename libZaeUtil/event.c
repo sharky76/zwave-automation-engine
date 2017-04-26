@@ -89,7 +89,7 @@ event_t*    event_receive()
     return event;
 }
 
-void        event_register_handler(int handler_id, const char* event_name, void (*event_handler)(event_t*))
+void        event_register_handler(int handler_id, const char* event_name, void (*event_handler)(event_t*, void*), void* context)
 {
     /*if(!variant_hash_get(registered_handlers, handler_id))
     {
@@ -105,6 +105,7 @@ void        event_register_handler(int handler_id, const char* event_name, void 
     handler->id = handler_id;
     handler->event_name = strdup(event_name);
     handler->event_handler = event_handler;
+    handler->context = context;
 
     if(!stack_is_exists(registered_handlers, &event_handler_match, handler))
     {
@@ -114,6 +115,20 @@ void        event_register_handler(int handler_id, const char* event_name, void 
     {
         //printf("Handler id %d for event %s already registered\n", handler_id, name);
         LOG_ERROR(Event, "Handler id %d for event %s already registered", handler_id, event_name);
+    }
+}
+
+void event_unregister_handler(int handler_id, const char* event_name)
+{
+    stack_for_each(registered_handlers, handler_var)
+    {
+        event_handler_t* event_handler = VARIANT_GET_PTR(event_handler_t, handler_var);
+        if(event_handler->id == handler_id && strcmp(event_handler->event_name, event_name) == 0)
+        {
+            stack_remove(registered_handlers, handler_var);
+            variant_free(handler_var);
+            break;
+        }
     }
 }
 
@@ -132,10 +147,10 @@ void* event_handle_event(void* arg)
             {
                 //printf("Found registered event type with id %d and callback %p\n", event_handler->id, event_handler->event_handler);
                 LOG_DEBUG(Event, "Found registered event type with id %d", event_handler->id);
-                void (*event_handler_cb)(event_t*);
+                void (*event_handler_cb)(event_t*,void*);
     
                 event_handler_cb = event_handler->event_handler;
-                event_handler_cb(event);
+                event_handler_cb(event, event_handler->context);
             }
         }
         event_delete(event);

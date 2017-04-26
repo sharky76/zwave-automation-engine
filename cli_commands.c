@@ -139,7 +139,7 @@ void    cli_load_config()
     char config_loc[512] = {0};
     snprintf(config_loc, 511, "%s/startup-config", global_config.config_location);
 
-    vty_data_t* file_data = calloc(1, sizeof(vty_data_t));
+    vty_io_data_t* file_data = calloc(1, sizeof(vty_io_data_t));
     file_data->desc.file = fopen(config_loc, "r");
 
     if(NULL != file_data->desc.file)
@@ -306,6 +306,7 @@ char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, var
     return cmd_matches;
 }
 
+/*
 char*   command_generator(const char* text, int state)
 {
     static int completer_cmd_index;
@@ -358,13 +359,12 @@ char**   cli_command_completer(const char* text, int start, int stop)
     {
       rl_point = rl_end;
 //      if (complete_status != CMD_COMPLETE_FULL_MATCH)
-        /* only append a space on full match */
 //        rl_completion_append_character = '\0';
     }
 
     return matches;
 }
-
+*/
 char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
 {
     static char** matched;
@@ -959,7 +959,7 @@ bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params)
     // First rename current startup config to backup
     rename(config_loc, backup_loc);
 
-    vty_data_t* file_vty_data = malloc(sizeof(vty_data_t));
+    vty_io_data_t* file_vty_data = malloc(sizeof(vty_io_data_t));
     file_vty_data->desc.file = fopen(config_loc, "w");
 
     vty_t* file_vty = vty_io_create(VTY_FILE, file_vty_data);
@@ -978,7 +978,7 @@ bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params)
     char config_loc[512] = {0};
     snprintf(config_loc, 511, "%s/%s", global_config.config_location, dest_filename);
 
-    vty_data_t file_vty_data = {
+    vty_io_data_t file_vty_data = {
         .desc.file = fopen(config_loc, "w")
     };
 

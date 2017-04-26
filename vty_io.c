@@ -10,9 +10,9 @@
 #include "socket_io.h"
 #include <arpa/telnet.h>
 
-void    file_write_cb(vty_t* vty, const char* buf, size_t len);
+bool    file_write_cb(vty_t* vty, const char* buf, size_t len);
 int     file_read_cb(vty_t* vty, char** str);
-void    std_write_cb(vty_t* vty, const char* buf, size_t len);
+bool    std_write_cb(vty_t* vty, const char* buf, size_t len);
 int     std_read_cb(vty_t* vty, char** str);
 void    std_erase_cb(vty_t* vty);
 void    std_erase_line_cb(vty_t* vty);
@@ -20,11 +20,11 @@ void    std_cursor_left_cb(vty_t* vty);
 void    std_cursor_right_cb(vty_t* vty);
 
 int     http_read_cb(vty_t* vty, char** str);
-void    http_write_cb(vty_t* vty, const char* buf, size_t len);
-void    http_flush_cb(vty_t* vty);
+bool    http_write_cb(vty_t* vty, const char* buf, size_t len);
+bool    http_flush_cb(vty_t* vty);
 void    http_free_priv_cb(vty_t* vty);
 
-vty_t*  vty_io_create(vty_type type, vty_data_t* data)
+vty_t*  vty_io_create(vty_type type, vty_io_data_t* data)
 {
     vty_t* new_vty = vty_create(type, data);
     vty_io_config(new_vty);
@@ -90,9 +90,9 @@ void    vty_io_config(vty_t* vty)
 }
 
 
-void    file_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    file_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    fwrite(buf, len, 1, vty->data->desc.file);
+    return fwrite(buf, len, 1, vty->data->desc.file) == 1;
 }
 
 int   file_read_cb(vty_t* vty, char** str)
@@ -155,10 +155,16 @@ int   file_read_cb(vty_t* vty, char** str)
     }
 }
 
-void    std_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    std_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    write(fileno(vty->data->desc.io_pair[OUT]), buf, len);
-    fflush(vty->data->desc.io_pair[OUT]);
+    bool retVal = false;
+    retVal = write(fileno(vty->data->desc.io_pair[OUT]), buf, len) != -1;
+    if(retVal)
+    {
+        fflush(vty->data->desc.io_pair[OUT]);
+    }
+
+    return retVal;
 }
 
 int   std_read_cb(vty_t* vty, char** str)
@@ -205,7 +211,7 @@ int   http_read_cb(vty_t* vty, char** str)
     }
 }
 
-void    http_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    http_write_cb(vty_t* vty, const char* buf, size_t len)
 {
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
     
@@ -215,26 +221,33 @@ void    http_write_cb(vty_t* vty, const char* buf, size_t len)
     http_priv->response_size += len;
 }
 
-void    http_flush_cb(vty_t* vty)
+bool    http_flush_cb(vty_t* vty)
 {
+    bool retVal = false;
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
     int socket = vty->data->desc.socket;
 
-    if(http_priv->response_size > 0)
+    //if(http_priv->response_size > 0)
     {
-        http_server_write_response(socket, http_priv);
+        retVal = http_server_write_response(socket, http_priv);
     
-        *http_priv->response = 0;
-        http_priv->response_size = 0;
+        if(http_priv->response_size > 0)
+        {
+            *http_priv->response = 0;
+            http_priv->response_size = 0;
+        }
     }
     vty->buf_size = 0;
     *vty->buffer = 0;
+
+    return retVal;
 }
 
 void    http_free_priv_cb(vty_t* vty)
 {
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
 
+    free(http_priv->request);
     free(http_priv->response);
     free(http_priv->content_type);
     free(http_priv->post_data);

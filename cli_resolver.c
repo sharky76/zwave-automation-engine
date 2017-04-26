@@ -91,15 +91,22 @@ void    show_resolver_helper(device_record_t* record, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
 
+    bool device_name_has_space = strchr(record->deviceName, ' ') != NULL;
+
+
     if(record->devtype == ZWAVE)
     {
         if(record->instanceId != 255)
         {
-            vty_write(vty, "resolver %s node-id %d instance %d command-class %d%s", record->deviceName, record->nodeId, record->instanceId, record->commandId, VTY_NEWLINE(vty));
+            vty_write(vty, "resolver %s%s%s node-id %d instance %d command-class %d%s", (device_name_has_space)? "\"" : "", 
+                                                                                        record->deviceName, 
+                                                                                        (device_name_has_space)? "\"" : "",
+                                                                                        record->nodeId, 
+                                                                                        record->instanceId, record->commandId, VTY_NEWLINE(vty));
         }
         else
         {
-            vty_write(vty, "resolver %s node-id %d%s", record->deviceName, record->nodeId, VTY_NEWLINE(vty));
+            vty_write(vty, "resolver %s%s%s node-id %d%s", (device_name_has_space)? "\"" : "", record->deviceName, (device_name_has_space)? "\"" : "", record->nodeId, VTY_NEWLINE(vty));
         }
     }
     else

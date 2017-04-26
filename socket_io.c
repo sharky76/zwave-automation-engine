@@ -21,11 +21,11 @@ DECLARE_LOGGER(SocketIO)
 #define KEY_NEWLINE     0xa
 #define KEY_RETURN      0xd
 
-void    socket_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    socket_write_cb(vty_t* vty, const char* buf, size_t len)
 {
     //printf("Sending: %s\n", buf);
     //fflush(stdin);
-    send(vty->data->desc.socket, buf, len, 0);
+    return send(vty->data->desc.socket, buf, len, 0) != -1;
 }
 
 int     socket_read_cb(vty_t* vty, char** str)
@@ -38,10 +38,11 @@ int     socket_read_cb(vty_t* vty, char** str)
 
 }
 
-void    socket_flush_cb(vty_t* vty)
+bool    socket_flush_cb(vty_t* vty)
 {
     memset(vty->buffer, 0, vty->buf_size);
     vty->buf_size = 0;
+    return true;
 }
 
 void    socket_erase_cb(vty_t* vty)

@@ -5,9 +5,11 @@
 
 typedef struct event_log_entry_t
 {
+    int event_id; // autoincrement
     int node_id;
     int instance_id;
     int command_id;
+    int device_type;
     char* event_data; 
     time_t   timestamp;
 } event_log_entry_t;

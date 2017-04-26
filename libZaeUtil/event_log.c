@@ -5,6 +5,8 @@
 #include "logger.h"
 #include "event.h"
 
+static uint32_t monotonic_event_id;
+
 typedef struct event_log_handle_t
 {
     variant_stack_t* event_log_list;
@@ -51,6 +53,7 @@ void    event_log_add_event(event_log_entry_t* event_entry)
         variant_free(e);
     }
 
+    event_entry->event_id = monotonic_event_id++;
     event_entry->timestamp = time(NULL);
     stack_push_front(event_log_handle.event_log_list, variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &delete_event_log_entry));
 

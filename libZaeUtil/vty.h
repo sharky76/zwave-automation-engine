@@ -17,14 +17,14 @@ typedef enum vty_type_e
 
 typedef FILE* iopair[2];
 
-typedef struct vty_data_t
+typedef struct vty_io_data_t
 {
     union {
         int     socket;
         FILE*   file;
         iopair  io_pair;
     } desc;
-} vty_data_t;
+} vty_io_data_t;
 
 typedef struct cli_node_t cli_node_t;
 
@@ -34,16 +34,16 @@ typedef struct cli_node_t cli_node_t;
 typedef struct vty_t
 {
     vty_type type;
-    void    (*write_cb)(struct vty_t*, const char*, size_t size);
+    bool    (*write_cb)(struct vty_t*, const char*, size_t size);
     int     (*read_cb)(struct vty_t*, char** str);
-    void    (*flush_cb)(struct vty_t*);
+    bool    (*flush_cb)(struct vty_t*);
     void    (*erase_char_cb)(struct vty_t*); // erase last char
     void    (*erase_line_cb)(struct vty_t*);
     void    (*show_history_cb)(struct vty_t*);
     void    (*cursor_left_cb)(struct vty_t*);
     void    (*cursor_right_cb)(struct vty_t*);
     void    (*free_priv_cb)(struct vty_t*);
-    vty_data_t* data;
+    vty_io_data_t* data;
     char*   prompt;
     bool    echo;
     bool    multi_line;
@@ -65,13 +65,14 @@ typedef struct vty_t
     bool    command_received;
     bool    shutdown;
     bool    is_authenticated;
+    bool    in_use;
     void*   priv;
 } vty_t;
 
 #define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET) ? "\r\n" : "\n")
 
 void    vty_signal_init();
-vty_t*  vty_create(vty_type type, vty_data_t* data);
+vty_t*  vty_create(vty_type type, vty_io_data_t* data);
 void    vty_set_echo(vty_t* vty, bool is_echo);
 void    vty_set_multiline(vty_t* vty, bool is_multiline, char stop_char);
 void    vty_set_banner(vty_t* vty, char* banner);
@@ -79,10 +80,10 @@ void    vty_display_banner(vty_t* vty);
 void    vty_free(vty_t* vty);
 void    vty_set_prompt(vty_t* vty, const char* format, ...);
 void    vty_display_prompt(vty_t* vty);
-void    vty_write(vty_t* vty, const char* format, ...);
+bool    vty_write(vty_t* vty, const char* format, ...);
 char*   vty_read(vty_t* vty);
 void    vty_error(vty_t* vty, const char* format, ...);
-void    vty_flush(vty_t* vty);
+bool    vty_flush(vty_t* vty);
 void    vty_set_error(vty_t* vty, bool is_error);
 bool    vty_is_error(vty_t* vty);
 void    vty_add_history(vty_t* vty);
@@ -106,5 +107,5 @@ void    vty_set_authenticated(vty_t* vty, bool is_authenticated);
 bool    vty_is_authenticated(vty_t* vty);
 void    vty_write_multiline(vty_t* vty, char* buffer);
 int     vty_convert_multiline(vty_t* vty, char* buffer, char** output);
-
+void    vty_set_in_use(vty_t* vty, bool in_use);
 

@@ -16,7 +16,6 @@
 #include "picohttpparser.h"
 
 #define VERSION 23
-#define BUFSIZE 8096
 #define ERROR      42
 #define LOG        44
 #define FORBIDDEN 403
@@ -84,17 +83,16 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
     int j, file_fd;
 	long i, ret, len;
 	char * fstr;
-	static char buffer[BUFSIZE+1]; /* static so zero filled */
 
-	const char *method, *path;
+    http_priv->request = calloc(1, sizeof(http_request_t));
+
     int pret, minor_version;
-    struct phr_header headers[100];
-    size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
+    size_t buflen = 0, prevbuflen = 0;
     ssize_t rret;
 
     while(1) {
         /* read */
-        rret = recv(client_socket, buffer + buflen, sizeof(buffer) - buflen, MSG_WAITALL);
+        rret = recv(client_socket, http_priv->request->buffer + buflen, sizeof(http_priv->request->buffer) - buflen, MSG_WAITALL);
         if (rret <= 0)
         {
             http_server_error_response(FORBIDDEN, client_socket);
@@ -106,9 +104,9 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         buflen += rret;
 
         /* parse the request */
-        num_headers = sizeof(headers) / sizeof(headers[0]);
-        pret = phr_parse_request(buffer, buflen, &method, &method_len, &path, &path_len,
-                                 &minor_version, headers, &num_headers, prevbuflen);
+        http_priv->request->num_headers = sizeof(http_priv->request->headers) / sizeof(http_priv->request->headers[0]);
+        pret = phr_parse_request(http_priv->request->buffer, buflen, &http_priv->request->method, &http_priv->request->method_len, &http_priv->request->path, &http_priv->request->path_len,
+                                 &minor_version, http_priv->request->headers, &http_priv->request->num_headers, prevbuflen);
         if (pret > 0)
         {
                 break; /* successfully parsed the request */
@@ -120,9 +118,9 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         }
     };
 
-    LOG_DEBUG(HTTPServer, "Request %s", buffer);
+    LOG_DEBUG(HTTPServer, "Request %s", http_priv->request->buffer);
 
-    if(strncmp(method, "OPTIONS", method_len) == 0)
+    if(strncmp(http_priv->request->method, "OPTIONS", http_priv->request->method_len) == 0)
     {
         http_set_response(http_priv, HTTP_RESP_OK);
         http_set_content_type(http_priv, "application/json");
@@ -131,24 +129,24 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         return NULL;
     }
 
-    int content_len_index = header_find_value("Content-Length", headers, num_headers);
+    // Handle POST request
     char* content = NULL;
-    if(-1 != content_len_index)
+    char* content_len_buf;
+    if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
     {
-        char content_len_buf[10] = {0};
-        strncpy(content_len_buf, headers[content_len_index].value, headers[content_len_index].value_len);
         int content_len = atoi(content_len_buf);
 
         if(content_len > 0)
         {
             content = malloc(content_len);
-            strncpy(content, request_get_data(buffer), content_len);
+            strncpy(content, request_get_data(http_priv->request->buffer), content_len);
             http_priv->post_data = content;
             http_priv->post_data_size = content_len;
         }
+        free(content_len_buf);
     }
 
-    if(user_manager_get_count() > 0)
+    /*if(user_manager_get_count() > 0)
     {
         char* auth_start = strstr(buffer, "Authorization: Basic");
         if(NULL == auth_start)
@@ -178,19 +176,19 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
                 LOG_INFO(HTTPServer, "Authentication success for %s\n", user_tok);
             }
         }
-    }
+    }*/
 
     // Browsers really like to get favicon.ico - tell them to fuck off
-    if(strstr(method, "favicon.ico") != 0)
+    if(strstr(http_priv->request->method, "favicon.ico") != 0)
     {
         http_server_error_response(NOTFOUND, client_socket);
         return NULL;
     }
 
-    char* request_body = calloc(method_len + path_len + 2, sizeof(char));
-    strncat(request_body, method, method_len);
+    char* request_body = calloc(http_priv->request->method_len + http_priv->request->path_len + 2, sizeof(char));
+    strncat(request_body, http_priv->request->method, http_priv->request->method_len);
     strncat(request_body, " ", 1);
-    strncat(request_body, path, path_len);
+    strncat(request_body, http_priv->request->path, http_priv->request->path_len);
 
     char* request_command = request_create_command(request_body);
     free(request_body);
@@ -198,20 +196,40 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
     return request_command;
 }
 
-void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
+bool  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
 {
-    static char buffer[BUFSIZE+1];
+    char buffer[HTTP_REQUEST_BUFSIZE+1] = {0};
     //LOG_DEBUG(HTTPServer, "Sending %d bytes: %s", http_priv->response_size, http_priv->response);
 
-    http_set_header(http_priv, "Access-Control-Allow-Origin", "*");
-    http_set_header(http_priv, "Access-Control-Allow-Methods", "GET,POST,PUT");
     switch(http_priv->resp_code)
     {
     case HTTP_RESP_OK:
-        sprintf(buffer, "HTTP/1.1 200 OK\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\n%sContent-Type: %s\n", 
-                http_priv->response_size, 
-                (http_priv->headers_size == 0)? "" : http_priv->headers, http_priv->content_type); /* Header + a blank line */
-        sprintf(buffer + strlen(buffer), "Cache-Control: %s, max-age=%d", (http_priv->can_cache)? "public" : "no-cache", http_priv->cache_age);
+        http_set_header(http_priv, "Access-Control-Allow-Origin", "*");
+        http_set_header(http_priv, "Access-Control-Allow-Methods", "GET,POST,PUT");
+        sprintf(buffer, "HTTP/1.1 200 OK\nServer: zae/0.1\n%s", 
+                (http_priv->headers_size == 0)? "" : http_priv->headers); /* Header + a blank line */
+
+        if(http_priv->can_cache)
+        {
+            sprintf(buffer + strlen(buffer), "Cache-Control: public, max-age=%d\n", http_priv->cache_age);
+        }
+        else
+        {
+            sprintf(buffer + strlen(buffer), "Cache-Control: no-cache\n");
+        }
+
+        if(NULL != http_priv->content_type)
+        {
+            sprintf(buffer + strlen(buffer), "Content-Type: %s\n", http_priv->content_type);
+        }
+
+        if(http_priv->response_size > 0)
+        {
+            sprintf(buffer + strlen(buffer), "Content-Length: %ld\n", http_priv->response_size);
+        }
+
+        sprintf(buffer + strlen(buffer), "\n");
+
         break;
     case HTTP_RESP_USER_ERR:
         sprintf(buffer, "HTTP/1.1 400 BAD REQUEST\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
@@ -219,20 +237,29 @@ void  http_server_write_response(int client_socket, http_vty_priv_t* http_priv)
     case HTTP_RESP_SERVER_ERR:
         sprintf(buffer, "HTTP/1.1 500 SERVER ERROR\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
         break;
+    case HTTP_RESP_NONE:
+        break;
     default:
         sprintf(buffer, "HTTP/1.1 400 BAD REQUEST\nServer: zae/0.1\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n", http_priv->response_size, http_priv->content_type); /* Header + a blank line */
         break;
     }
 
 
+    bool retVal = false;
     LOG_DEBUG(HTTPServer, "Response %s\n\n%s", buffer, http_priv->response);
-    write(client_socket, buffer, strlen(buffer));
+    retVal = write(client_socket, buffer, strlen(buffer)) != -1;
 
-    if(http_priv->response_size > 0)
+    if(retVal && http_priv->response_size > 0)
     {
-        write(client_socket, "\n\n", 2);
-        write(client_socket, http_priv->response, http_priv->response_size);
+        //retVal = write(client_socket, "\n\n", 2) != -1;
+
+        //if(retVal)
+        {
+            retVal = write(client_socket, http_priv->response, http_priv->response_size) != -1;
+        }
     }
+
+    return retVal;
 }
 
 void  http_set_response(http_vty_priv_t* http_priv, int http_resp)
@@ -242,7 +269,16 @@ void  http_set_response(http_vty_priv_t* http_priv, int http_resp)
 
 void  http_set_content_type(http_vty_priv_t* http_priv, const char* content_type)
 {
-    http_priv->content_type = strdup(content_type);
+    if(NULL != http_priv->content_type)
+    {
+        free(http_priv->content_type);
+        http_priv->content_type = NULL;
+    }
+
+    if(NULL != content_type)
+    {
+        http_priv->content_type = strdup(content_type);
+    }
 }
 
 void  http_set_cache_control(http_vty_priv_t* http_priv, bool is_set, int max_age)
@@ -312,16 +348,35 @@ char*       request_get_data(const char* request)
     return start_data + 4;
 }
 
-int       header_find_value(const char* name, struct phr_header* headers, int header_size)
+int   http_request_find_header_value_index(http_vty_priv_t* http_priv, const char* name)
 {
-    for (int i = 0; i < header_size; i++)
+    for (int i = 0; i < http_priv->request->num_headers; i++)
     {
-        if(strncmp(headers[i].name, name, headers[i].name_len) == 0)
+        if(strncmp(http_priv->request->headers[i].name, name, http_priv->request->headers[i].name_len) == 0)
         {
             return i;
         }
     }
 
     return -1;
+}
+
+bool http_request_find_header_value_by_index(http_vty_priv_t* http_priv, int index, char** value)
+{
+    if(index >= 0)
+    {
+        *value = calloc(http_priv->request->headers[index].value_len+1, sizeof(char));
+        strncpy(*value, http_priv->request->headers[index].value, http_priv->request->headers[index].value_len);
+        return true;
+    }
+
+    return false;
+}
+
+bool  http_request_find_header_value(http_vty_priv_t* http_priv, const char* name, char** value)
+{
+    return http_request_find_header_value_by_index(http_priv,
+                                                   http_request_find_header_value_index(http_priv, name),
+                                                   value);
 }
 

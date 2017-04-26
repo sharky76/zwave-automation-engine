@@ -11,6 +11,7 @@
 #include "hash.h"
 #include "crc32.h"
 #include "command_class.h"
+#include "event_log.h"
 
 extern ZWay zway;
 extern hash_table_t*   data_holder_event_table;
@@ -138,10 +139,16 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
         {
             LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
             event_data->last_update_time = time_msec;
-            // Record event in history...
-            // ...
             event_t* event = event_create(DataCallback, SENSOR_DATA_CHANGE_EVENT, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, variant_delete_none));
             event_post(event);
+
+            event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
+            new_entry->node_id = event_data->node_id;
+            new_entry->instance_id = event_data->instance_id;
+            new_entry->command_id = event_data->command_id;
+            new_entry->device_type = ZWAVE;
+            new_entry->event_data = strdup(zdata_get_name(data));
+            event_log_add_event(new_entry);
         }
     }
 }

@@ -31,10 +31,8 @@ variant_t*  get_event_snapshot(va_list args);
 variant_t*  get_event_snapshot_range(va_list args);
 variant_t*  get_camera_snapshot(va_list args);
 
-void    ss_event_handler(event_t* event);
-
 void        device_start(); 
-void        timer_tick_handler(event_t* pevent);
+void        timer_tick_handler(event_t* pevent, void* context);
 
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
@@ -51,7 +49,7 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
     
     DT_SURVEILLANCE_STATION = vdev_id;
-    event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler);
+    event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler, NULL);
 
 
     SS_user = NULL;
@@ -297,7 +295,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     ev->old_event_count = ev->event_count;
 }
 
-void        timer_tick_handler(event_t* pevent)
+void        timer_tick_handler(event_t* pevent, void* context)
 {
     service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
 
