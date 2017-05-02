@@ -8,6 +8,8 @@
 extern ZWay zway;
 extern hash_table_t*   data_holder_event_table;
 
+#define COMMAND_DATA_READY_EVENT    "CommandDataReady"
+
 USING_LOGGER(DataCallback)
 
 variant_t*   command_class_eval_basic(const char* method, device_record_t* record, va_list args);
@@ -50,6 +52,10 @@ void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void*
     LOG_DEBUG(DataCallback, "Data read success for device %s with function 0x%x",
               ctx->record->deviceName,
               functionId);
+
+    event_t* event = event_create(DataCallback, COMMAND_DATA_READY_EVENT, NULL);
+    event_post(event);
+
     free(ctx);
 }
 
@@ -59,6 +65,10 @@ void         zway_data_read_fail_cb(const ZWay zway, ZWBYTE functionId, void* ar
     LOG_DEBUG(DataCallback, "Data read failure for device %s with function 0x%x",
               ctx->record->deviceName,
               functionId);
+
+    event_t* event = event_create(DataCallback, COMMAND_DATA_READY_EVENT, NULL);
+    event_post(event);
+
     free(ctx);
 }
 
@@ -244,9 +254,15 @@ variant_t*   command_class_eval_alarm(const char* method, device_record_t* recor
     if(strcmp(method, "Get") == 0)
     {
         variant_t* arg1 = va_arg(args, variant_t*);
-        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_alarm_get(zway, record->nodeId, record->instanceId, 0, 0, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);*/
+        zway_cc_alarm_get(zway, record->nodeId, record->instanceId, 0, 0, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
+
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)
@@ -263,17 +279,25 @@ variant_t*   command_class_eval_alarm(const char* method, device_record_t* recor
 variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t* record, va_list args)
 {
     variant_t* ret_val = NULL;
-    variant_t* arg1 = va_arg(args, variant_t*);
 
     if(strcmp(method, "Get") == 0)
     {
-        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);*/
+        zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
+
         ret_val = command_class_read_data(record, "level");
     }
     else if(strcmp(method, "Set") == 0)
     {
+        variant_t* arg1 = va_arg(args, variant_t*);
+
         LOG_ADVANCED(DataCallback, "Setting device %s to %d", record->deviceName, variant_get_bool(arg1));
         ZWError err = zway_cc_switch_binary_set(zway,record->nodeId, record->instanceId, variant_get_bool(arg1), NULL, NULL, NULL);
         ret_val = variant_create_bool(err == NoError);
@@ -294,6 +318,12 @@ variant_t*   command_class_eval_configuration(const char* method, device_record_
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_configuration_get(zway, record->nodeId, record->instanceId, variant_get_int(param), zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
+
         ret_val = command_class_read_data(record, param_str);
         free(param_str);
     }
@@ -318,6 +348,12 @@ variant_t*   command_class_eval_manufacturer_specific(const char* method, device
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_manufacturer_specific_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
+
         ret_val = command_class_read_data(record, NULL);
     }
 
@@ -333,6 +369,11 @@ variant_t*   command_class_eval_wakeup(const char* method, device_record_t* reco
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_wakeup_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
         ret_val = command_class_read_data(record, NULL);
     }
     else if(strcmp(method, "Capabilities") == 0)

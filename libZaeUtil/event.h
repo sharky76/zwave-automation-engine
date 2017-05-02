@@ -6,6 +6,7 @@ Each event triggers a particular scene
 */
 #include "stack.h"
 #include "variant.h"
+#include <stdint.h>
 
 typedef struct event_t
 {
@@ -44,4 +45,5 @@ event_t*    event_create(int source_id, const char* event_name, variant_t* data)
 void        event_delete(event_t* event);
 void        event_post(event_t* event);
 event_t*    event_receive();
+int         event_wait(int source_id, const char* event_name, uint32_t timeout);
 

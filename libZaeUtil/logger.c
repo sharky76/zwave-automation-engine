@@ -136,7 +136,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
 
             if(logger_vty->is_online)
             {
-                vty_write(logger_vty->vty, buf);
+                vty_write(logger_vty->vty, "%s", buf);
             }
         }
     }

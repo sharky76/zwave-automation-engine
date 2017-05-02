@@ -77,7 +77,7 @@ cli_command_t root_command_list[] = {
     {"controller save-config",                                cmd_controller_config_save, "Save controller configuration"},
     {"controller restore-config",                             cmd_controller_config_restore, "Restore controller configuration"},
     //{"controller learn-mode stop",            cmd_controller_set_learn_mode, "Stop learn mode"},
-    {"show controller queue",       cmd_show_controller_queue,   "Display the contents of controller job queue"},
+    {"show controller queue",        cmd_show_controller_queue,   "Display the contents of controller job queue"},
     {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
     {"help",                 cmd_help,                      "(module) Display help for module"},
     {"banner CHAR",          cmd_set_banner,                "Set new banner"},
@@ -178,7 +178,7 @@ void    cli_load_config()
 recursively traverse the command stack and save all matching 
 commands into matches stack. 
 */
-void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, const char* cmd_part_str)
+/*void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, const char* cmd_part_str)
 {
     cmd_tree_node_t* last_node = NULL;
 
@@ -236,9 +236,9 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
     {
         *root = last_node->children;
     }
-}
+}*/
 
-char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, variant_stack_t* matches, int* complete_status)
+/*char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, variant_stack_t* matches, int* complete_status)
 {
     static char** cmd_matches = NULL;
 
@@ -304,7 +304,7 @@ char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, var
     }
 
     return cmd_matches;
-}
+}*/
 
 /*
 char*   command_generator(const char* text, int state)
@@ -365,7 +365,7 @@ char**   cli_command_completer(const char* text, int start, int stop)
     return matches;
 }
 */
-char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
+/*char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
 {
     static char** matched;
     static variant_stack_t* matches = NULL;
@@ -381,7 +381,7 @@ char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
 
     cmd_vec = create_cmd_vec(text);
 
-    if(cmd_vec->count == 0 || /*rl_end &&*/ isspace((int)text[size - 1]))
+    if(cmd_vec->count == 0 || isspace((int)text[size - 1]))
     {
         stack_push_back(cmd_vec, variant_create_string(NULL));
     }
@@ -396,7 +396,7 @@ char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
     }
 
     return NULL;
-}
+}*/
 
 /*CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {
@@ -531,7 +531,7 @@ char**  cli_command_completer_norl(vty_t* vty, const char* text, int size)
     return match_status;
 }*/
 
-CmdMatchStatus cli_get_command(vty_t* vty, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
+/*CmdMatchStatus cli_get_command(vty_t* vty, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec)
 {
     cli_get_custom_command(vty->current_node, cmdline, cmd_node, complete_cmd_vec);
 }
@@ -557,12 +557,12 @@ variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, 
     }
 
     return completions;
-}
+}*/
 
 /*
 Show help for command
 */
-int     cli_command_describe()
+/*int     cli_command_describe()
 {
     cmd_tree_node_t* cmd_node;
 
@@ -581,7 +581,7 @@ int     cli_command_describe()
     {
         rl_possible_completions(0, '\t');
     }
-}
+}*/
 
 int     cli_command_quit(int count, int key)
 {

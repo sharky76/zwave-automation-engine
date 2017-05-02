@@ -479,6 +479,7 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
     stack_for_each((*root), command_tree_node_variant)
     {
         cmd_tree_node_t* node = (cmd_tree_node_t*)variant_get_ptr(command_tree_node_variant);
+
         if(NULL != cmd_part_str)
         {
             if(node->data->type == TYPE_INT)
@@ -507,6 +508,24 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
             else if((node->data->type == TYPE_TERM && *cmd_part_str == 0) || node->data->type == TYPE_WORD || node->data->type == TYPE_LINE || node->data->type == TYPE_CHAR ||
                (node->data->type == TYPE_CMD_PART && strstr(node->data->name, cmd_part_str) == node->data->name))
             {
+                if(strcmp(node->data->name, cmd_part_str) == 0)
+                {
+                    // We have full match - remove all partial matches from stack and return!
+                    while(matches->count > 0)
+                    {
+                        stack_pop_front(matches);
+                    }
+
+                    stack_push_back(matches, command_tree_node_variant);
+
+                    if(node->data->type != TYPE_LINE)
+                    {
+                        last_node = node;
+                    }
+
+                    break;
+                }
+
                 stack_push_back(matches, command_tree_node_variant);
 
                 if(node->data->type != TYPE_LINE)
@@ -684,7 +703,10 @@ CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd
 
                     if(node->data->type == TYPE_CMD_PART && strcmp(node->data->name, cmd_part_str) == 0)
                     {
-                        stack_push_back(*complete_cmd_vec, variant_create_string(strdup(node->data->name)));
+                        if(NULL != complete_cmd_vec)
+                        {
+                            stack_push_back(*complete_cmd_vec, variant_create_string(strdup(node->data->name)));
+                        }
                         
                         // Now lets see if this is the terminal node. Terminal nodes has only one child - <cr>
                         stack_for_each(node->children, term_node_variant)

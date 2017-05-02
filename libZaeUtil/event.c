@@ -157,3 +157,52 @@ void* event_handle_event(void* arg)
     }
 }
 
+typedef struct event_wait_context_t
+{
+    pthread_cond_t* wait_cond;
+    const char*     event_name;
+} event_wait_context_t;
+
+void    event_wait_handler(event_t* event, void* arg)
+{
+    event_wait_context_t* event_ctx = (event_wait_context_t*)arg;
+    if(strcmp(event_ctx->event_name, event->name) == 0)
+    {
+        LOG_DEBUG(Event, "Wait for %s completed", event->name);
+        pthread_cond_signal(event_ctx->wait_cond);
+    }
+}
+
+int    event_wait(int source_id, const char* event_name, uint32_t timeout)
+{
+    pthread_mutex_t wait_lock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t  wait_cond = PTHREAD_COND_INITIALIZER;
+    int retVal;
+
+    event_wait_context_t    event_wait_ctx = {
+        .wait_cond = &wait_cond,
+        .event_name = event_name
+    };
+
+    event_register_handler(source_id, event_name, event_wait_handler, &event_wait_ctx);
+    pthread_mutex_lock(&wait_lock);
+    if(timeout != 0)
+    {
+        time_t duration = time(NULL);
+        struct timespec ts = {
+            .tv_sec = duration + timeout / 1000,
+            .tv_nsec = (timeout % 1000) * 1000000
+        };
+    
+        LOG_DEBUG(Event, "Waiting for: %d sec %d nsec", ts.tv_sec, ts.tv_nsec);
+        retVal = pthread_cond_timedwait(&wait_cond, &wait_lock, &ts);
+    }
+    else
+    {
+        retVal = pthread_cond_wait(&wait_cond, &wait_lock);
+    }
+    pthread_mutex_unlock(&wait_lock);
+
+    event_unregister_handler(source_id, event_name);
+    return retVal;
+}
