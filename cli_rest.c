@@ -14,6 +14,7 @@
 extern ZWay zway;
 cli_node_t*     rest_node;
 
+void data_leaf_to_json(json_object* root, ZDataHolder data);
 void data_holder_to_json(json_object* root, ZDataHolder data);
 void command_class_to_json(command_class_t* cmd_class, void* arg);
 
@@ -25,7 +26,7 @@ bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_sensor_command_class_list(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_multisensor_command_class_data(vty_t* vty, variant_stack_t* params);
-
+bool    cmd_get_multisensor_command_class_data_short(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 
 
@@ -46,9 +47,11 @@ cli_command_t   rest_root_list[] = {
     {"GET rest v1 command-classes",  cmd_get_sensor_command_class_list,  "Get list of supported command classes"},
     {"GET rest v1 command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
     {"GET rest v1 devices INT INT INT",  cmd_get_sensor_command_class_data_short,  "Get sensor command classes data"},
+    {"GET rest v1 devices INT INT INT WORD",  cmd_get_multisensor_command_class_data_short,  "Get sensor command classes data"},
 
     {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
 
+    {"GET rest v1 events", cmd_get_events,  "Get event log entries"},
     {"GET rest v1 events INT", cmd_get_events,  "Get event log entries"},
     {"GET rest v1 sse", cmd_subscribe_sse,  "Subscribe to Server side event bus"},
 
@@ -479,19 +482,27 @@ bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* par
     return get_sensor_command_class_data(vty, node_id,instance_id,command_id, ".");
 }
 
-/*
-       "NAME" : value,
- 
-*/
-void data_holder_to_json(json_object* root, ZDataHolder data)
+bool    cmd_get_multisensor_command_class_data_short(vty_t* vty, variant_stack_t* params)
 {
-    ZDataIterator child = zdata_first_child(data);
-    while (child != NULL)
-    {
-        const char* name = zdata_get_name(child->data);
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
+
+    char* data_string;
+    variant_t* data_variant = stack_peek_at(params, 7);
+    variant_to_string(data_variant, &data_string);
+
+    bool retVal = get_sensor_command_class_data(vty, node_id,instance_id,command_id, data_string);
+    free(data_string);
+    return retVal;
+}
+
+void data_leaf_to_json(json_object* root, ZDataHolder data)
+{
+    const char* name = zdata_get_name(data);
 
         ZWDataType type;
-        zdata_get_type(child->data, &type);
+        zdata_get_type(data, &type);
     
         ZWBOOL bool_val;
         int int_val;
@@ -509,23 +520,23 @@ void data_holder_to_json(json_object* root, ZDataHolder data)
             json_object_object_add(root, name, json_object_new_string("Empty"));
                 break;
             case Boolean:
-                zdata_get_boolean(child->data, &bool_val);
+                zdata_get_boolean(data, &bool_val);
                 json_object_object_add(root, name, json_object_new_boolean(bool_val));
                 break;
             case Integer:
-                zdata_get_integer(child->data, &int_val);
+                zdata_get_integer(data, &int_val);
                 json_object_object_add(root, name, json_object_new_int(int_val));
                 break;
             case Float:
-                zdata_get_float(child->data, &float_val);
+                zdata_get_float(data, &float_val);
                 json_object_object_add(root, name, json_object_new_double(float_val));
                 break;
         case String:
-                zdata_get_string(child->data, &str_val);
+                zdata_get_string(data, &str_val);
                 json_object_object_add(root, name, json_object_new_string(str_val));
                 break;
             case Binary:
-                zdata_get_binary(child->data, &binary, &len);
+                zdata_get_binary(data, &binary, &len);
                 json_object* bin_array = json_object_new_array();
                 for(int i = 0; i < len; i++)
                 {
@@ -564,6 +575,24 @@ void data_holder_to_json(json_object* root, ZDataHolder data)
             default:
                 break;
         }
+}
+/*
+       "NAME" : value,
+ 
+*/
+void data_holder_to_json(json_object* root, ZDataHolder data)
+{
+    ZDataIterator child = zdata_first_child(data);
+
+    if(child == NULL)
+    {
+        data_leaf_to_json(root, data);
+        return;
+    }
+
+    while (child != NULL)
+    {
+        data_leaf_to_json(root, child->data);
     
         ZDataIterator nested_child = zdata_first_child(child->data);
         if (nested_child != NULL)
@@ -602,11 +631,20 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
 {
-    int num_lines = variant_get_int(stack_peek_at(params, 4));
+    int num_lines;
 
-    if(num_lines <= 0)
+    if(params->count == 4)
     {
-        num_lines = 1;
+        num_lines = event_log_get_size();
+    }
+    else
+    {
+        num_lines = variant_get_int(stack_peek_at(params, 4));
+    
+        if(num_lines <= 0)
+        {
+            num_lines = 1;
+        }
     }
 
     variant_stack_t* event_list = event_log_get_tail(num_lines-1);

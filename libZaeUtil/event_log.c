@@ -97,3 +97,8 @@ variant_stack_t* event_log_get_list()
 {
     return event_log_handle.event_log_list;
 }
+
+int     event_log_get_size()
+{
+    return event_log_handle.event_log_list->count;
+}

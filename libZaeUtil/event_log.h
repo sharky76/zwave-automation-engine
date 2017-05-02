@@ -22,5 +22,6 @@ void    event_log_set_limit(int limit);
 void    event_log_for_each(void (*callback)(event_log_entry_t*, void*), void* arg);
 variant_stack_t* event_log_get_tail(int lines);
 variant_stack_t* event_log_get_list();
+int     event_log_get_size();
 
 
