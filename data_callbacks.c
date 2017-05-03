@@ -12,6 +12,7 @@
 #include "crc32.h"
 #include "command_class.h"
 #include "event_log.h"
+#include "zway_json.h"
 
 extern ZWay zway;
 extern hash_table_t*   data_holder_event_table;
@@ -147,8 +148,12 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             new_entry->instance_id = event_data->instance_id;
             new_entry->command_id = event_data->command_id;
             new_entry->device_type = ZWAVE;
-            new_entry->event_data = strdup(zdata_get_name(data));
+
+            json_object* json_resp = json_object_new_object();
+            zway_json_data_holder_to_json(json_resp, data);
+            new_entry->event_data = strdup(json_object_to_json_string(json_resp));
             event_log_add_event(new_entry);
+            free(json_resp);
         }
     }
 }

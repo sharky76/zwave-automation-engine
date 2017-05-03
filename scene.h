@@ -13,7 +13,8 @@ typedef struct action_t action_t;
 typedef struct scene_t
 {
     char*               name;
-    char*               source;
+    //char*               source;
+    variant_stack_t*    source_list;
     char*               condition;
     variant_stack_t*    actions;
     bool                is_valid;
@@ -25,6 +26,8 @@ scene_t*    scene_create(const char* name);
 bool        scene_add_action(scene_t* scene, action_t* action);
 void        scene_del_action(scene_t* scene, action_t* action);
 action_t*   scene_get_action(scene_t* scene, const char* action_path);
+void        scene_add_source(scene_t* scene, const char* source);
+void        scene_del_source(scene_t* scene, const char* source);
 
 action_t*   scene_get_action_with_type(scene_t* scene, const char* action_path, ActionType type);
 

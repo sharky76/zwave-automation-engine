@@ -101,10 +101,16 @@ void    scene_manager_on_vdev_event(event_t* event, void* context)
             while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
             {
                 scene_t* scene = (scene_t*)variant_get_ptr(variant_hash_iterator_value(it));
-                if(NULL != scene->source && strcmp(scene->source, vdev_resolved_name) == 0)
+                //if(NULL != scene->source && strcmp(scene->source, vdev_resolved_name) == 0)
+                //{
+                stack_for_each(scene->source_list, source_variant)
                 {
-                    LOG_ADVANCED(Scene, "Scene event from virtual device %s for scene %s", vdev->name, scene->name);
-                    scene_exec(scene);
+                    const char* source = variant_get_string(source_variant);
+                    if(strcmp(source, vdev_resolved_name) == 0)
+                    {
+                        LOG_ADVANCED(Scene, "Scene event from virtual device %s for scene %s", vdev->name, scene->name);
+                        scene_exec(scene);
+                    }
                 }
             }
 
@@ -141,10 +147,16 @@ void    scene_manager_on_sensor_event(event_t* event, void* context)
         while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
         {
             scene_t* scene = (scene_t*)variant_get_ptr(variant_hash_iterator_value(it));
-            if(NULL != scene->source && strcmp(scene->source, scene_source) == 0)
+            //if(NULL != scene->source && strcmp(scene->source, scene_source) == 0)
+            // Check all scene sources...
+            stack_for_each(scene->source_list, source_variant)
             {
-                LOG_ADVANCED(Scene, "Scene event from sensor %s for scene %s", event_data->device_name, scene->name);
-                scene_exec(scene);
+                const char* source = variant_get_string(source_variant);
+                if(strcmp(source, scene_source) == 0)
+                {
+                    LOG_ADVANCED(Scene, "Scene event from sensor %s for scene %s", event_data->device_name, scene->name);
+                    scene_exec(scene);
+                }
             }
         }
 
@@ -177,12 +189,21 @@ void    scene_manager_on_scene_activation_event(event_t* event, void* context)
             if(NULL != scene_variant)
             {
                 scene_t* scene = (scene_t*)variant_get_ptr(scene_variant);
-                if(strcmp(scene->source, calling_service->service_name) == 0)
+                //if(strcmp(scene->source, calling_service->service_name) == 0)
+                //{
+                bool scene_called = false;
+                stack_for_each(scene->source_list, source_variant)
                 {
-                    LOG_ADVANCED(Scene, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
-                    scene_exec(scene);
+                    const char* source = variant_get_string(source_variant);
+                    if(strcmp(source, calling_service->service_name) == 0)
+                    {
+                        LOG_ADVANCED(Scene, "Scene event from service: %s for scene: %s", calling_service->service_name, scene->name);
+                        scene_called = true;
+                        scene_exec(scene);
+                    }
                 }
-                else
+
+                if(!scene_called)
                 {
                     LOG_ERROR(Scene, "Scene %s source mismatch: %s", scene->name, calling_service->service_name);
                 }
@@ -369,3 +390,63 @@ void    scene_manager_for_each(void (*visitor)(scene_t*, void*), void* arg)
 
     variant_hash_for_each_value(scene_table, scene_t*, visitor, arg);
 }
+
+variant_t*  scene_set_enabled_impl(struct service_method_t* method, va_list args);
+variant_t*  scene_exec_impl(struct service_method_t* method, va_list args);
+variant_t*  scene_is_enabled_impl(struct service_method_t* method, va_list args);
+
+builtin_service_t*  scene_service_create(hash_table_t* service_table)
+{
+    builtin_service_t*   service = builtin_service_create(service_table, "Scene", "Scene management methods");
+    builtin_service_add_method(service, "SetEnabled", "Set scene enabled (args: scene, bool)", 2, scene_set_enabled_impl);
+    builtin_service_add_method(service, "IsEnabled", "Check if scene is enabled (args: scene)", 1, scene_is_enabled_impl);
+    builtin_service_add_method(service, "Exec", "Exec scene (args: scene)", 1, scene_exec_impl);
+
+    return service;
+}
+
+variant_t*  scene_set_enabled_impl(struct service_method_t* method, va_list args)
+{
+    variant_t* scene_name_variant = va_arg(args, variant_t*);
+    variant_t* enabled_variant = va_arg(args, variant_t*);
+
+    scene_t* scene = scene_manager_get_scene(variant_get_string(scene_name_variant));
+
+    if(NULL != scene)
+    {
+        scene->is_enabled = variant_get_bool(enabled_variant);
+        return variant_create_bool(true);
+    }
+
+    return variant_create_bool(false);
+}
+
+variant_t*  scene_exec_impl(struct service_method_t* method, va_list args)
+{
+    variant_t* scene_name_variant = va_arg(args, variant_t*);
+
+    scene_t* scene = scene_manager_get_scene(variant_get_string(scene_name_variant));
+
+    if(NULL != scene)
+    {
+        scene_exec(scene);
+        return variant_create_bool(true);
+    }
+
+    return variant_create_bool(false);
+}
+
+variant_t*  scene_is_enabled_impl(struct service_method_t* method, va_list args)
+{
+    variant_t* scene_name_variant = va_arg(args, variant_t*);
+
+    scene_t* scene = scene_manager_get_scene(variant_get_string(scene_name_variant));
+
+    if(NULL != scene)
+    {
+        return variant_create_bool(scene->is_enabled);
+    }
+
+    return variant_create_bool(false);
+}
+

@@ -12,9 +12,10 @@ void scene_delete(void* arg)
     scene_t* scene = (scene_t*)arg;
     free(scene->condition);
     free(scene->name);
-    free(scene->source);
+    //free(scene->source);
     //stack_free(scene->compiled_condition);
     stack_free(scene->actions);
+    stack_free(scene->source_list);
     free(scene);
 }
 
@@ -25,6 +26,7 @@ scene_t*    scene_create(const char* name)
     new_scene->is_valid = true;
     new_scene->is_enabled = true;
     new_scene->name = strdup(name);
+    new_scene->source_list = stack_create();
 
     return new_scene;
 }
@@ -43,6 +45,31 @@ bool        scene_add_action(scene_t* scene, action_t* action)
     }
     stack_push_back(scene->actions, variant_create_ptr(DT_PTR, action, &scene_action_delete));
     return true;
+}
+
+bool    scene_source_compare(variant_t* item, void* other)
+{
+    return strcmp(variant_get_string(item), (char*)other) == 0;
+}
+
+void        scene_add_source(scene_t* scene, const char* source)
+{
+    if(!stack_is_exists(scene->source_list, scene_source_compare, (void*)source))
+    {
+        stack_push_back(scene->source_list, variant_create_string(source));
+    }
+}
+
+void        scene_del_source(scene_t* scene, const char* source)
+{
+    stack_for_each(scene->source_list, source_variant)
+    {
+        if(strcmp(source, variant_get_string(source_variant)) == 0)
+        {
+            stack_remove(scene->source_list, source_variant);
+            break;
+        }
+    }
 }
 
 /*scene_t*    scene_load(struct json_object* scene_obj)

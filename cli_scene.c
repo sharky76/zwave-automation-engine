@@ -20,6 +20,7 @@ bool cmd_del_scene(vty_t* vty, variant_stack_t* params);
 bool cmd_list_scenes(vty_t* vty, variant_stack_t* params);
 bool cmd_show_scene(vty_t* vty, variant_stack_t* params);
 bool cmd_set_scene_source(vty_t* vty, variant_stack_t* params);
+bool cmd_del_scene_source(vty_t* vty, variant_stack_t* params);
 bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params);
 bool cmd_exit_scene_node(vty_t* vty, variant_stack_t* params);
 
@@ -62,7 +63,8 @@ cli_command_t   scene_root_list[] = {
 };
 
 cli_command_t   scene_command_list[] = {
-    {"source WORD",             cmd_set_scene_source,      "Set scene source"},
+    {"source WORD",             cmd_set_scene_source,      "Add scene source"},
+    {"no source WORD",          cmd_del_scene_source,      "Del scene source"},
     {"condition LINE",          cmd_set_scene_condition,   "Set scene condition"},
     {"action script WORD",      cmd_config_scene_action_script,   "Configure scene action script"},
     {"no action script WORD",   cmd_delete_scene_action_script,   "Delete scene action script"},
@@ -155,7 +157,15 @@ bool cmd_show_scene(vty_t* vty, variant_stack_t* params)
 bool cmd_set_scene_source(vty_t* vty, variant_stack_t* params)
 {
     scene_t* scene = scene_manager_get_scene(scene_node->context);
-    scene->source = strdup(variant_get_string(stack_peek_at(params, 1)));
+    //scene->source = strdup(variant_get_string(stack_peek_at(params, 1)));
+    scene_add_source(scene, strdup(variant_get_string(stack_peek_at(params, 1))));
+}
+
+bool cmd_del_scene_source(vty_t* vty, variant_stack_t* params)
+{
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+    //scene->source = strdup(variant_get_string(stack_peek_at(params, 1)));
+    scene_del_source(scene, variant_get_string(stack_peek_at(params, 2)));
 }
 
 bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params)
@@ -388,7 +398,10 @@ void    show_scene_helper(scene_t* scene, void* arg)
         vty_write(vty, " no enable%s", VTY_NEWLINE(vty));
     }
 
-    vty_write(vty, " source %s%s", scene->source, VTY_NEWLINE(vty));
+    stack_for_each(scene->source_list, source_variant)
+    {
+        vty_write(vty, " source %s%s", variant_get_string(source_variant), VTY_NEWLINE(vty));
+    }
     vty_write(vty, " condition %s%s", scene->condition, VTY_NEWLINE(vty));
     
     scene_for_each_action(scene, show_scene_action_helper, vty);
