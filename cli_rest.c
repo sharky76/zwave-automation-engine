@@ -11,6 +11,7 @@
 #include "event_log.h"
 #include "event.h"
 #include "zway_json.h"
+#include "vdev_manager.h"
 
 extern ZWay zway;
 cli_node_t*     rest_node;
@@ -47,6 +48,7 @@ cli_command_t   rest_root_list[] = {
 
     {"GET rest v1 command-classes",  cmd_get_sensor_command_class_list,  "Get list of supported command classes"},
     {"GET rest v1 command-classes INT",  cmd_get_sensor_command_class_info,  "Get sensor command class info"},
+    {"GET rest v1 devices INT INT",  cmd_get_sensor_command_classes,  "Get sensor command classes data"},
     {"GET rest v1 devices INT INT INT",  cmd_get_sensor_command_class_data_short,  "Get sensor command classes data"},
     {"GET rest v1 devices INT INT INT WORD",  cmd_get_multisensor_command_class_data_short,  "Get sensor command classes data"},
 
@@ -108,6 +110,25 @@ void show_resolver_visitor(device_record_t* record, void* arg)
     json_object_array_add(json_resp, new_sensor);
 }
 
+void vdev_enumerate(device_record_t* record, void* arg)
+{
+    // Virtual devices have invalid instance ID
+    if(record->devtype == VDEV && record->instanceId == INVALID_INSTANCE)
+    {
+        json_object* sensor_array = (json_object*)arg;
+        json_object* new_sensor = json_object_new_object();
+    
+        json_object_object_add(new_sensor, "type", json_object_new_string("VDEV"));
+        json_object_object_add(new_sensor, "node_id", json_object_new_int(record->nodeId));
+        json_object_object_add(new_sensor, "name", json_object_new_string(record->deviceName));
+        json_object_object_add(new_sensor, "failed", json_object_new_boolean(FALSE));
+    
+        char buf[4] = {0};
+        snprintf(buf, 3, "%d", record->nodeId);
+        json_object_object_add(sensor_array, buf, new_sensor);
+    }
+}
+
 bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
 {
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
@@ -146,6 +167,7 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
                 str_val = dev_name;
             }
 
+            json_object_object_add(new_sensor, "type", json_object_new_string("ZWAVE"));
             json_object_object_add(new_sensor, "node_id", json_object_new_int(node_array[i]));
             json_object_object_add(new_sensor, "name", json_object_new_string(str_val));
             json_object_object_add(new_sensor, "failed", json_object_new_boolean(is_failed == TRUE));
@@ -159,6 +181,10 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
     }
     zdata_release_lock(ZDataRoot(zway));
     zway_devices_list_free(node_array);
+
+
+    // Now add virtual devices
+    resolver_for_each(vdev_enumerate, sensor_array);
 
     vty_write(vty, json_object_to_json_string(json_resp));
     
@@ -190,31 +216,46 @@ bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params)
 {
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
 
-    json_object* json_resp = json_object_new_object();
-    json_object* instance_array = json_object_new_array();
-    json_object_object_add(json_resp, "instances", instance_array);
+    const char* dev_name = resolver_name_from_node_id(node_id);
+    device_record_t* record = resolver_get_device_record(dev_name);
 
-    ZWInstancesList instances;
-    instances = zway_instances_list(zway, node_id);
     int j = 0;
+    json_object* json_resp = json_object_new_object();
 
-    if(NULL != instances)
+    if(record->devtype == ZWAVE)
     {
-        // Add 0 instance
-        json_object_array_add(instance_array, json_object_new_int(0));
+        json_object* instance_array = json_object_new_array();
+        json_object_object_add(json_resp, "instances", instance_array);
     
-        // Add all the rest    
-        while(instances[j])
+        ZWInstancesList instances;
+        instances = zway_instances_list(zway, node_id);
+    
+        if(NULL != instances)
         {
-            json_object_array_add(instance_array, json_object_new_int(instances[j]));
+            // Add 0 instance
+            json_object_array_add(instance_array, json_object_new_int(0));
+        
+            // Add all the rest    
+            while(instances[j])
+            {
+                json_object_array_add(instance_array, json_object_new_int(instances[j]));
+                j++;
+            }
+    
+            // Just in case there is only one instance - we want j not to be zero
             j++;
         }
-
-        // Just in case there is only one instance - we want j not to be zero
+    
+        zway_instances_list_free(instances);
+    }
+    else if(record->devtype == VDEV)
+    {
+        // Virtual devices have only one instance
+        json_object* instance_array = json_object_new_array();
+        json_object_object_add(json_resp, "instances", instance_array);
+        json_object_array_add(instance_array, json_object_new_int(0));
         j++;
     }
-
-    zway_instances_list_free(instances);
 
     if(j == 0)
     {
@@ -259,7 +300,7 @@ bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params)
 bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
 {
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, params->count-1));
 
     json_object* json_resp = json_object_new_object();
     //json_object* command_class_array = json_object_new_array();
@@ -268,28 +309,43 @@ bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
     json_object* command_class_array = json_object_new_object();
     json_object_object_add(json_resp, "command_classes", command_class_array);
 
-
-    ZWCommandClassesList commands = zway_command_classes_list(zway, node_id, instance_id);
+    const char* dev_name = resolver_name_from_node_id(node_id);
+    device_record_t* record = resolver_get_device_record(dev_name);
     int k = 0;
 
-    if(NULL != commands)
+    if(NULL == record || record->devtype == ZWAVE)
     {
-        
-        while(commands[k])
+        ZWCommandClassesList commands = zway_command_classes_list(zway, node_id, instance_id);
+    
+        if(NULL != commands)
         {
-            const char* device_name = resolver_name_from_id(node_id, instance_id, commands[k]);
-            command_class_t* cmd_class = get_command_class_by_id(commands[k]);
-    
-            //json_object* new_command_class = json_object_new_object();
-            if(NULL != cmd_class)
+            
+            while(commands[k])
             {
-                command_class_to_json(cmd_class, (void*)command_class_array);
+                const char* device_name = resolver_name_from_id(node_id, instance_id, commands[k]);
+                command_class_t* cmd_class = get_command_class_by_id(commands[k]);
+        
+                //json_object* new_command_class = json_object_new_object();
+                if(NULL != cmd_class)
+                {
+                    command_class_to_json(cmd_class, (void*)command_class_array);
+                }
+       
+                k++;
             }
-   
-            k++;
+        
+            zway_command_classes_list_free(commands);
         }
-    
-        zway_command_classes_list_free(commands);
+    }
+    else if(record->devtype == VDEV)
+    {
+        command_class_t* cmd_class = vdev_manager_get_command_class(node_id);
+        if(NULL != cmd_class)
+        {
+            command_class_to_json(cmd_class, (void*)command_class_array);
+        }
+
+        k++;
     }
 
     if(k == 0)
@@ -350,7 +406,12 @@ void command_class_to_json(command_class_t* cmd_class, void* arg)
 
         json_object* new_method = json_object_new_object();
         json_object_object_add(new_method, "name", json_object_new_string(supported_methods->name));
-        json_object_object_add(new_method, "help", json_object_new_string(supported_methods->help));
+
+        if(NULL != supported_methods->help)
+        {
+            json_object_object_add(new_method, "help", json_object_new_string(supported_methods->help));
+        }
+
         json_object_object_add(new_method, "args", json_object_new_int(supported_methods->nargs));
         //json_object_array_add(supported_methods_array, new_method);
         json_object_object_add(supported_methods_array, supported_methods->name, new_method);

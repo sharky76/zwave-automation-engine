@@ -110,12 +110,15 @@ bool resolver_has_name(const char* name)
 
 device_record_t*    resolver_get_device_record(const char* name)
 {
-    uint32_t key = crc32(0, name, strlen(name));
-
-    variant_t* record_variant = variant_hash_get(resolver->record_table, key);
-    if(NULL != record_variant)
+    if(NULL != name)
     {
-        return (device_record_t*)variant_get_ptr(record_variant);
+        uint32_t key = crc32(0, name, strlen(name));
+    
+        variant_t* record_variant = variant_hash_get(resolver->record_table, key);
+        if(NULL != record_variant)
+        {
+            return (device_record_t*)variant_get_ptr(record_variant);
+        }
     }
 
     return NULL;

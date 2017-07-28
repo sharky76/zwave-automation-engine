@@ -413,7 +413,5 @@
 		<F N="vty_io.c"/>
 		<F N="vty_io.h"/>
 		<F N="zwave-automation-engine.c"/>
-		<F N="zway_json.c"/>
-		<F N="zway_json.h"/>
 	</Files>
 </Project>

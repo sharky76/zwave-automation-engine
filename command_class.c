@@ -145,6 +145,12 @@ variant_t*  command_class_read_data(device_record_t* record, const char* path)
             ret_val = variant_create_int32(DT_INT32, int_val);
         }
         break;
+    case Float:
+        {
+            float float_val;
+            zdata_get_float(dh, &float_val);
+            ret_val = variant_create_float(float_val);
+        }
     case String:
         {
             const char* string_val;
@@ -188,6 +194,10 @@ variant_t*   command_class_eval_basic(const char* method, device_record_t* recor
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         ZWError err = zway_cc_basic_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
         ret_val = command_class_read_data(record, variant_get_string(arg1));
     }
     else if(strcmp(method, "Set") == 0)

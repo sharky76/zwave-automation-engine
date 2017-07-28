@@ -96,6 +96,7 @@
 			</Target>
 		</Menu>
 		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/z-way-devel/include/"/>
 		</Includes>
 		<Libs PreObjects="0">
 			<Lib File="-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf"/>
@@ -198,6 +199,7 @@
 			</Target>
 		</Menu>
 		<Includes>
+			<Include Dir="/home/alex/Documents/Projects/z-way-devel/include/"/>
 		</Includes>
 		<Libs PreObjects="0">
 			<Lib File="-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf"/>
@@ -228,6 +230,7 @@
 			<F N="variant.h"/>
 			<F N="vdev.h"/>
 			<F N="vty.h"/>
+			<F N="zway_json.h"/>
 		</Folder>
 		<Folder
 			Name="Other Files"
@@ -254,6 +257,7 @@
 			<F N="variant.c"/>
 			<F N="vdev.c"/>
 			<F N="vty.c"/>
+			<F N="zway_json.c"/>
 		</Folder>
 		<F N="crc32.c"/>
 		<F N="crc32.h"/>

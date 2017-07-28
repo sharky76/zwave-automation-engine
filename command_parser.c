@@ -582,8 +582,16 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
             *tok = 0;
             if(resolver_has_name(ch))
             {
-                //printf("DEVICE: %s, METHOD: %s\n", ch, tok+1);
-                retVal = process_device_function_operator(ch, tok+1, operator_stack);
+                device_record_t* record = resolver_get_device_record(ch);
+                
+                if(record->devtype == VDEV)
+                {
+                    retVal = process_vdev_method_operator(ch, tok+1, operator_stack);
+                }
+                else
+                {
+                    retVal = process_device_function_operator(ch, tok+1, operator_stack);
+                }
             }
             else if(service_manager_is_class_exists(ch))
             {

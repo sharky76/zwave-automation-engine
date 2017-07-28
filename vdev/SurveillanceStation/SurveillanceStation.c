@@ -6,6 +6,7 @@
 #include <logger.h>
 #include <crc32.h>
 #include <event.h>
+#include <event_log.h>
 
 char* SS_user;
 char* SS_pass;
@@ -33,6 +34,7 @@ variant_t*  get_camera_snapshot(va_list args);
 
 void        device_start(); 
 void        timer_tick_handler(event_t* pevent, void* context);
+void        SS_on_data_change_event(event_t* event, void* context);
 
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
@@ -50,7 +52,7 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     
     DT_SURVEILLANCE_STATION = vdev_id;
     event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler, NULL);
-
+    event_register_handler(DT_SURVEILLANCE_STATION, VDEV_DATA_CHANGE_EVENT, SS_on_data_change_event, NULL);
 
     SS_user = NULL;
     SS_pass = NULL;
@@ -280,6 +282,26 @@ void    device_start()
     SS_device_started = true;
 }
 
+void SS_on_data_change_event(event_t* event, void* context)
+{
+    vdev_event_data_t* event_data = (vdev_event_data_t*)variant_get_ptr(event->data);
+    SS_event_keeper_t* ev = (SS_event_keeper_t*)event_data->data;
+
+    char json_buf[256] = {0};
+    
+    snprintf(json_buf, 255, "{\"camera_id\":\"%d\",\"camera_name\":\"%s\",\"event_count\":\"%d\"}",
+             ev->camera_id, 
+             ev->camera_name,
+             ev->event_count);
+
+    event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
+    new_entry->node_id = event_data->vdev_id;
+    new_entry->instance_id = event_data->instance_id;
+    new_entry->command_id = event_data->event_id;
+    new_entry->device_type = VDEV;
+    new_entry->event_data = strdup(json_buf);
+    event_log_add_event(new_entry);
+ }
 
 void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
 {
@@ -289,7 +311,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     {
         SS_api_get_events_info(ev);
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, (void*)ev);
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
     }
 
     ev->old_event_count = ev->event_count;

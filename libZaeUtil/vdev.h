@@ -11,6 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef enum DeviceType
+{
+    ZWAVE,
+    VDEV
+} DeviceType;
+
 typedef struct device_record_t device_record_t;
 
 typedef struct vdev_event_data_t
@@ -76,4 +82,4 @@ stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, 
 
 void    vdev_create(vdev_t** vdev, int vdev_id);
 void    vdev_cli_create(cli_node_t* parent_node);
-void    vdev_post_event(int vdev_id, int event_id, int instance_id, void* data);
+void    vdev_post_event(int vdev_id, int command_id, int instance_id, const char* event_name, void* data);

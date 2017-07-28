@@ -191,16 +191,20 @@ void    weather_cache_parse_forecast(struct json_object* weather_response_obj)
     for(int i = 0; i < weather_entries; i++)
     {
         json_object* entry = json_object_array_get_idx(entries_array, i);
-        json_object* date_obj;
-        json_object_object_get_ex(entry, "dt", &date_obj);
 
-        weather_forecast_cache_t* forecast_entry = calloc(1, sizeof(weather_forecast_cache_t));
-        forecast_entry->timestamp = json_object_get_int(date_obj);
-
-        weather_cache_parse_weather_entry(entry, &forecast_entry->weather_entry);
-
-        variant_t* forecast_entry_variant = variant_create_ptr(DT_PTR, forecast_entry, &weather_entry_free);
-        stack_push_back(weather_cache.forecast_hourly, forecast_entry_variant);
+        if(NULL != entry)
+        {
+            json_object* date_obj;
+            json_object_object_get_ex(entry, "dt", &date_obj);
+    
+            weather_forecast_cache_t* forecast_entry = calloc(1, sizeof(weather_forecast_cache_t));
+            forecast_entry->timestamp = json_object_get_int(date_obj);
+    
+            weather_cache_parse_weather_entry(entry, &forecast_entry->weather_entry);
+    
+            variant_t* forecast_entry_variant = variant_create_ptr(DT_PTR, forecast_entry, &weather_entry_free);
+            stack_push_back(weather_cache.forecast_hourly, forecast_entry_variant);
+        }
     }
 
     weather_cache.raw_forecast = strdup(json_object_to_json_string_ext(weather_response_obj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
@@ -209,6 +213,11 @@ void    weather_cache_parse_forecast(struct json_object* weather_response_obj)
 void    weather_cache_parse_weather_entry(struct json_object* weather_entry_obj, weather_cache_t* cache_entry)
 {
     cache_entry->precipitation = 0;
+
+    if(NULL == weather_entry_obj)
+    {
+        return;
+    }
 
     json_object_object_foreach(weather_entry_obj, key, value)
     {

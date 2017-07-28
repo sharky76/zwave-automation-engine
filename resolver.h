@@ -2,6 +2,7 @@
 #define RESOLVER_H
 
 #include <stdbool.h>
+#include "vdev.h"
 
 // This is the device resolver module
 // It uses json-c lib to load resolver.json file containing 
@@ -12,12 +13,7 @@
 #include <stack.h>
 
 #define MAX_DEVICE_NAME_LEN 128
-
-typedef enum DeviceType
-{
-    ZWAVE,
-    VDEV
-} DeviceType;
+#define INVALID_INSTANCE 0xff
 
 typedef struct device_record_t
 {

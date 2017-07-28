@@ -20,7 +20,7 @@ endif
 ifeq "$(CFG)" "Debug"
 OUTDIR=Debug
 OUTFILE=$(OUTDIR)/libZaeUtil.so
-CFG_INC=
+CFG_INC=-I../../z-way-devel/include 
 CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 CFG_OBJ=
@@ -28,13 +28,13 @@ COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/event_log.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/service.o $(OUTDIR)/service_args.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/variant.o $(OUTDIR)/vdev.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
+	$(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/event_log.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/service.o $(OUTDIR)/service_args.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/variant.o $(OUTDIR)/vdev.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
+	$(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 
@@ -73,7 +73,7 @@ endif
 ifeq "$(CFG)" "Release"
 OUTDIR=Release
 OUTFILE=$(OUTDIR)/libZaeUtil.so
-CFG_INC=
+CFG_INC=-I../../z-way-devel/include 
 CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 CFG_OBJ=
@@ -81,13 +81,13 @@ COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/event_log.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/service.o $(OUTDIR)/service_args.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/variant.o $(OUTDIR)/vdev.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
+	$(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event.o $(OUTDIR)/event_log.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/service.o $(OUTDIR)/service_args.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/variant.o $(OUTDIR)/vdev.o $(OUTDIR)/vty.o \
-	$(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
+	$(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o $(OUTDIR)/hash.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 

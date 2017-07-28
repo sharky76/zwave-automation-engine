@@ -343,6 +343,7 @@ int main (int argc, char *argv[])
                 }
 
                 vty_display_prompt(vty_std);
+                //event_register_handler(General, "VTY_COMMAND_RECEIVED", on_command_received, vty_std);
             }
 
             while(true)
@@ -383,6 +384,7 @@ int main (int argc, char *argv[])
 
                         if(vty_is_command_received(vty_std))
                         {
+                            // event_post ... COMMAND_RECEIVED
                             vty_new_line(vty_std);
                             cli_command_exec(vty_std, str);
                             vty_display_prompt(vty_std);
@@ -457,11 +459,6 @@ int main (int argc, char *argv[])
 
                             if(NULL != str)
                             {
-                                // HTTP request can take indefinite time (server-side events)
-                                // so it is better to handle each request asynchronously.
-                                // For SSE socket should not be closed therefore more return codes
-                                // should be present for cli_command_exec methods to indicate
-                                // whether command is completed or not
                                 cli_command_exec_custom_node(rest_root_node, vty_ptr, str);
                             }
 

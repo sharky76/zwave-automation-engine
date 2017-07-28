@@ -81,6 +81,8 @@ void    vdev_manager_init(const char* vdev_dir)
                         (*vdev_cli_create)(root_node);
                     }
 
+                    // add resolver entry
+                    resolver_add_device_entry(VDEV, vdev->name, vdev->vdev_id);
 
                     // Create command class pointer 
                     vdev->command_class_ptr = vdev_manager_create_command_class(vdev);

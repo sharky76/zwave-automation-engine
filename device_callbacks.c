@@ -23,6 +23,9 @@ void device_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE node
         else
         {
             LOG_ADVANCED(DeviceCallback, "New unresolved device added - Change type %d, Node Id %d, Instance Id %d, Command Id %d", type, node_id, instance_id, command_id);
+            char buf[16] = {0};
+            snprintf(buf, 15, "ZWaveDev.%d", node_id);
+            resolver_add_device_entry(ZWAVE, buf, node_id);
         }
     }
 }
