@@ -44,14 +44,36 @@ int variant_compare_bool(const variant_t* v, const variant_t* other)
 
 int variant_compare_float(const variant_t* v, const variant_t* other)
 {
-    return (v->storage.double_data < other->storage.double_data) ? -1 : 
-        (v->storage.double_data > other->storage.double_data);
+    switch(other->type)
+    {
+    case DT_FLOAT:
+        return (v->storage.double_data < other->storage.double_data) ? -1 : 
+            (v->storage.double_data > other->storage.double_data);
+    case DT_INT32:
+    case DT_INT64:
+    case DT_INT8:
+        return (v->storage.double_data < other->storage.int_data)? -1 : 
+            (v->storage.double_data > other->storage.int_data);
+    default:
+        return -1;
+    }
 }
 
 int variant_compare_int(const variant_t* v, const variant_t* other)
 {
-    return (v->storage.int_data < other->storage.int_data)? -1 : 
-        (v->storage.int_data > other->storage.int_data);
+    switch(other->type)
+    {
+    case DT_INT32:
+    case DT_INT64:
+    case DT_INT8:
+        return (v->storage.int_data < other->storage.int_data)? -1 : 
+            (v->storage.int_data > other->storage.int_data);
+    case DT_FLOAT:
+        return (v->storage.int_data < other->storage.double_data)? -1 : 
+            (v->storage.int_data > other->storage.double_data);
+    default:
+        return -1;
+    }
 }
 
 int variant_compare_byte(const variant_t* v, const variant_t* other)
@@ -63,7 +85,21 @@ int variant_compare_byte(const variant_t* v, const variant_t* other)
 int variant_compare_string(const variant_t* v, const variant_t* other)
 {
     //printf("variant_compare_string: compare %s with %s\n", variant_get_string(v), variant_get_string(other));
-    return strcmp(variant_get_string(v), variant_get_string(other));
+    const char* s1 = variant_get_string(v);
+    const char* s2 = variant_get_string(other);
+
+    if(s1 == NULL)
+    {
+        return 1;
+    }
+    else if(s2 == NULL)
+    {
+        return -1;
+    }
+    else
+    {
+        return strcmp(s1, s2);
+    }
 }
 
 int variant_compare_ptr(const variant_t* v, const variant_t* other)
@@ -305,6 +341,11 @@ bool        variant_is_null(variant_t* variant)
 
 bool variant_to_string(variant_t* variant, char** string)
 {
+    if(NULL == variant)
+    {
+        return false;
+    }
+
     bool retVal = true;
     switch(variant->type)
     {

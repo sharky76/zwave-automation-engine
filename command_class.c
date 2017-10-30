@@ -151,6 +151,7 @@ variant_t*  command_class_read_data(device_record_t* record, const char* path)
             zdata_get_float(dh, &float_val);
             ret_val = variant_create_float(float_val);
         }
+        break;
     case String:
         {
             const char* string_val;

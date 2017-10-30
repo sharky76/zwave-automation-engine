@@ -8,6 +8,7 @@
 
 variant_t*  datetime_get_time_string(service_method_t* method, va_list args);
 variant_t*  datetime_get_timestamp(service_method_t* method, va_list args);
+variant_t*  datetime_time_from_timesamp(service_method_t* method, va_list args);
 variant_t*  datetime_time_less_than(service_method_t* method, va_list args);
 variant_t*  datetime_time_greater_than(service_method_t* method, va_list args);
 variant_t*  datetime_get_date_string(service_method_t* method, va_list args);
@@ -18,6 +19,8 @@ void    service_create(service_t** service, int service_id)
 {
     SERVICE_INIT(DateTime, "Provides date/time display")
     SERVICE_ADD_METHOD(GetTimeString, datetime_get_time_string, 0, "Returns time formatted as string (hours from 0-24, minutes from 00-59)")
+    SERVICE_ADD_METHOD(FromTimeStamp, datetime_time_from_timesamp, 1, "Convert timestamp to time formatted as string (hours from 0-24, minutes from 00-59)")
+
     SERVICE_ADD_METHOD(GetTimeStamp,  datetime_get_timestamp, 0, "Returns time as UNIX timestamp")
     SERVICE_ADD_METHOD(TimeLessThan,  datetime_time_less_than, 1, "Compare current time with string")
     SERVICE_ADD_METHOD(TimeGreaterThan,  datetime_time_greater_than, 1, "Compare current time with string")
@@ -38,6 +41,19 @@ void    service_cli_create(cli_node_t* parent_node)
 variant_t*  datetime_get_time_string(service_method_t* method, va_list args)
 {
     time_t t = time(NULL);
+    struct tm* p_tm = localtime(&t);
+
+    char* timebuf = (char*)calloc(200, sizeof(char));
+
+    strftime(timebuf, 200, datetime_time_format, p_tm);
+
+    return variant_create_string(timebuf);
+}
+
+variant_t*  datetime_time_from_timesamp(service_method_t* method, va_list args)
+{
+    variant_t* timestamp_variant = va_arg(args, variant_t*);
+    time_t t = (time_t)variant_get_int(timestamp_variant);
     struct tm* p_tm = localtime(&t);
 
     char* timebuf = (char*)calloc(200, sizeof(char));

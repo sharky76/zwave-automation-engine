@@ -39,6 +39,18 @@ variant_t*  weather_get_humidity(service_method_t* method, va_list args)
     return variant_create_int32(DT_INT32, weather_cache.humidity);
 }
 
+variant_t*  weather_get_sunrise(service_method_t* method, va_list args)
+{
+    weather_cache_refresh();
+    return variant_create_int32(DT_INT32, weather_cache.sunrise);
+}
+
+variant_t*  weather_get_sunset(service_method_t* method, va_list args)
+{
+    weather_cache_refresh();
+    return variant_create_int32(DT_INT32, weather_cache.sunset);
+}
+
 variant_t*  weather_get_forecast(service_method_t* method, va_list args)
 {
     weather_cache_refresh();

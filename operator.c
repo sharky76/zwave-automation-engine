@@ -162,8 +162,14 @@ variant_t*   op_device_function(operator_t* op, ...)
     va_list args;
     va_start(args, op);
 
-    //return FUNC_CALL(op_data, args);
-    return op_data->command_class->command_impl((const char*)op_data->command_method, op_data->device_record, args);
+    if(NULL != op_data->command_class)
+    {
+        return op_data->command_class->command_impl((const char*)op_data->command_method, op_data->device_record, args);
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 variant_t*   op_service_method(operator_t* op, ...)
@@ -189,6 +195,11 @@ int binary_argument_count(struct operator_t* op)
 int function_argument_count(struct operator_t* op)
 {
     function_operator_data_t* op_data = (function_operator_data_t*)op->operator_data;
+    
+    if(NULL == op_data->command_class)
+    {
+        return 0;
+    }
 
     command_method_t* supported_methods = op_data->command_class->supported_method_list;
 

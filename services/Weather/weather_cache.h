@@ -9,6 +9,8 @@ typedef struct weather_cache_t
     double  windspeed;
     char*   precipitation;
     int     humidity;
+    int     sunrise;
+    int     sunset;
     char*   raw_forecast;
     variant_stack_t* forecast_hourly;
 } weather_cache_t;

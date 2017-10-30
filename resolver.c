@@ -134,6 +134,13 @@ void    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, ZWB
         new_record->nodeId = nodeId;
         new_record->instanceId = instanceId;
         new_record->commandId = commandId;
+
+        const char* existing_name = resolver_name_from_id(nodeId, instanceId, commandId);
+        if(NULL != existing_name)
+        {
+            resolver_remove_entry(existing_name);
+        }
+
         strncpy(new_record->deviceName, name, MAX_DEVICE_NAME_LEN-1);
 
         uint32_t key = crc32(0, new_record->deviceName, strlen(new_record->deviceName));

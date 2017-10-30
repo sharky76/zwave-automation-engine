@@ -271,6 +271,20 @@ void    weather_cache_parse_weather_entry(struct json_object* weather_entry_obj,
                 cache_entry->windspeed = json_object_get_double(wind_data);
             }
         }
+        else if(strcmp(key, "sys") == 0)
+        {
+            struct json_object* sunrise_data;
+            if(json_object_object_get_ex(value, "sunrise", &sunrise_data) == TRUE)
+            {
+                cache_entry->sunrise = json_object_get_int(sunrise_data);
+            }
+
+            struct json_object* sunset_data;
+            if(json_object_object_get_ex(value, "sunset", &sunset_data) == TRUE)
+            {
+                cache_entry->sunset = json_object_get_int(sunset_data);
+            }
+        }
     }
 }
 

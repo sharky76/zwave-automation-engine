@@ -607,6 +607,12 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
     variant_stack_t* params;
     CmdMatchStatus match_status = cli_get_custom_command(node, line, &cmd_node, &params);
 
+    /*char* filter_start = NULL;
+    if((filter_start = strstr(line, "|")) != NULL)
+    {
+        char* filter = filter_start + 1;
+    }*/
+
     switch(match_status)
     {
     case CMD_FULL_MATCH:
