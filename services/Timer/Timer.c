@@ -176,19 +176,22 @@ void alarm_expire_handler(int sig)
     {
         stack_for_each(timer_list, timer_variant)
         {
-            timer_info_t* timer = variant_get_ptr(timer_variant);
-            if(--timer->ticks_left == 0)
+            if(NULL != timer_variant)
             {
-                service_post_event(DT_TIMER, timer->event_name, variant_create_string(strdup(timer->name)));
-    
-                if(timer->singleshot)
+                timer_info_t* timer = variant_get_ptr(timer_variant);
+                if(--timer->ticks_left == 0)
                 {
-                    stack_remove(timer_list, timer_variant);
-                    variant_free(timer_variant);
-                }
-                else
-                {
-                    timer->ticks_left = timer->timeout;
+                    service_post_event(DT_TIMER, timer->event_name, variant_create_string(strdup(timer->name)));
+        
+                    if(timer->singleshot)
+                    {
+                        stack_remove(timer_list, timer_variant);
+                        variant_free(timer_variant);
+                    }
+                    else
+                    {
+                        timer->ticks_left = timer->timeout;
+                    }
                 }
             }
         }
