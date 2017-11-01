@@ -124,7 +124,7 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
     {
         http_set_response(http_priv, HTTP_RESP_OK);
         http_set_content_type(http_priv, "application/json");
-        http_set_header(http_priv, "Access-Control-Allow-Headers", "x-requested-with");
+        http_set_header(http_priv, "Access-Control-Allow-Headers", "x-requested-with,content-type");
         http_server_write_response(client_socket, http_priv);
         return NULL;
     }
@@ -138,8 +138,20 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
 
         if(content_len > 0)
         {
-            content = malloc(content_len);
+            content = calloc(1, content_len+1);
+            //http_priv->post_data = calloc(1, content_len+1);
             strncpy(content, request_get_data(http_priv->request->buffer), content_len);
+
+            // Unescape content...
+            /*int j = 0;
+            for(int i = 0; i < content_len; i++)
+            {
+                if(content[i] != '\\')
+                {
+                    http_priv->post_data[j++] = content[i];
+                }   
+            }*/
+
             http_priv->post_data = content;
             http_priv->post_data_size = content_len;
         }
@@ -294,7 +306,7 @@ void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* 
 
     sprintf(http_priv->headers + http_priv->headers_size, "%s: %s\n", name, value);
     http_priv->headers_size += header_size;
-    http_priv->headers[http_priv->headers_size] = 0;
+    http_priv->headers[http_priv->headers_size-1] = 0;
     http_priv->headers_size--;
 }
 

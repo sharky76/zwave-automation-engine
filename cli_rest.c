@@ -52,7 +52,7 @@ cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices INT INT INT",  cmd_get_sensor_command_class_data_short,  "Get sensor command classes data"},
     {"GET rest v1 devices INT INT INT WORD",  cmd_get_multisensor_command_class_data_short,  "Get sensor command classes data"},
 
-    {"PUT rest v1 devices INT instances INT command-classes INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
+    {"POST rest v1 devices INT INT INT",  cmd_set_sensor_command_class_data,  "Set sensor command classes data"},
 
     {"GET rest v1 events", cmd_get_events,  "Get event log entries"},
     {"GET rest v1 events INT", cmd_get_events,  "Get event log entries"},
@@ -559,11 +559,19 @@ bool    cmd_get_multisensor_command_class_data_short(vty_t* vty, variant_stack_t
     return retVal;
 }
 
+/*
+    JSON request data:
+ 
+    {
+      "command"  : "Set",
+      "arguments": [true, 12, 23]
+    }
+*/
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
 {
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
+    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
 
     const char* device_name = resolver_name_from_id(node_id, instance_id, command_id);
     const char* json_data = ((http_vty_priv_t*)vty->priv)->post_data;
@@ -575,9 +583,77 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     else
     {
         http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+        struct json_object* response_obj = json_tokener_parse(json_data);
+
+        command_class_t* command_class = get_command_class_by_id(command_id);
+        if(NULL != command_class)
+        {
+            //LOG_DEBUG(CLI, "Matching command-class %s found for sensor %s", command_class->command_name, event_data->device_name);
+            const char* device_name = resolver_name_from_id(node_id, instance_id, command_id);
+
+            if(NULL != device_name)
+            {
+                device_record_t* device_record = resolver_get_device_record(device_name);
+
+                if(NULL != device_record)
+                {
+                    struct json_object* cmd_object;
+                    if(json_object_object_get_ex(response_obj, "command", &cmd_object) == TRUE)
+                    {
+                        const char* command = json_object_get_string(cmd_object);
+
+                        // We support maximum 4 arguments...
+                        variant_t* arg_list[4] = {0};
+                        
+                        struct json_object* arg_array;
+                        if(json_object_object_get_ex(response_obj, "arguments", &arg_array) == TRUE)
+                        {
+                            int arg_count = json_object_array_length(arg_array);
+
+                            for(int i = 0; i < arg_count; i++)
+                            {
+                                json_object* entry = json_object_array_get_idx(arg_array, i);
+                                switch(json_object_get_type(entry))
+                                {
+                                case json_type_boolean:
+                                    arg_list[i] = variant_create_bool(json_object_get_boolean(entry));
+                                    break;
+                                case json_type_int:
+                                    arg_list[i] = variant_create_int32(DT_INT32, json_object_get_int(entry));
+                                    break;
+                                case json_type_string:
+                                    arg_list[i] = variant_create_string(json_object_get_string(entry));
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
+
+                            switch(arg_count)
+                            {
+                            case 1:
+                                command_class_exec(command_class, command, device_record, arg_list[0]);
+                                break;
+                            case 2:
+                                command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1]);
+                                break;
+                            case 3:
+                                command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2]);
+                                break;
+                            case 4:
+                                command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2], arg_list[3]);
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
-    struct json_object* response_obj = json_tokener_parse(json_data);
 }
 
 bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
