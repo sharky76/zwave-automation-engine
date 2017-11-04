@@ -130,32 +130,25 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
     }
 
     // Handle POST request
-    char* content = NULL;
-    char* content_len_buf;
-    if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
+    if(strncmp(http_priv->request->method, "POST", http_priv->request->method_len) == 0)
     {
-        int content_len = atoi(content_len_buf);
-
-        if(content_len > 0)
+        char* content = NULL;
+        char* content_len_buf;
+        if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
         {
-            content = calloc(1, content_len+1);
-            //http_priv->post_data = calloc(1, content_len+1);
-            strncpy(content, request_get_data(http_priv->request->buffer), content_len);
-
-            // Unescape content...
-            /*int j = 0;
-            for(int i = 0; i < content_len; i++)
+            int content_len = atoi(content_len_buf);
+    
+            if(content_len > 0)
             {
-                if(content[i] != '\\')
-                {
-                    http_priv->post_data[j++] = content[i];
-                }   
-            }*/
-
-            http_priv->post_data = content;
-            http_priv->post_data_size = content_len;
+                content = calloc(1, content_len+1);
+                //http_priv->post_data = calloc(1, content_len+1);
+                strncpy(content, request_get_data(http_priv->request->buffer), content_len);
+    
+                http_priv->post_data = content;
+                http_priv->post_data_size = content_len;
+            }
+            free(content_len_buf);
         }
-        free(content_len_buf);
     }
 
     /*if(user_manager_get_count() > 0)

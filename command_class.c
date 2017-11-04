@@ -21,6 +21,7 @@ variant_t*   command_class_eval_configuration(const char* method, device_record_
 variant_t*   command_class_eval_manufacturer_specific(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_wakeup(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_sensor_multilevel(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_indicator(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -40,6 +41,7 @@ static command_class_t command_class_table[] = {
     {0x72, "ManufacturerSpecific", {"Get", 0, "", NULL, 0, NULL},                                     &command_class_eval_manufacturer_specific},
     {0x84, "Wakeup",       {"Get", 0, "", "Capabilities", 0, "", "Sleep", 0, "", "Set", 2, "<seconds>, <node ID>", NULL, 0, NULL},       &command_class_eval_wakeup},
     {0x31, "SensorMultilevel",       {"Get", 1, "<sensor>", NULL, 0, NULL},       &command_class_eval_sensor_multilevel},
+    {0x81, "Indicator",     {"Get", 0, "", "Set", 1, "<parameter>", NULL, 0, NULL}, &command_class_eval_indicator},  
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -392,6 +394,11 @@ variant_t*   command_class_eval_wakeup(const char* method, device_record_t* reco
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_wakeup_capabilities_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
         ret_val = command_class_read_data(record, NULL);
     }
     else if(strcmp(method, "Sleep") == 0)
@@ -425,6 +432,33 @@ variant_t*   command_class_eval_sensor_multilevel(const char* method, device_rec
         char buf[32] = {0};
         snprintf(buf, 31, "%d.val", variant_get_int(param));
         ret_val = command_class_read_data(record, buf);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_indicator(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+    variant_t* param = va_arg(args, variant_t*);
+
+    if(strcmp(method, "Get") == 0)
+    {
+        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        ctx->record = record;
+        zway_cc_indicator_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        // Block here...
+        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
+        {
+            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+        }
+        ret_val = command_class_read_data(record, NULL);
+    }
+    else if(strcmp(method, "Set") == 0)
+    {
+        int arg = variant_get_int(param);
+        ZWError err = zway_cc_indicator_set(zway, record->nodeId, record->instanceId, arg, NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
     }
 
     return ret_val;

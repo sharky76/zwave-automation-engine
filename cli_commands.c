@@ -604,6 +604,28 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
         line[strlen(line) - 1] = 0;
     }
 
+    /*
+    char* pipe_char = rindex(line, '|');
+    char* pipe_method = NULL;
+    if(NULL != pipe_char && *(pipe_char-1) != '|')
+    {
+        pipe_method = pipe_char+1;
+        *pipe_char = 0;
+
+
+        int in_fd[2];
+        pipe(in_fd);
+
+        vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
+        vty_data->desc.io_pair[IN] = fdopen(in_fd[0], "r");
+        vty_data->desc.io_pair[OUT] = stdout;
+        vty_std = vty_io_create(VTY_STD, vty_data);
+
+        vty->data->desc.io_pair[OUT] = fdopen(in_fd[1], "w");
+
+    }
+    */
+
     variant_stack_t* params;
     CmdMatchStatus match_status = cli_get_custom_command(node, line, &cmd_node, &params);
 

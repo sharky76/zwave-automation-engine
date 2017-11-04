@@ -157,19 +157,14 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
 
             ZWCSTR str_val;
             const char* dev_name = resolver_name_from_node_id(node_array[i]);
-            if(NULL == dev_name)
-            {
-                dh = zway_find_device_data(zway,node_array[i], "deviceTypeString");
-                zdata_get_string(dh, &str_val);
-            }
-            else
-            {
-                str_val = dev_name;
-            }
+            dh = zway_find_device_data(zway,node_array[i], "deviceTypeString");
+            zdata_get_string(dh, &str_val);
 
             json_object_object_add(new_sensor, "type", json_object_new_string("ZWAVE"));
+
             json_object_object_add(new_sensor, "node_id", json_object_new_int(node_array[i]));
-            json_object_object_add(new_sensor, "name", json_object_new_string(str_val));
+            json_object_object_add(new_sensor, "name", json_object_new_string(dev_name));
+            json_object_object_add(new_sensor, "typeString", json_object_new_string(str_val));
             json_object_object_add(new_sensor, "failed", json_object_new_boolean(is_failed == TRUE));
 
             char buf[4] = {0};
