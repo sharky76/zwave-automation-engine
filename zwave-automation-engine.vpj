@@ -287,6 +287,8 @@
 			<F N="BuiltinServices/Expression.h"/>
 			<F N="BuiltinServices/List.c"/>
 			<F N="BuiltinServices/List.h"/>
+			<F N="BuiltinServices/Resolver.c"/>
+			<F N="BuiltinServices/Resolver.h"/>
 		</Folder>
 		<Folder Name="../../../pidev">
 			<Folder Name="pitools">

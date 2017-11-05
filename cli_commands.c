@@ -623,7 +623,8 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 
         vty->data->desc.io_pair[OUT] = fdopen(in_fd[1], "w");
 
-    }
+    } 
+     
     */
 
     variant_stack_t* params;

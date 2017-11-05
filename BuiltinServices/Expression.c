@@ -154,7 +154,7 @@ variant_t*  unescape_impl(struct service_method_t* method, va_list args)
 {
     variant_t*  expression_var = va_arg(args, variant_t*);
     const char* escaped_string = variant_get_string(expression_var);
-    char* result_string = calloc(strlen(escaped_string), sizeof(char));
+    char* result_string = calloc(strlen(escaped_string)+1, sizeof(char));
 
     int j = 0;
     for(int i = 0; i < strlen(escaped_string); i++)

@@ -82,3 +82,24 @@ void                    service_args_stack_clear()
     }
 }
 
+variant_t*              service_args_get_value(service_args_stack_t* stack, const char* key)
+{
+    hash_table_t*   token_table = (hash_table_t*)stack->data_storage;
+    uint32_t hash_key = crc32(0, key, strlen(key));
+    variant_t* value_var = variant_hash_get(token_table, hash_key);
+
+    return value_var;
+}
+
+void                    service_args_for_each(service_args_stack_t* stack, void (*visitor)(uint32_t, variant_t*, void*), void* arg)
+{
+    hash_table_t*   token_table = (hash_table_t*)stack->data_storage;
+    hash_iterator_t* it = variant_hash_begin(token_table);
+    while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
+    {
+        variant_t* value = variant_hash_iterator_value(it);
+        uint32_t   key = variant_hash_iterator_key(it);
+        visitor(key, value, arg);
+    }
+}
+

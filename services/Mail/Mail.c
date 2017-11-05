@@ -10,6 +10,7 @@ extern smtp_data_t*  smtp_data;
 variant_t*  mail_send_mail(service_method_t* method, va_list args);
 variant_t*  mail_send_mail_to(service_method_t* method, va_list args);
 variant_t*  mail_get_template(service_method_t* method, va_list args);
+variant_t*  mail_send_mail_subject(service_method_t* method, va_list args);
 
 int DT_MAIL;
 extern hash_table_t* recipient_table;
@@ -18,6 +19,8 @@ void    service_create(service_t** service, int service_id)
 {
     SERVICE_INIT(Mail, "Provide SMTP mail sending services");
     SERVICE_ADD_METHOD(Send, mail_send_mail, 1, "Send mail message. Arg: message");
+    SERVICE_ADD_METHOD(SendWithSubject, mail_send_mail_subject, 2, "Send mail message with subject. Arg: subject, message");
+
     SERVICE_ADD_METHOD(SendTo, mail_send_mail_to, 2, "Send mail message. Args: message, address");
     SERVICE_ADD_METHOD(GetTemplate, mail_get_template, 1, "Return mail template by name");
     (*service)->get_config_callback = mail_cli_get_config;
@@ -78,9 +81,14 @@ variant_t*  mail_send_mail(service_method_t* method, va_list args)
 {
     variant_t* message_variant = va_arg(args, variant_t*);
 
-    
     //const char* recepient = variant_get_string(recepient_variant);
     const char* mail_message = variant_get_string(message_variant);
+
+    if(NULL == mail_message)
+    {
+        LOG_ERROR(DT_MAIL, "Empty mail message");
+        return variant_create_bool(false);
+    }
 
     char mail_payload[128 + strlen(mail_message)];
     sprintf(mail_payload, "From: Home Security System <zae@local>\r\n%s", mail_message);
@@ -262,5 +270,38 @@ variant_t*  mail_get_template(service_method_t* method, va_list args)
         LOG_ERROR(DT_MAIL, "Error retireving tempate %s", variant_get_string(template_name));
         return variant_create_string(strdup(""));
     }
+}
+
+variant_t* call_mail_send(service_method_t* method, ...)
+{
+    va_list args;
+    va_start(args, method);
+    variant_t* result = mail_send_mail(method, args);
+    va_end(args);
+
+    return result;
+}
+
+variant_t*  mail_send_mail_subject(service_method_t* method, va_list args)
+{
+    variant_t* subject_variant = va_arg(args, variant_t*);
+    variant_t* message_variant = va_arg(args, variant_t*);
+
+    //const char* recepient = variant_get_string(recepient_variant);
+    const char* mail_message = variant_get_string(message_variant);
+
+    if(NULL == mail_message)
+    {
+        LOG_ERROR(DT_MAIL, "Empty mail message");
+        return variant_create_bool(false);
+    }
+
+    variant_t* mail_subject = variant_add(variant_create_string("Subject: "), subject_variant);
+    variant_t* mail_subject_with_newline = variant_add(mail_subject, variant_create_string("\n\n"));
+    variant_t* subject_message = variant_add(mail_subject_with_newline, message_variant);
+    variant_free(mail_subject);
+    variant_free(mail_subject_with_newline);
+
+    return call_mail_send(method, subject_message);
 }
 
