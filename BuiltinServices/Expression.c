@@ -26,6 +26,8 @@ variant_t*  eval_impl(struct service_method_t* method, va_list args)
 {
     variant_t* expression_var = va_arg(args, variant_t*);
     char* expression;
+    variant_t* result = NULL;
+
     if(variant_to_string(expression_var, &expression))
     {
         bool isOk;
@@ -33,11 +35,12 @@ variant_t*  eval_impl(struct service_method_t* method, va_list args)
         free(expression);
         if(isOk)
         {
-            return command_parser_execute_expression(compiled);
+            result = command_parser_execute_expression(compiled);
         }
+        stack_free(compiled);
     }
 
-    return NULL;
+    return result;
 }
 
 variant_t*  process_template_impl(struct service_method_t* method, va_list args)
@@ -85,8 +88,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
                     ++tokens;
                 }
                 --tokens;
-                uint32_t key = crc32(0, token_buf, strlen(token_buf));
-                variant_t* value_var = variant_hash_get(token_table, key);
+                variant_t* value_var = service_args_get_value(service_stack, token_buf);
                 if(NULL != value_var)
                 {
                     //stack_push_back(result_stack, variant_create_string(strdup(variant_to_string(value_var))));
@@ -153,18 +155,24 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
 variant_t*  unescape_impl(struct service_method_t* method, va_list args)
 {
     variant_t*  expression_var = va_arg(args, variant_t*);
-    const char* escaped_string = variant_get_string(expression_var);
-    char* result_string = calloc(strlen(escaped_string)+1, sizeof(char));
 
-    int j = 0;
-    for(int i = 0; i < strlen(escaped_string); i++)
+    const char* escaped_string = variant_get_string(expression_var);
+    if(NULL != escaped_string)
     {
-        if(escaped_string[i] != '\\')
+        char* result_string = calloc(strlen(escaped_string)+1, sizeof(char));
+    
+        int j = 0;
+        for(int i = 0; i < strlen(escaped_string); i++)
         {
-            result_string[j++] = escaped_string[i];
+            if(escaped_string[i] != '\\')
+            {
+                result_string[j++] = escaped_string[i];
+            }
         }
+    
+        return variant_create_string(result_string);
     }
 
-    return variant_create_string(result_string);
+    return expression_var;
 }
 

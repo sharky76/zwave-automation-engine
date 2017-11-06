@@ -282,8 +282,6 @@ void*       variant_get_ptr(variant_t* variant)
 variant_t*  variant_get_variant(variant_t* variant)
 {
     variant_t* ret = (variant_t*)variant->storage.ptr_data;
-    ret->ref_count++;
-
     return ret;
 }
 
@@ -357,7 +355,7 @@ bool variant_to_string(variant_t* variant, char** string)
     case DT_INT64:
         {
             *string = (char*)calloc(12, sizeof(char));
-            int n = snprintf(*string, 12, "%d", variant_get_int(variant));
+            int n = snprintf(*string, 11, "%d", variant_get_int(variant));
             retVal = (n > 0);
         }
         break;

@@ -774,6 +774,8 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
             vty_set_in_use(vty, true); // Mark this VTY as "in use" so it will not be deleted
             stack_push_back(sse_event_listener_list, variant_create_ptr(DT_PTR, vty, variant_delete_none));
         }
+
+        free(accept_type);
     }
     return true;
 }

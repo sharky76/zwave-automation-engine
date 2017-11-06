@@ -740,7 +740,7 @@ bool process_digit_token(const char* ch, variant_stack_t* operator_stack, varian
             number_variant = variant_create_float(val);
         }
     
-        stack_push_back(operand_queue, variant_create_ptr(T_OPERAND, number_variant, NULL));
+        stack_push_back(operand_queue, variant_create_variant(T_OPERAND, number_variant));
     }
 
     return retVal;
@@ -769,7 +769,9 @@ variant_t*      command_parser_execute_expression(variant_stack_t* compiled_expr
             retVal = eval(work_stack, data);
             break;
         default:
-            stack_push_front(work_stack, variant_get_variant(data));
+            // First time the variant will be deleted during eval(), second time 
+            // when we delete compiled_expression (outside of this method)
+            stack_push_front(work_stack, variant_clone(variant_get_variant(data)));
             break;
         }
     }

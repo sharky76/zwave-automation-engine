@@ -90,6 +90,7 @@ cli_command_t root_command_list[] = {
     {"show history",                       cmd_show_history,    "Show command history size"},
     {"history INT",                        cmd_set_history, "Set command history size"},
     {"eval LINE",            cmd_eval_expression,       "Evaluate expression"},
+    // TODO: {"more",                 cmd_pager,                 "Pager"},
     {"end",                  cmd_exit_node,             "End configuration session"},
     {"exit",                 cmd_quit,                  "Exit the application"},
     {NULL,                   NULL,                          NULL}

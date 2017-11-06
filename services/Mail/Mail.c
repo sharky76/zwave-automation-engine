@@ -296,12 +296,14 @@ variant_t*  mail_send_mail_subject(service_method_t* method, va_list args)
         return variant_create_bool(false);
     }
 
-    variant_t* mail_subject = variant_add(variant_create_string("Subject: "), subject_variant);
-    variant_t* mail_subject_with_newline = variant_add(mail_subject, variant_create_string("\n\n"));
-    variant_t* subject_message = variant_add(mail_subject_with_newline, message_variant);
-    variant_free(mail_subject);
-    variant_free(mail_subject_with_newline);
 
-    return call_mail_send(method, subject_message);
+    char* mail_buffer = calloc(12 + strlen(variant_get_string(subject_variant)) + strlen(mail_message), sizeof(char));
+    sprintf(mail_buffer, "Subject: %s\n\n%s", variant_get_string(subject_variant), variant_get_string(message_variant));
+
+    variant_t* mail_variant = variant_create_string(mail_buffer);
+    variant_t* reply = call_mail_send(method, mail_variant);
+    variant_free(mail_variant);
+
+    return reply;
 }
 

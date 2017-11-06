@@ -32,16 +32,44 @@ void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void*
 void         zway_data_read_fail_cb(const ZWay zway, ZWBYTE functionId, void* arg);
 
 static command_class_t command_class_table[] = {
-    {0x20, "Basic",        {"Get", 0, "", "Set", 1, "level", NULL, 0, NULL},       &command_class_eval_basic},
-    {0x30, "SensorBinary", {"Get", 1, "<sensor>,<parameter>", NULL, 0, NULL},                        &command_class_eval_binarysensor},
-    {0x80, "Battery",      {"Get", 0, "", NULL, 0, NULL},                           &command_class_eval_battery},
-    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  "Set", 2, "<type>, <level>", NULL, 0, NULL},  &command_class_eval_alarm},
-    {0x25, "SwitchBinary", {"Get", 0, "",  "Set", 1, "Bool", NULL, 0, NULL},              &command_class_eval_binaryswitch},
-    {0x70, "Configuration", {"Get", 1, "<parameter>", "Set", 3, "<parameter>, <value>, <size>", NULL, 0, NULL},       &command_class_eval_configuration},
-    {0x72, "ManufacturerSpecific", {"Get", 0, "", NULL, 0, NULL},                                     &command_class_eval_manufacturer_specific},
-    {0x84, "Wakeup",       {"Get", 0, "", "Capabilities", 0, "", "Sleep", 0, "", "Set", 2, "<seconds>, <node ID>", NULL, 0, NULL},       &command_class_eval_wakeup},
-    {0x31, "SensorMultilevel",       {"Get", 1, "<sensor>", NULL, 0, NULL},       &command_class_eval_sensor_multilevel},
-    {0x81, "Indicator",     {"Get", 0, "", "Set", 1, "<parameter>", NULL, 0, NULL}, &command_class_eval_indicator},  
+    {0x20, "Basic",        {"Get", 0, "", 
+                            "Set", 1, "level", 
+                            NULL, 0, NULL},       
+                           &command_class_eval_basic},
+    {0x30, "SensorBinary", {"Get", 1, "<sensor>,<parameter>", 
+                            NULL, 0, NULL},                        
+                           &command_class_eval_binarysensor},
+    {0x80, "Battery",      {"Get", 0, "", 
+                            NULL, 0, NULL},                           
+                           &command_class_eval_battery},
+    {0x71, "Alarm",        {"Get", 1, "<type>.<field>",  
+                            "Set", 2, "<type>, <level>", 
+                            NULL, 0, NULL},  
+                           &command_class_eval_alarm},
+    {0x25, "SwitchBinary", {"Get", 0, "",  
+                            "Set", 1, "Bool", 
+                            NULL, 0, NULL},
+                           &command_class_eval_binaryswitch},
+    {0x70, "Configuration", {"Get", 1, "<parameter>", 
+                             "Set", 3, "<parameter>, <value>, <size>", 
+                             NULL, 0, NULL},       
+                            &command_class_eval_configuration},
+    {0x72, "ManufacturerSpecific", {"Get", 0, "", 
+                                    NULL, 0, NULL},    
+                                   &command_class_eval_manufacturer_specific},
+    {0x84, "Wakeup",       {"Get", 0, "", 
+                            "Capabilities", 0, "", 
+                            "Sleep", 0, "", 
+                            "Set", 2, "<seconds>, <node ID>", 
+                            NULL, 0, NULL},       
+                           &command_class_eval_wakeup},
+    {0x31, "SensorMultilevel",       {"Get", 1, "<sensor>", 
+                                      NULL, 0, NULL},       
+                                     &command_class_eval_sensor_multilevel},
+    {0x81, "Indicator",     {"Get", 0, "", 
+                             "Set", 1, "<parameter>", 
+                             NULL, 0, NULL}, 
+                             &command_class_eval_indicator},  
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -123,16 +151,19 @@ void    command_class_for_each(void (*visitor)(command_class_t*, void*), void* a
     }
 }
 
-variant_t*  command_class_read_data(device_record_t* record, const char* path)
+/** 
+ * 
+ * 
+ * @param ret_val
+ * @param dh
+ * @param type
+ */
+variant_t* command_class_extract_data(ZDataHolder dh)
 {
     variant_t* ret_val = NULL;
-    zdata_acquire_lock(ZDataRoot(zway));
-    ZDataHolder dh = zway_find_device_instance_cc_data(zway, record->nodeId, record->instanceId, record->commandId, path);
-
     ZWDataType type;
     zdata_get_type(dh, &type);
 
-    //printf("Found zdata type %d\n", type);
     switch(type)
     {
     case Empty:
@@ -172,6 +203,17 @@ variant_t*  command_class_read_data(device_record_t* record, const char* path)
         break;
 
     }
+
+    return ret_val;
+}
+variant_t*  command_class_read_data(device_record_t* record, const char* path)
+{
+    variant_t* ret_val = NULL;
+    zdata_acquire_lock(ZDataRoot(zway));
+    ZDataHolder dh = zway_find_device_instance_cc_data(zway, record->nodeId, record->instanceId, record->commandId, path);
+
+    //printf("Found zdata type %d\n", type);
+    ret_val = command_class_extract_data(dh);
     zdata_release_lock(ZDataRoot(zway));
     return ret_val;
 }
@@ -427,7 +469,7 @@ variant_t*   command_class_eval_sensor_multilevel(const char* method, device_rec
     {
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        //ZWError err = zway_cc_sensor_multilevel_get(zway, record->nodeId, record->instanceId, -1, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        ZWError err = zway_cc_sensor_multilevel_get(zway, record->nodeId, record->instanceId, -1, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         //ret_val = variant_create_bool(err == NoError);
         char buf[32] = {0};
         snprintf(buf, 31, "%d.val", variant_get_int(param));

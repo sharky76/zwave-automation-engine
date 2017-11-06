@@ -110,7 +110,9 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
         ZDataIterator child = zdata_first_child(data);
         while (child != NULL)
         {
-            LOG_DEBUG(DataCallback, "Adding callback for path: %s", zdata_get_path(child->data));
+            char* path = zdata_get_path(child->data);
+            LOG_DEBUG(DataCallback, "Adding callback for path: %s", path);
+            free(path);
             zdata_add_callback_ex(child->data, &value_change_event_callback, TRUE, event_data);
             child = zdata_next_child(child);
         }
@@ -140,7 +142,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
         {
             LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
             event_data->last_update_time = time_msec;
-            event_t* event = event_create(DataCallback, SENSOR_DATA_CHANGE_EVENT, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, variant_delete_none));
+            event_t* event = event_create(DataCallback, SENSOR_DATA_CHANGE_EVENT, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, &variant_delete_none));
             event_post(event);
 
             event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
@@ -152,8 +154,9 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             json_object* json_resp = json_object_new_object();
             zway_json_data_holder_to_json(json_resp, data);
             new_entry->event_data = strdup(json_object_to_json_string(json_resp));
+            json_object_put(json_resp);
             event_log_add_event(new_entry);
-            free(json_resp);
+            //free(json_resp);
         }
     }
 }

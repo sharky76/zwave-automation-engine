@@ -7,6 +7,7 @@
 #include "BuiltinServices/List.h"
 #include "BuiltinServices/EventLog.h"
 #include "BuiltinServices/Resolver.h"
+#include "BuiltinServices/SensorEvent.h"
 #include "scene_manager.h"
 
 USING_LOGGER(BuiltinService)
@@ -24,6 +25,7 @@ void              builtin_service_manager_init()
     event_log_service_create(builtin_service_table);
     scene_service_create(builtin_service_table);
     resolver_service_create(builtin_service_table);
+    sensor_event_service_create(builtin_service_table);
 }
 
 service_method_t* builtin_service_manager_get_method(const char* service_class, const char* method_name)

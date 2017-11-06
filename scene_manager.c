@@ -11,6 +11,7 @@
 #include <hash.h>
 #include <crc32.h>
 #include "vdev_manager.h"
+#include "service_args.h"
 
 //static variant_stack_t* scene_list;
 hash_table_t*   scene_table;
@@ -142,17 +143,21 @@ void    scene_manager_on_sensor_event(event_t* event, void* context)
 
     if(NULL != scene_source)
     {
+        // Create SensorEvent argument stack
+        service_args_stack_create("SensorEvent");
+        service_args_stack_add("SensorEvent", "EventData", variant_clone(event->data));
+
         hash_iterator_t* it = variant_hash_begin(scene_table);
 
         while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
         {
             scene_t* scene = (scene_t*)variant_get_ptr(variant_hash_iterator_value(it));
-            //if(NULL != scene->source && strcmp(scene->source, scene_source) == 0)
+
             // Check all scene sources...
             stack_for_each(scene->source_list, source_variant)
             {
                 const char* source = variant_get_string(source_variant);
-                if(strcmp(source, scene_source) == 0)
+                if(strcmp(source, scene_source) == 0 || strcmp(source, "Sensor") == 0)
                 {
                     LOG_ADVANCED(Scene, "Scene event from sensor %s for scene %s", event_data->device_name, scene->name);
                     scene_exec(scene);
@@ -161,6 +166,7 @@ void    scene_manager_on_sensor_event(event_t* event, void* context)
         }
 
         free(it);
+        service_args_stack_destroy("SensorEvent");
     }
     else
     {

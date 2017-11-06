@@ -25,8 +25,9 @@ CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
-	$(OUTDIR)/builtin_service.o $(OUTDIR)/builtin_service_manager.o \
-	$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
+	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
@@ -42,8 +43,9 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
-	$(OUTDIR)/builtin_service.o $(OUTDIR)/builtin_service_manager.o \
-	$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
+	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
@@ -122,8 +124,9 @@ CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
-	$(OUTDIR)/builtin_service.o $(OUTDIR)/builtin_service_manager.o \
-	$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
+	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
@@ -139,8 +142,9 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
-	$(OUTDIR)/builtin_service.o $(OUTDIR)/builtin_service_manager.o \
-	$(OUTDIR)/cli_auth.o $(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
+	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
+	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
 	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
 	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
 	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \

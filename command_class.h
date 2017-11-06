@@ -32,5 +32,7 @@ command_class_t*    get_command_class_by_id(ZWBYTE command_id);
 command_class_t*    get_command_class_by_name(const char* command_name);
 void                command_class_for_each(void (*visitor)(command_class_t*, void* arg), void* arg);
 variant_t*          command_class_exec(command_class_t* cmd_class, const char* cmd_name, device_record_t* record, ...);
+variant_t*          command_class_extract_data(ZDataHolder dh);
+
 
 #endif // COMMAND_CLASS_H

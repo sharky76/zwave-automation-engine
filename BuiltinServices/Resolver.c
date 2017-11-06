@@ -15,9 +15,9 @@ builtin_service_t*  resolver_service_create(hash_table_t* service_table)
 {
     builtin_service_t*   service = builtin_service_create(service_table, "Resolver", "Name resolving methods");
     builtin_service_add_method(service, "NameFromId", "Return device name", 1, name_from_id_impl);
-    builtin_service_add_method(service, "GetListOfCommandIds", "Return list of devices's command id (arg: command class) ", 1, get_list_impl);
+    builtin_service_add_method(service, "GetListOfCommandIds", "Return list of devices resolved names for command id (arg: command class) ", 1, get_list_impl);
     builtin_service_add_method(service, "GetListOfNodes", "Return list of devices's node id", 0, get_node_list_impl);
-    builtin_service_add_method(service, "GetListOfNodesForCommandId", "Return list of devices's node id having command id (arg: cmd id) ", 1, get_node_list_for_command_id_impl);
+    builtin_service_add_method(service, "GetListOfNodesForCommandId", "Return list of devices's node ids having command id (arg: cmd id) ", 1, get_node_list_for_command_id_impl);
 
     return service;
 }

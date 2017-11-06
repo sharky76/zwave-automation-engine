@@ -222,12 +222,11 @@ void scene_action_exec_command(action_t* action)
                     
                     if(NULL != env_value)
                     {
-                        uint32_t key = crc32(0, env->name, strlen(env->name));
                         char* val;
                         variant_to_string(env_value, &val);
-                        LOG_DEBUG(Scene, "Inserting value with name %s and key %u, and val: %s", env->name, key, val);
+                        LOG_DEBUG(Scene, "Inserting value with name %s and val: %s", env->name, val);
                         free(val);
-                        service_args_stack_add(env->stack_name, key, env_value);
+                        service_args_stack_add(env->stack_name, env->name, env_value);
                     }
                 }
 
@@ -245,7 +244,11 @@ void scene_action_exec_command(action_t* action)
             variant_free(result);
         }
 
-        service_args_stack_clear();
+        stack_for_each(action->environment, env_variant)
+        {
+            method_stack_item_t* env = (method_stack_item_t*)variant_get_ptr(env_variant);
+            service_args_stack_destroy(env->stack_name);
+        }
     }
 
     stack_free(compiled);
