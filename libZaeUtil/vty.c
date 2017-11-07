@@ -211,15 +211,15 @@ char*   vty_read(vty_t* vty)
             vty_set_command_received(vty, true);
             //break;
         }
-        else if(ch[0] == IAC)
+        /*else if(ch[0] == IAC)
         {
             //printf("IAC start\n");
             vty->iac_started = true;
             vty->iac_count = 1;
-        }
+        }*/
         else if(vty->iac_started)
         {
-            if(vty->iac_count < 2)
+            /*if(vty->iac_count < 3)
             {
                 //printf("IAC cont\n");
 
@@ -230,7 +230,7 @@ char*   vty_read(vty_t* vty)
                 //printf("IAC end\n");
 
                 vty->iac_started = false;
-            }
+            }*/
         }
         else if(ch[0] == KEY_CTRL_Z)
         {
@@ -735,5 +735,10 @@ int     vty_convert_multiline(vty_t* vty, char* buffer, char** output)
 void    vty_set_in_use(vty_t* vty, bool in_use)
 {
     vty->in_use = in_use;
+}
+
+void    vty_store_vty(vty_t* vty, vty_t* stored_vty)
+{
+    vty->stored_vty = stored_vty;
 }
 

@@ -9,6 +9,8 @@
 #include "http_server.h"
 #include "socket_io.h"
 #include <arpa/telnet.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 
 bool    file_write_cb(vty_t* vty, const char* buf, size_t len);
 int     file_read_cb(vty_t* vty, char** str);
@@ -51,6 +53,11 @@ void    vty_io_config(vty_t* vty)
         vty->cursor_left_cb = std_cursor_left_cb;
         vty->cursor_right_cb = std_cursor_right_cb;
 
+        struct winsize w;
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+        vty->term_height = w.ws_row;
+        vty->term_width = w.ws_col;
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_HTTP:
@@ -77,11 +84,15 @@ void    vty_io_config(vty_t* vty)
         unsigned char cmd_will_echo[] = { IAC, WILL, TELOPT_ECHO };
         unsigned char cmd_will_sga[] = { IAC, WILL, TELOPT_SGA };
         unsigned char cmd_dont_linemode[] = { IAC, DONT, TELOPT_LINEMODE };
+        unsigned char cmd_do_naws[] = { IAC, DO, TELOPT_NAWS };
+        
         //unsigned char cmd_will_cr[] = {IAC, WILL, TELOPT_NAOCRD};
 
         socket_write_cb(vty, cmd_will_echo, 3);
         socket_write_cb(vty, cmd_will_sga, 3);
         socket_write_cb(vty, cmd_dont_linemode, 3);
+        socket_write_cb(vty, cmd_do_naws, 3);
+
         //socket_write_cb(vty, cmd_will_cr, 3);
         
         //vty->buffer = calloc(BUFSIZE, sizeof(char));

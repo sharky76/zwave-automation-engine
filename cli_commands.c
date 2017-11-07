@@ -7,6 +7,8 @@
 #include <readline/history.h>
 #include <stack.h>
 #include <cli.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <ZWayLib.h>
 #include <ZData.h>
 #include <ZPlatform.h>
@@ -26,6 +28,7 @@
 #include "vty_io.h"
 #include "cli_vdev.h"
 #include "cli_rest.h"
+#include "hash.h"
 
 extern sigjmp_buf jmpbuf;
 extern int keep_running;
@@ -62,6 +65,7 @@ bool    cmd_show_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_quit(vty_t* vty, variant_stack_t* params);
 bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_history(vty_t* vty, variant_stack_t* params);
+bool    cmd_pager(vty_t* vty, variant_stack_t* params);
 
 void    show_command_class_helper(command_class_t* command_class, void* arg);
 
@@ -90,7 +94,7 @@ cli_command_t root_command_list[] = {
     {"show history",                       cmd_show_history,    "Show command history size"},
     {"history INT",                        cmd_set_history, "Set command history size"},
     {"eval LINE",            cmd_eval_expression,       "Evaluate expression"},
-    // TODO: {"more",                 cmd_pager,                 "Pager"},
+    {"more",                 cmd_pager,                 "Pager"},
     {"end",                  cmd_exit_node,             "End configuration session"},
     {"exit",                 cmd_quit,                  "Exit the application"},
     {NULL,                   NULL,                          NULL}
@@ -605,45 +609,65 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
         line[strlen(line) - 1] = 0;
     }
 
-    /*
+    
     char* pipe_char = rindex(line, '|');
     char* pipe_method = NULL;
     if(NULL != pipe_char && *(pipe_char-1) != '|')
     {
         pipe_method = pipe_char+1;
         *pipe_char = 0;
+    }
 
-
-        int in_fd[2];
-        pipe(in_fd);
-
+    if(NULL != pipe_method)
+    {
+        int pipe_fd[2];
+        pipe(pipe_fd);
+        
         vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
-        vty_data->desc.io_pair[IN] = fdopen(in_fd[0], "r");
-        vty_data->desc.io_pair[OUT] = stdout;
-        vty_std = vty_io_create(VTY_STD, vty_data);
+        vty_data->desc.io_pair[IN] = fdopen(pipe_fd[IN], "r");
+        vty_data->desc.io_pair[OUT] = fdopen(pipe_fd[OUT], "w");;
 
-        vty->data->desc.io_pair[OUT] = fdopen(in_fd[1], "w");
+        vty_t* vty_pipe = vty_io_create(VTY_STD, vty_data);
+        vty_pipe->term_width = vty->term_width;
+        vty_pipe->term_height = vty->term_height;
 
-    } 
-     
-    */
+        cli_set_vty(vty_pipe);
 
+        pid_t pid = fork();
+        if(0 == pid)
+        {
+            vty_store_vty(vty_pipe, vty);
+            cli_command_exec_custom_node(root_node, vty_pipe, pipe_method);
+            exit(0);
+        }
+        else
+        {
+            retVal = cli_command_exec_custom_node(node, vty_pipe, line);
+
+            // Insert EOF char
+            char eof_ch = (char)EOF;
+            vty_pipe->write_cb(vty_pipe, &eof_ch, 1);
+
+            // Wait for pipe to process all input
+            pid_t pid = waitpid((pid_t)(-1), 0, 0);
+
+            // Recover
+            cli_set_vty(vty);
+            vty_free(vty_pipe);
+            return retVal;
+        }
+    }
+
+        
     variant_stack_t* params;
     CmdMatchStatus match_status = cli_get_custom_command(node, line, &cmd_node, &params);
 
-    /*char* filter_start = NULL;
-    if((filter_start = strstr(line, "|")) != NULL)
-    {
-        char* filter = filter_start + 1;
-    }*/
 
     switch(match_status)
     {
     case CMD_FULL_MATCH:
         {
-            //variant_stack_t* params = create_cmd_vec(line);
             retVal = cmd_node->data->command->func(vty, params);
-            //stack_free(params);
         }
         break;
     case CMD_PARTIAL_MATCH:
@@ -833,6 +857,55 @@ bool    cmd_set_banner(vty_t* vty, variant_stack_t* params)
 
     vty_write(vty, VTY_NEWLINE(vty));
 }
+
+bool    cmd_pager(vty_t* vty, variant_stack_t* params)
+{
+    int rows = 0;
+    char* str = NULL;
+    char* ch = NULL;
+    int n = 0;
+
+    do
+    {
+        do
+        {
+            if(NULL != ch)
+            {
+                free(ch);
+            }
+
+            n = vty->read_cb(vty, &ch);
+            while(ch[0] != 0xa && ch[0] != 0xd && ch[0] != (char)EOF)
+            {
+                vty_write(vty->stored_vty, "%c", *ch);
+                free(ch);
+                n = vty->read_cb(vty, &ch);
+            }
+            
+            vty_write(vty->stored_vty, "%s", VTY_NEWLINE(vty->stored_vty));
+        }
+        while(++rows < vty->term_height && ch[0] != (char)EOF && n > 0);
+
+        if(ch[0] != (char)EOF && n > 0)
+        {
+            rows = 0;
+            vty_write(vty->stored_vty, "-- MORE --");
+            
+            char* c = 0;
+            vty->stored_vty->read_cb(vty->stored_vty, &c);
+            while(c[0] != 0xa && c[0] != 0xd && c[0] != ' ')
+            {
+                free(c);
+                vty->stored_vty->read_cb(vty->stored_vty, &c);
+            }
+
+            free(c);
+        }
+
+    } while(ch[0] != (char)EOF && n > 0);
+    free(ch);
+}
+
 
 bool    cmd_show_banner(vty_t* vty, variant_stack_t* params)
 {

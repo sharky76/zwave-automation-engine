@@ -60,13 +60,15 @@ typedef struct vty_t
     bool    command_completion_started;
     bool    esc_sequence_started;
     bool    iac_started;
-    int     iac_count;
     variant_stack_t* completions;
     bool    command_received;
     bool    shutdown;
     bool    is_authenticated;
     bool    in_use;
+    int16_t term_width;
+    int16_t term_height;
     void*   priv;
+    struct vty_t*  stored_vty;
 } vty_t;
 
 #define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET) ? "\r\n" : "\n")
@@ -108,4 +110,5 @@ bool    vty_is_authenticated(vty_t* vty);
 void    vty_write_multiline(vty_t* vty, char* buffer);
 int     vty_convert_multiline(vty_t* vty, char* buffer, char** output);
 void    vty_set_in_use(vty_t* vty, bool in_use);
+void    vty_store_vty(vty_t* vty, vty_t* stored_vty);
 
