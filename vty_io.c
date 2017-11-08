@@ -29,6 +29,7 @@ void    http_free_priv_cb(vty_t* vty);
 vty_t*  vty_io_create(vty_type type, vty_io_data_t* data)
 {
     vty_t* new_vty = vty_create(type, data);
+    new_vty->stored_vty = new_vty;
     vty_io_config(new_vty);
     return new_vty;
 }

@@ -66,7 +66,7 @@ bool    cmd_quit(vty_t* vty, variant_stack_t* params);
 bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_pager(vty_t* vty, variant_stack_t* params);
-
+bool    cmd_line_filter(vty_t* vty, variant_stack_t* params);
 void    show_command_class_helper(command_class_t* command_class, void* arg);
 
 cli_command_t root_command_list[] = {
@@ -95,6 +95,7 @@ cli_command_t root_command_list[] = {
     {"history INT",                        cmd_set_history, "Set command history size"},
     {"eval LINE",            cmd_eval_expression,       "Evaluate expression"},
     {"more",                 cmd_pager,                 "Pager"},
+    {"grep LINE",            cmd_line_filter,           "Line filter"},
     {"end",                  cmd_exit_node,             "End configuration session"},
     {"exit",                 cmd_quit,                  "Exit the application"},
     {NULL,                   NULL,                          NULL}
@@ -861,7 +862,6 @@ bool    cmd_set_banner(vty_t* vty, variant_stack_t* params)
 bool    cmd_pager(vty_t* vty, variant_stack_t* params)
 {
     int rows = 0;
-    char* str = NULL;
     char* ch = NULL;
     int n = 0;
 
@@ -906,6 +906,41 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
     free(ch);
 }
 
+bool    cmd_line_filter(vty_t* vty, variant_stack_t* params)
+{
+    bool isOk;
+    char expression[512] = {0};
+    cli_assemble_line(params, 1, expression);
+
+    char buf[512] = {0};
+    char* ch = NULL;
+    int n = 0;
+
+    do
+    {
+        if(NULL != ch)
+        {
+            free(ch);
+        }
+
+        n = vty->read_cb(vty, &ch);
+        while(ch[0] != 0xa && ch[0] != 0xd && ch[0] != (char)EOF)
+        {
+            strcat(buf, ch);
+            free(ch);
+            n = vty->read_cb(vty, &ch);
+        }
+        
+        if(strstr(buf, expression) != NULL)
+        {
+            vty_write(vty->stored_vty, "%s%s", buf, VTY_NEWLINE(vty->stored_vty));
+        }
+
+        memset(buf, 0, 512);
+     }
+     while(ch[0] != (char)EOF && n > 0);
+     free(ch);
+}
 
 bool    cmd_show_banner(vty_t* vty, variant_stack_t* params)
 {
