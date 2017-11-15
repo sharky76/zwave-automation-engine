@@ -13,6 +13,7 @@ bool    cmd_configure_key(vty_t* vty, variant_stack_t* params);
 
 cli_command_t    ifttt_command_list[] = {
     {"key WORD",       cmd_configure_key,   "Set IFTTT Maker key"},
+    //{"url WORD scene|command|script LINE",       cmd_configure_trigger,   "Add IFTTT trigger"},
     {NULL, NULL, NULL}
 };
 

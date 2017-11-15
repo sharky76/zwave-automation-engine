@@ -60,7 +60,8 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
             event_data->last_update_time = 0;
             event_data->device_name = resolver_name_from_node_id(node_id);
 
-            if(NULL == event_data->device_name)
+            if(NULL == event_data->device_name || 
+               NULL == resolver_name_from_id(node_id, instance_id, command_id))
             {
                 char default_name[MAX_DEVICE_NAME_LEN] = {0};
                 command_class_t* cmd_class = get_command_class_by_id(command_id);

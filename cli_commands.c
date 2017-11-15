@@ -864,6 +864,7 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
     int rows = 0;
     char* ch = NULL;
     int n = 0;
+    bool is_quit = false;
 
     do
     {
@@ -893,16 +894,22 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
             
             char* c = 0;
             vty->stored_vty->read_cb(vty->stored_vty, &c);
-            while(c[0] != 0xa && c[0] != 0xd && c[0] != ' ')
+            while(c[0] != 0xa && c[0] != 0xd && c[0] != ' ' && c[0] != 'q' && c[0] != 'Q')
             {
                 free(c);
                 vty->stored_vty->read_cb(vty->stored_vty, &c);
             }
 
+            if(c[0] == 'q' || c[0] == 'Q')
+            {
+                vty_new_line(vty->stored_vty);
+                is_quit = true;
+            }
+
             free(c);
         }
 
-    } while(ch[0] != (char)EOF && n > 0);
+    } while(ch[0] != (char)EOF && n > 0 && !is_quit);
     free(ch);
 }
 
