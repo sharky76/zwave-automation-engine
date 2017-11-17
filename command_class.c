@@ -37,7 +37,7 @@ static command_class_t command_class_table[] = {
                             "Set", 1, "level", 
                             NULL, 0, NULL},       
                            &command_class_eval_basic},
-    {0x30, "SensorBinary", {"Get", 1, "<sensor>,<parameter>", 
+    {0x30, "SensorBinary", {"Get", 0, "", 
                             NULL, 0, NULL},                        
                            &command_class_eval_binarysensor},
     {0x80, "Battery",      {"Get", 0, "", 
@@ -67,7 +67,7 @@ static command_class_t command_class_table[] = {
     {0x31, "SensorMultilevel",       {"Get", 1, "<sensor>", 
                                       NULL, 0, NULL},       
                                      &command_class_eval_sensor_multilevel},
-    {0x81, "Indicator",     {"Get", 0, "", 
+    {0x87, "Indicator",     {"Get", 0, "", 
                              "Set", 1, "<parameter>", 
                              NULL, 0, NULL}, 
                              &command_class_eval_indicator},
@@ -269,7 +269,7 @@ variant_t*   command_class_eval_binarysensor(const char* method, device_record_t
 
     if(strcmp(method, "Get") == 0)
     {
-        variant_t* arg1 = va_arg(args, variant_t*);
+        //variant_t* arg1 = va_arg(args, variant_t*);
 
         /*ZWBOOL bool_val;
         zdata_get_boolean(dh, &bool_val);
@@ -287,7 +287,7 @@ variant_t*   command_class_eval_binarysensor(const char* method, device_record_t
             LOG_DEBUG(DataCallback, "Binary sensor GET sent");
         }*/
 
-        ret_val = command_class_read_data(record, variant_get_string(arg1));
+        ret_val = command_class_read_data(record, "1.level");
     }
 
     return ret_val;

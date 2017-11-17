@@ -181,19 +181,30 @@ void  timer_tick_event(event_t* pevent, void* context)
 
         LOG_DEBUG(DT_CRON, "Cron Event %d %d %d %d %d", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
 
-        variant_stack_t* scene_list = crontab_get_scene(job_time);
+        variant_stack_t* action_list = crontab_get_action(job_time);
 
-        if(NULL != scene_list)
+        if(NULL != action_list)
         {
-            LOG_ADVANCED(DT_CRON, "Found %d matching scenes", scene_list->count);
-            stack_for_each(scene_list, scene_variant)
+            LOG_ADVANCED(DT_CRON, "Found %d matching actions", action_list->count);
+            stack_for_each(action_list, cron_action_variant)
             {
-                const char* scene_name = variant_get_string(scene_variant);
-                LOG_DEBUG(DT_CRON, "Sending event for scene %s", scene_name);
-                service_post_event(DT_CRON, SCENE_ACTIVATION_EVENT, variant_create_string(strdup(scene_name)));
+                cron_action_t* action = VARIANT_GET_PTR(cron_action_t, cron_action_variant);
+
+                if(action->type == CA_SCENE)
+                {
+                    const char* scene_name = variant_get_string(action->command);
+                    LOG_DEBUG(DT_CRON, "Sending event for scene %s", scene_name);
+                    service_post_event(DT_CRON, SCENE_ACTIVATION_EVENT, variant_create_string(strdup(scene_name)));
+                }
+                else if(action->type == CA_COMMAND)
+                {
+                    const char* command_name = variant_get_string(action->command);
+                    LOG_DEBUG(DT_CRON, "Executing command %s", command_name);
+                    service_post_event(DT_CRON, COMMAND_ACTIVATION_EVENT, variant_create_string(strdup(command_name)));
+                }
             }
 
-            stack_free(scene_list);
+            stack_free(action_list);
         }
     }
 }

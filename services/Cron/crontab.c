@@ -21,6 +21,13 @@ void delete_time_entry(void* arg)
     free(e);
 }
 
+void delete_cron_action(void* arg)
+{
+    cron_action_t* action = (cron_action_t*)arg;
+    variant_free(action->command);
+    free(action);
+}
+
 /**
  * o o o o 
  * | 
@@ -37,7 +44,7 @@ void delete_time_entry(void* arg)
  */
 
 
-void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
+void    crontab_add_entry(crontab_time_t crontab_time, CronAction actionType, char* command)
 {
     if(NULL == crontab)
     {
@@ -82,8 +89,11 @@ void    crontab_add_entry(crontab_time_t crontab_time, char* scene)
 
     // Here root points to the last child array which must hold the command
     //printf("Adding scene %s\n", scene);
-    LOG_DEBUG(DT_CRON, "Adding scene %s", scene);
-    stack_push_back(root, variant_create_string(strdup(scene)));
+    LOG_DEBUG(DT_CRON, "Adding scene %s", command);
+    cron_action_t* action = malloc(sizeof(cron_action_t));
+    action->type = actionType;
+    action->command = variant_create_string(strdup(command));
+    stack_push_back(root, variant_create_ptr(DT_PTR, action, &delete_cron_action));
 }
 
 typedef struct crontab_remove_candidate_t
@@ -92,7 +102,7 @@ typedef struct crontab_remove_candidate_t
     variant_stack_t* stack;
 } crontab_remove_candidate_t;
 
-void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
+void    crontab_del_entry(crontab_time_t crontab_time, CronAction actionType, char* command)
 {
     if(NULL == crontab)
     {
@@ -120,12 +130,13 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
                 else
                 {
                     // This is the last level - all child_arrays contains scene names!
-                    stack_for_each(e->child_array, scene_name_variant)
+                    stack_for_each(e->child_array, cron_action_variant)
                     {
+                        cron_action_t* action = VARIANT_GET_PTR(cron_action_t, cron_action_variant);
                         //printf("Pushing back %s\n", variant_get_string(scene_name_variant));
-                        if(strcmp(scene, variant_get_string(scene_name_variant)) == 0)
+                        if(strcmp(command, variant_get_string(action->command)) == 0 && actionType == action->type)
                         {
-                            stack_remove(e->child_array, scene_name_variant);
+                            stack_remove(e->child_array, cron_action_variant);
                         }
                     }
                 }
@@ -200,7 +211,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, char* scene)
     }*/
 }
 
-variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
+variant_stack_t*   crontab_get_action(crontab_time_t crontab_time)
 {
     if(NULL == crontab)
     {
@@ -232,10 +243,10 @@ variant_stack_t*   crontab_get_scene(crontab_time_t crontab_time)
                 else
                 {
                     // This is the last level - all child_arrays contains scene names!
-                    stack_for_each(e->child_array, scene_name_variant)
+                    stack_for_each(e->child_array, cron_action_variant)
                     {
                         //printf("Pushing back %s\n", variant_get_string(scene_name_variant));
-                        stack_push_back(scene_array, variant_clone(scene_name_variant));
+                        stack_push_back(scene_array, variant_clone(cron_action_variant));
                     }
                 }
             }

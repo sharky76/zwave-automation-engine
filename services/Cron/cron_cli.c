@@ -10,15 +10,16 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params);
 cli_node_t* cron_node;
 
 cli_command_t cron_command_list[] = {
-    {"job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6] scene LINE",   cmd_cron_add_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Monday). * means first-last"},
-    {"no job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6] scene LINE",   cmd_cron_del_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Monday). * means first-last"},
+    {"job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6] scene|command LINE",   cmd_cron_add_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Monday). * means first-last"},
+    {"no job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6] scene|command LINE",   cmd_cron_del_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Monday). * means first-last"},
     {NULL, NULL, NULL}
 };
 
 typedef struct cron_cli_record_t
 {
     crontab_time_t time;
-    char* scene;
+    CronAction type;
+    char* command;
 } cron_cli_record_t;
 
 variant_stack_t*    cron_cli_record_list;
@@ -27,7 +28,7 @@ char** config_list;
 void delete_cron_cli_record(void* arg)
 {
     cron_cli_record_t* r = (cron_cli_record_t*)arg;
-    free(r->scene);
+    free(r->command);
     free(r);
 }
 
@@ -84,7 +85,7 @@ char** cron_cli_get_config(vty_t* vty)
         config_list[i] = calloc(512, sizeof(char));
         cron_cli_record_t* crontab_record = (cron_cli_record_t*)variant_get_ptr(crontab_record_variant);
         char* crontab_time = crontab_time_to_string(crontab_record->time);
-        snprintf(config_list[i], 511, "job %s scene %s", crontab_time, crontab_record->scene);
+        snprintf(config_list[i], 511, "job %s %s %s", crontab_time, (crontab_record->type == CA_SCENE)? "scene" : "command", crontab_record->command);
         free(crontab_time);
         i++;
     }
@@ -109,9 +110,22 @@ bool cmd_cron_add_entry(vty_t* vty, variant_stack_t* params)
         }
     }
 
-    crontab_record->scene = strdup(variant_get_string(stack_peek_at(params, 7)));
+    variant_t* action_type = stack_peek_at(params, 6);
+    variant_t* command = stack_peek_at(params, 7);
 
-    crontab_add_entry(crontab_record->time, crontab_record->scene);
+    if(strcmp(variant_get_string(action_type), "scene") == 0)
+    {
+        crontab_record->type = CA_SCENE;
+    }
+    else
+    {
+        crontab_record->type = CA_COMMAND;
+    }
+
+
+    crontab_record->command = strdup(variant_get_string(command));
+
+    crontab_add_entry(crontab_record->time, crontab_record->type, crontab_record->command);
     stack_push_back(cron_cli_record_list, variant_create_ptr(DT_PTR, crontab_record, &delete_cron_cli_record));
 }
 
@@ -132,16 +146,27 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params)
         }
     }
 
-    crontab_record.scene = (char*)variant_get_string(stack_peek_at(params, 8));
+    variant_t* action_type = stack_peek_at(params, 7);
+    variant_t* command = stack_peek_at(params, 8);
+
+    if(strcmp(variant_get_string(action_type), "scene") == 0)
+    {
+        crontab_record.type = CA_SCENE;
+    }
+    else
+    {
+        crontab_record.type = CA_COMMAND;
+    }
+    crontab_record.command = (char*)variant_get_string(command);
 
     stack_for_each(cron_cli_record_list, crontab_record_variant)
     {
         cron_cli_record_t* saved_record = (cron_cli_record_t*)variant_get_ptr(crontab_record_variant);
         if(memcmp(saved_record->time, crontab_record.time, sizeof(int)*5) == 0)
         {
-            if(strcmp(saved_record->scene, crontab_record.scene) == 0)
+            if(strcmp(saved_record->command, crontab_record.command) == 0 && saved_record->type == crontab_record.type)
             {
-                crontab_del_entry(saved_record->time, saved_record->scene);
+                crontab_del_entry(saved_record->time, saved_record->type, saved_record->command);
                 stack_remove(cron_cli_record_list, crontab_record_variant);
                 variant_free(crontab_record_variant);
                 break;
