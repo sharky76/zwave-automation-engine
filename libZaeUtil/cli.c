@@ -53,6 +53,23 @@ node_data_t*    cmd_create_node_data(const char* cmd_part, cli_command_t* cmd)
     {
         data->type = TYPE_CHAR;
     }
+    else if(strstr(cmd_part, "LIST") == cmd_part)
+    {
+        int start;
+        int end;
+        if(sscanf(cmd_part, "LIST[%d-%d]", &start, &end) == 2)
+        {
+            data->type = TYPE_INTLIST;
+            data->value_range.start = variant_create_int32(DT_INT32, start);
+            data->value_range.end = variant_create_int32(DT_INT32, end);
+            data->has_range = true;
+        }
+        else 
+        {
+            data->type = TYPE_LIST;
+            data->has_range = false;
+        }
+    }
     else
     {
         data->type = TYPE_CMD_PART;
@@ -455,6 +472,44 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
                     }
                 }
             }
+            else if(node->data->type == TYPE_INTLIST)
+            {
+                char* mutable_cmd_part = strdup(cmd_part_str);
+                char* tok = strtok(mutable_cmd_part, ",");
+                bool list_in_range = true;
+                while(NULL != tok && list_in_range)
+                {
+                    char* endptr;
+                    int base;
+                    if(strstr(tok, "0x") == tok)
+                    {
+                        base = 16;
+                    }
+                    else
+                    {
+                        base = 10;
+                    }
+    
+                    int num = strtol(tok, &endptr, base);
+                    if(*endptr == '\0')
+                    {
+                        if(variant_get_int(node->data->value_range.start) > num || variant_get_int(node->data->value_range.end) < num)
+                        {
+                            list_in_range = false;
+                        }
+                    }
+
+                    tok = strtok(NULL, ",");
+                }
+                
+                free(mutable_cmd_part);
+
+                if(list_in_range)
+                {
+                    stack_push_back(matches, command_tree_node_variant);
+                    last_node = node;
+                }
+            }
             else if((node->data->type == TYPE_TERM && *cmd_part_str == 0) || node->data->type == TYPE_WORD || node->data->type == TYPE_LINE || node->data->type == TYPE_CHAR ||
                (node->data->type == TYPE_CMD_PART && strstr(node->data->name, cmd_part_str) == node->data->name))
             {
@@ -502,6 +557,12 @@ char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, var
 
     if(cmd_matches)
     {
+        char** first_cmd = cmd_matches;
+        while(NULL != *first_cmd)
+        {
+            free(*first_cmd);
+            first_cmd++;
+        }
         free(cmd_matches);
     }
     
@@ -619,6 +680,33 @@ CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd
     
                             int num = strtol(cmd_part_str, NULL, base);
                             stack_push_back(*complete_cmd_vec, variant_create_int32(DT_INT32, num));
+                        }
+                        break;
+                    case TYPE_INTLIST:
+                        {
+                            variant_stack_t* int_list = stack_create();
+                            char* mutable_cmd_part = strdup(cmd_part_str);
+                            char* tok = strtok(mutable_cmd_part, ",");
+                            while(NULL != tok)
+                            {
+                                char* endptr;
+                                int base;
+                                if(strstr(tok, "0x") == tok)
+                                {
+                                    base = 16;
+                                }
+                                else
+                                {
+                                    base = 10;
+                                }
+                
+                                int num = strtol(tok, &endptr, base);
+                                stack_push_back(int_list, variant_create_int32(DT_INT32, num));
+                                tok = strtok(NULL, ",");
+                            }
+                            
+                            free(mutable_cmd_part);
+                            stack_push_back(*complete_cmd_vec, variant_create_list(int_list));
                         }
                         break;
                     }

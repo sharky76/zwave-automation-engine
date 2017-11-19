@@ -285,6 +285,11 @@ variant_t*  variant_get_variant(variant_t* variant)
     return ret;
 }
 
+variant_stack_t* variant_get_list(variant_t* variant)
+{
+    return (NULL != variant)? (variant_stack_t*)variant->storage.ptr_data : NULL;
+}
+
 variant_t*  variant_clone(variant_t* variant)
 {
     variant->ref_count++;

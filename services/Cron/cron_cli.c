@@ -10,8 +10,8 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params);
 cli_node_t* cron_node;
 
 cli_command_t cron_command_list[] = {
-    {"job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6] scene|command LINE",   cmd_cron_add_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Monday). * means first-last"},
-    {"no job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6] scene|command LINE",   cmd_cron_del_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Monday). * means first-last"},
+    {"job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6]|LIST[0-6] scene|command LINE",   cmd_cron_add_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Sunday). * means first-last"},
+    {"no job *|INT[0-59] *|INT[0-23] *|INT[1-31] *|INT[1-12] *|INT[0-6]|LIST[0-6] scene|command LINE",   cmd_cron_del_entry, "Add cron entry: min[0-59] hour[0-23] day of month[1-31] month[1-12] day of week[0-6] (0 = Sunday). * means first-last"},
     {NULL, NULL, NULL}
 };
 
@@ -28,6 +28,11 @@ char** config_list;
 void delete_cron_cli_record(void* arg)
 {
     cron_cli_record_t* r = (cron_cli_record_t*)arg;
+
+    for(int i = 0; i < 5; i++)
+    {
+        stack_free(r->time[i]);
+    }
     free(r->command);
     free(r);
 }
@@ -40,18 +45,25 @@ void cron_cli_init(cli_node_t* parent_node)
 
 char* crontab_time_to_string(crontab_time_t time)
 {
-    char* time_str = calloc(16, sizeof(char));
+    char* time_str = calloc(128, sizeof(char));
     char* time_ptr = time_str;
     for(int i = 0; i < 5; i++)
     {
-        if(time[i] == -1)
+        variant_stack_t* time_list = time[i];
+
+        int time_count = time_list->count;
+        stack_for_each(time_list, time_value_variant)
         {
-            strcat(time_ptr++, "*");
-        }
-        else
-        {
-            int n = sprintf(time_ptr, "%d", time[i]);
-            time_ptr += n;
+            int time_value = variant_get_int(time_value_variant);
+            if(time_value == -1)
+            {
+                strcat(time_ptr++, "*");
+            }
+            else
+            {
+                int n = sprintf(time_ptr, "%d%s", time_value, (--time_count > 0)? "," : "");
+                time_ptr += n;
+            }
         }
 
         if(i < 4)
@@ -95,18 +107,33 @@ char** cron_cli_get_config(vty_t* vty)
 
 bool cmd_cron_add_entry(vty_t* vty, variant_stack_t* params)
 {
-    cron_cli_record_t* crontab_record = malloc(sizeof(char*) + sizeof(int)*5);
+    cron_cli_record_t* crontab_record = malloc(/*sizeof(char*) + sizeof(int)*5*/sizeof(cron_cli_record_t));
 
+    for(int i = 0; i < 5; i++)
+    {
+        crontab_record->time[i] = stack_create();
+    }
+
+    // Process command line and add more or modify existing time entry
     for(int i = 1; i < 6; i++)
     {
         variant_t* time_val = stack_peek_at(params, i);
         if(time_val->type == DT_STRING && strcmp(variant_get_string(time_val), "*") == 0)
         {
-            crontab_record->time[i-1] = -1;
+            stack_push_back(crontab_record->time[i-1], variant_create_int32(DT_INT32, -1));
         }
-        else
+        else if(time_val->type == DT_INT32)
         {
-            crontab_record->time[i-1] = variant_get_int(time_val);
+            stack_push_back(crontab_record->time[i-1], variant_clone(time_val));
+        }
+        else if(time_val->type == DT_LIST)
+        {
+            variant_stack_t* int_list = variant_get_list(time_val);
+
+            stack_for_each(int_list, time_value_variant)
+            {
+                stack_push_back(crontab_record->time[i-1], variant_clone(time_value_variant));
+            }
         }
     }
 
@@ -132,17 +159,30 @@ bool cmd_cron_add_entry(vty_t* vty, variant_stack_t* params)
 bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params)
 {
     cron_cli_record_t crontab_record;
+    for(int i = 0; i < 5; i++)
+    {
+        crontab_record.time[i] = stack_create();
+    }
 
     for(int i = 2; i < 7; i++)
     {
         variant_t* time_val = stack_peek_at(params, i);
         if(time_val->type == DT_STRING && strcmp(variant_get_string(time_val), "*") == 0)
         {
-            crontab_record.time[i-2] = -1;
+            stack_push_back(crontab_record.time[i-2], variant_create_int32(DT_INT32, -1));
         }
-        else
+        else if(time_val->type == DT_INT32)
         {
-            crontab_record.time[i-2] = variant_get_int(time_val);
+            stack_push_back(crontab_record.time[i-2], variant_clone(time_val));
+        }
+        else if(time_val->type == DT_LIST)
+        {
+            variant_stack_t* int_list = variant_get_list(time_val);
+
+            stack_for_each(int_list, time_value_variant)
+            {
+                stack_push_back(crontab_record.time[i-2], variant_clone(time_value_variant));
+            }
         }
     }
 
@@ -162,7 +202,7 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params)
     stack_for_each(cron_cli_record_list, crontab_record_variant)
     {
         cron_cli_record_t* saved_record = (cron_cli_record_t*)variant_get_ptr(crontab_record_variant);
-        if(memcmp(saved_record->time, crontab_record.time, sizeof(int)*5) == 0)
+        if(/*memcmp(saved_record->time, crontab_record.time, sizeof(int)*5) == 0*/crontab_time_compare(saved_record->time, crontab_record.time))
         {
             if(strcmp(saved_record->command, crontab_record.command) == 0 && saved_record->type == crontab_record.type)
             {
@@ -172,6 +212,11 @@ bool cmd_cron_del_entry(vty_t* vty, variant_stack_t* params)
                 break;
             }
         }
+    }
+
+    for(int i = 0; i < 5; i++)
+    {
+        stack_free(crontab_record.time[i]);
     }
 }
 

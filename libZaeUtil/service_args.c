@@ -127,5 +127,6 @@ void                    service_args_for_each(service_args_stack_t* stack, void 
         uint32_t   key = variant_hash_iterator_key(it);
         visitor(key, value, arg);
     }
+    free(it);
 }
 

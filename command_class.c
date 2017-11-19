@@ -300,9 +300,9 @@ variant_t*   command_class_eval_battery(const char* method, device_record_t* rec
     if(strcmp(method, "Get") == 0)
     {
         variant_t* arg1 = va_arg(args, variant_t*);
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
-        ctx->record = record;
-        zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        //zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        //ctx->record = record;
+        //zway_cc_battery_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         ret_val = command_class_read_data(record, "last");
     }
 

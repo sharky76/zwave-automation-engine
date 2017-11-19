@@ -28,6 +28,8 @@ typedef enum
     TYPE_LINE,
     TYPE_INT,
     TYPE_CHAR,
+    TYPE_LIST,
+    TYPE_INTLIST,
     TYPE_TERM
 } NodeType;
 

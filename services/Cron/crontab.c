@@ -18,6 +18,7 @@ void delete_time_entry(void* arg)
     }
 
     stack_free(e->child_array);
+    stack_free(e->time_list);
     free(e);
 }
 
@@ -26,6 +27,70 @@ void delete_cron_action(void* arg)
     cron_action_t* action = (cron_action_t*)arg;
     variant_free(action->command);
     free(action);
+}
+
+/**
+ * 
+ * 
+ * @author alex (11/18/2017)
+ *  
+ *  Find if time exists in existing entry times 
+ *  
+ * @param time 
+ * @param existing_entry 
+ * 
+ * @return bool 
+ */
+bool crontab_has_time(int time, crontab_time_entry_t* existing_entry)
+{
+    stack_for_each(existing_entry->time_list, time_value_variant)
+    {
+        if(variant_get_int(time_value_variant) == time)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool    crontab_time_list_compare(variant_stack_t* left, variant_stack_t* right)
+{
+    if(left->count != right->count)
+    {
+        return false;
+    }
+
+    // If stacks are equal size, lets compare each time entry
+    int index = 0;
+    stack_for_each(left, left_time_entry)
+    {
+        variant_t* right_time_entry = stack_peek_at(right, index++);
+        if(variant_get_int(left_time_entry) != variant_get_int(right_time_entry))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/******************************************************************//**
+
+Compare two time entries and return true if equal
+
+***********************************************************************/
+bool    crontab_time_compare(crontab_time_t left, crontab_time_t right)
+{
+    for(int i = 0; i < 5; i++)
+    {
+        if(!crontab_time_list_compare(left[i], right[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -43,7 +108,9 @@ void delete_cron_action(void* arg)
  *  
  */
 
-
+//                     array of time lists
+//                                                         action type
+//                                                                                 command
 void    crontab_add_entry(crontab_time_t crontab_time, CronAction actionType, char* command)
 {
     if(NULL == crontab)
@@ -51,7 +118,7 @@ void    crontab_add_entry(crontab_time_t crontab_time, CronAction actionType, ch
         crontab = stack_create();
     }
     variant_stack_t* root = crontab;
-    int* time_ptr = (int*)crontab_time;
+    variant_stack_t** time_list_ptr = (variant_stack_t**)crontab_time;
     bool node_found = false;
 
     for(int i = 0; i < 5; i++)
@@ -59,11 +126,12 @@ void    crontab_add_entry(crontab_time_t crontab_time, CronAction actionType, ch
         stack_for_each(root, time_entry_variant)
         {
             crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
-            if(e->time == *time_ptr)
+            
+            if(crontab_time_list_compare(e->time_list, *time_list_ptr))
             {
                 //printf("Time %d was found, go to next\n", e->time);
                 root = e->child_array;
-                time_ptr++;
+                time_list_ptr++;
                 node_found = true;
                 break;
             }
@@ -75,10 +143,16 @@ void    crontab_add_entry(crontab_time_t crontab_time, CronAction actionType, ch
         {
             //printf("Alloc %d\n", sizeof(crontab_time_entry_t));
             crontab_time_entry_t* new_time_entry = malloc(sizeof(crontab_time_entry_t));
-            new_time_entry->time = *time_ptr;
-            time_ptr++;
+            new_time_entry->time_list = stack_create();
+
+            stack_for_each((*time_list_ptr), time_value_variant)
+            {
+                stack_push_back(new_time_entry->time_list, variant_clone(time_value_variant));
+            }
+
+            time_list_ptr++;
             //printf("Adding time %d to root %p\n", new_time_entry->time, root);
-            LOG_DEBUG(DT_CRON, "Adding time %d at position %d", new_time_entry->time, i);
+            LOG_DEBUG(DT_CRON, "Adding time %d at position %d", variant_get_int(stack_peek_at(new_time_entry->time_list, 0)), i);
             new_time_entry->child_array = stack_create();
             stack_push_back(root, variant_create_ptr(DT_PTR, new_time_entry, &delete_time_entry));
             root = new_time_entry->child_array;
@@ -110,7 +184,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, CronAction actionType, ch
     }
 
     variant_stack_t* root = crontab;
-    int* time_ptr = (int*)crontab_time;
+    variant_stack_t** time_list_ptr = (variant_stack_t**)crontab_time;
 
     for(int i = 0; i < 5; i++)
     {
@@ -118,13 +192,13 @@ void    crontab_del_entry(crontab_time_t crontab_time, CronAction actionType, ch
         {
             //printf("Size of this level %p: %d\n", root, root->count);
             crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
-            if(e->time == *time_ptr || e->time == -1)
+            if(crontab_time_list_compare(e->time_list, *time_list_ptr) || variant_get_int(stack_peek_at(e->time_list, 0)) == -1)
             {
                 //printf("Time %d was found, go to next\n", e->time);
                 if(i < 4)
                 {
                     root = e->child_array;
-                    time_ptr++;
+                    time_list_ptr++;
                     break;
                 }
                 else
@@ -211,7 +285,7 @@ void    crontab_del_entry(crontab_time_t crontab_time, CronAction actionType, ch
     }*/
 }
 
-variant_stack_t*   crontab_get_action(crontab_time_t crontab_time)
+variant_stack_t*   crontab_get_action(current_time_value_t crontab_time)
 {
     if(NULL == crontab)
     {
@@ -230,7 +304,7 @@ variant_stack_t*   crontab_get_action(crontab_time_t crontab_time)
         {
             //printf("Size of this level %p: %d\n", root, root->count);
             crontab_time_entry_t* e = (crontab_time_entry_t*)variant_get_ptr(time_entry_variant);
-            if(e->time == *time_ptr || e->time == -1)
+            if(crontab_has_time(*time_ptr, e) || variant_get_int(stack_peek_at(e->time_list, 0)) == -1)
             {
                 //printf("Time %d was found, go to next\n", e->time);
                 if(i < 4)

@@ -73,6 +73,7 @@ float       variant_get_float(variant_t* variant);
 const char* variant_get_string(const variant_t* variant);
 void*       variant_get_ptr(variant_t* variant);
 variant_t*  variant_get_variant(variant_t* variant);
+variant_stack_t* variant_get_list(variant_t* variant);
 variant_t*  variant_clone(variant_t* variant);
 bool        variant_is_null(variant_t* variant);
 

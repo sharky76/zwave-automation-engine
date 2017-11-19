@@ -172,7 +172,7 @@ void  timer_tick_event(event_t* pevent, void* context)
         time_t t = time(NULL);
         struct tm* p_tm = localtime(&t);
     
-        crontab_time_t job_time;
+        current_time_value_t job_time;
         ADD_MINUTE(job_time, p_tm->tm_min);
         ADD_HOUR(job_time, p_tm->tm_hour);
         ADD_DAY(job_time, p_tm->tm_mday);

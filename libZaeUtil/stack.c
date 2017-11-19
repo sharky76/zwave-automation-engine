@@ -227,9 +227,11 @@ void stack_remove(variant_stack_t* stack, variant_t* value)
             tmp = current->next;
             current->next = tmp->next;
             tmp->next->prev = current;
+            free(tmp);
         }
         else 
         {
+            free(current->next);
             current->next = NULL;
             stack->tail = current;
         }
