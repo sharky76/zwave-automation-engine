@@ -474,6 +474,11 @@ void cmd_find_matches_worker(variant_stack_t** root, variant_stack_t* matches, c
             }
             else if(node->data->type == TYPE_INTLIST)
             {
+                if(strchr(cmd_part_str, ',') == NULL)
+                {
+                    continue;
+                }
+
                 char* mutable_cmd_part = strdup(cmd_part_str);
                 char* tok = strtok(mutable_cmd_part, ",");
                 bool list_in_range = true;
