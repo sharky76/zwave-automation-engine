@@ -79,7 +79,7 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
                 event_data->device_name = resolver_name_from_id(node_id, instance_id, command_id);
             }
 
-            zdata_add_callback_ex(dataHolder, &data_change_event_callback, FALSE, event_data);
+            zdata_add_callback_ex(dataHolder, &data_change_event_callback, TRUE, event_data);
 
             if(NULL != event_data->device_name)
             {

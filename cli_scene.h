@@ -7,6 +7,7 @@
 
 
 void    cli_scene_init(cli_node_t* parent_node);
+void    cli_add_scene(const char* scene_name);
 //bool    cmd_set_scene_source(vty_t* vty, variant_stack_t* params);
 //bool    cmd_del_scene_entry(vty_t* vty, variant_stack_t* params);
 

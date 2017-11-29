@@ -96,6 +96,28 @@ void dump_data(const ZWay zway, ZDataHolder data)
     }
 }
 
+/** 
+ * 
+ * 
+ * @param data
+ * @param event_data
+ */
+void install_callback(ZDataHolder data, sensor_event_data_t* event_data)
+{
+    ZDataIterator child = zdata_first_child(data);
+    while (child != NULL)
+    {
+        char* path = zdata_get_path(child->data);
+        LOG_DEBUG(DataCallback, "Adding callback for path: %s", path);
+        free(path);
+        zdata_add_callback_ex(child->data, &value_change_event_callback, TRUE, event_data);
+        child = zdata_next_child(child);
+    }
+
+    event_data->callback_added = true;
+
+}
+
 void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType changeType, ZDataHolder data, void * arg)
 {
     sensor_event_data_t* event_data = (sensor_event_data_t*)arg;
@@ -107,20 +129,25 @@ void data_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType cha
 
     if(changeType == ChildCreated)
     {
-        ZDataIterator child = zdata_first_child(data);
-        while (child != NULL)
-        {
-            char* path = zdata_get_path(child->data);
-            LOG_DEBUG(DataCallback, "Adding callback for path: %s", path);
-            free(path);
-            zdata_add_callback_ex(child->data, &value_change_event_callback, TRUE, event_data);
-            child = zdata_next_child(child);
-        }
+        install_callback(data, event_data);
     }
     else if(changeType == (Deleted & 0x0f) || changeType ==  (Invalidated & 0x0f))
     {
         //zdata_remove_callback_ex(child->data, &value_change_event_callback)
         LOG_DEBUG(DataCallback, "Command removed node-id %d, instance-id %d, command-id %d", event_data->node_id, event_data->instance_id, event_data->command_id);
+    }
+    else if(changeType == (ChildEvent|Updated) && !event_data->callback_added)
+    {
+        install_callback(data, event_data);
+        //LOG_DEBUG(DataCallback, "Data change event for changeType: ChildEvent|Updated and node-id %d, instance-id %d, command-id %d", event_data->node_id, event_data->instance_id, event_data->command_id);
+    }
+    else if(changeType == (ChildEvent|PhantomUpdate|Updated))
+    {
+        //LOG_DEBUG(DataCallback, "Data change event for changeType: ChildEvent|PhantomUpdate|Updated and node-id %d, instance-id %d, command-id %d", event_data->node_id, event_data->instance_id, event_data->command_id);
+    }
+    else
+    {
+        //LOG_DEBUG(DataCallback, "Data change event for changeType: %d and node-id %d, instance-id %d, command-id %d", changeType, event_data->node_id, event_data->instance_id, event_data->command_id);
     }
 }
 

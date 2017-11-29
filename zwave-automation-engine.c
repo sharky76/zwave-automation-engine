@@ -401,6 +401,7 @@ int main (int argc, char *argv[])
                             logger_unregister_target(vty_std);
                             vty_free(vty_std);
                             tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
+                            event_manager_shutdown();
                             zway_stop(zway);
                             zway_terminate(&zway);
 

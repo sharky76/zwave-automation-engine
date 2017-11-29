@@ -297,7 +297,7 @@ char*   vty_read(vty_t* vty)
 
                 stack_for_each(vty->completions, matching_command)
                 {
-                    vty_write(vty, "%-20s", variant_get_string(matching_command));
+                    vty_write(vty, "%-25s", variant_get_string(matching_command));
                     if(word_count++ >= 3)
                     {
                         vty_write(vty, VTY_NEWLINE(vty));

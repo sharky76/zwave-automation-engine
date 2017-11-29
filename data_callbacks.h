@@ -2,6 +2,7 @@
 
 #include <ZWayLib.h>
 #include <ZData.h>
+#include <stdbool.h>
 
 #define SENSOR_DATA_CHANGE_EVENT   "SensorDataChangeEvent"
 
@@ -13,6 +14,7 @@ typedef struct sensor_event_data_t
     const char*   device_name;
     unsigned long  last_update_time;
     ZDataHolder    data_holder;
+    bool    callback_added;
 } sensor_event_data_t;
 
 /*

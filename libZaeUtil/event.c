@@ -14,6 +14,7 @@ variant_stack_t* registered_handlers;
 
 pthread_mutex_t  event_list_mutex;
 sem_t   event_semaphore;
+bool    event_manager_running;
 
 void    event_destroy(void* arg);
 
@@ -46,6 +47,7 @@ void event_manager_init()
     sem_init(&event_semaphore, 0, 0);
 
     // Now create event thread
+    event_manager_running = true;
     pthread_t   event_thread;
     pthread_create(&event_thread, NULL, event_handle_event, NULL);
     pthread_detach(event_thread);
@@ -53,13 +55,22 @@ void event_manager_init()
     LOG_ADVANCED(Event, "Event manager initialized");
 }
 
+void        event_manager_shutdown()
+{
+    LOG_ADVANCED(Event, "Event manager shutdown");
+    event_manager_running = false;
+}
+
 event_t*    event_create(int source_id, const char* event_name, variant_t* data)
 {
-    event_t* new_event = (event_t*)malloc(sizeof(event_t));
-    new_event->data = data;
-    new_event->source_id = source_id;
-    new_event->name = strdup(event_name);
-    return new_event;
+    if(event_manager_running)
+    {
+        event_t* new_event = (event_t*)malloc(sizeof(event_t));
+        new_event->data = data;
+        new_event->source_id = source_id;
+        new_event->name = strdup(event_name);
+        return new_event;
+    }
 }
 
 void        event_delete(event_t* event)
@@ -71,12 +82,15 @@ void        event_delete(event_t* event)
 
 void        event_post(event_t* event)
 {
-    //printf("Event post to %p\n", event_list);
-    pthread_mutex_lock(&event_list_mutex);
-    stack_push_back(event_list, variant_create_ptr(DT_PTR, event, NULL));
-    pthread_mutex_unlock(&event_list_mutex);
-    sem_post(&event_semaphore);
-    //raise(SIGUSR1);
+    if(event_manager_running)
+    {
+        //printf("Event post to %p\n", event_list);
+        pthread_mutex_lock(&event_list_mutex);
+        stack_push_back(event_list, variant_create_ptr(DT_PTR, event, NULL));
+        pthread_mutex_unlock(&event_list_mutex);
+        sem_post(&event_semaphore);
+        //raise(SIGUSR1);
+    }
 }
 
 event_t*    event_receive()
@@ -134,7 +148,7 @@ void event_unregister_handler(int handler_id, const char* event_name)
 
 void* event_handle_event(void* arg)
 {
-    while(true)
+    while(event_manager_running)
     {
         sem_wait(&event_semaphore);
         event_t* event = event_receive();

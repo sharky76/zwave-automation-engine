@@ -34,6 +34,7 @@ typedef struct event_handler_t
 #define TIMER_TICK_EVENT         "TimerTickEvent"
 
 void        event_manager_init();
+void        event_manager_shutdown();
 
 // Each module who wish to have events forwarded to it must register its handler method
 // Only events registered with the handler will be forwarded to it

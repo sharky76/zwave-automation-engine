@@ -23,6 +23,7 @@ variant_t*   command_class_eval_wakeup(const char* method, device_record_t* reco
 variant_t*   command_class_eval_sensor_multilevel(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_indicator(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_node_naming(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_current_scene(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -77,6 +78,10 @@ static command_class_t command_class_table[] = {
                              "SetLocation", 1, "location string",
                              NULL, 0, NULL},
                              &command_class_eval_node_naming},
+    {0x5b, "CentralScene",  {"CurrentScene", 0, "Get current scene",
+                             NULL, 0, NULL},
+                             &command_class_eval_current_scene},
+
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -478,9 +483,9 @@ variant_t*   command_class_eval_sensor_multilevel(const char* method, device_rec
     variant_t* param = va_arg(args, variant_t*);
     if(strcmp(method, "Get") == 0)
     {
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
-        ctx->record = record;
-        ZWError err = zway_cc_sensor_multilevel_get(zway, record->nodeId, record->instanceId, -1, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
+        //zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        //ctx->record = record;
+        //ZWError err = zway_cc_sensor_multilevel_get(zway, record->nodeId, record->instanceId, -1, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         //ret_val = variant_create_bool(err == NoError);
         char buf[32] = {0};
         snprintf(buf, 31, "%d.val", variant_get_int(param));
@@ -558,6 +563,18 @@ variant_t*   command_class_eval_node_naming(const char* method, device_record_t*
         LOG_ADVANCED(DataCallback, "Setting node location to %s", variant_get_string(param));
         ZWError err = zway_cc_node_naming_set_location(zway, record->nodeId, record->instanceId, variant_get_string(param), NULL, NULL, NULL);
         ret_val = variant_create_bool(err == NoError);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_current_scene(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+    
+    if(strcmp(method, "CurrentScene") == 0)
+    {
+        ret_val = command_class_read_data(record, "currentScene");
     }
 
     return ret_val;

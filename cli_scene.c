@@ -58,7 +58,7 @@ cli_command_t   scene_root_list[] = {
     {"scene LINE",           cmd_enter_scene_node,          "Configure scene"},
     {"no scene LINE",        cmd_del_scene,                 "Delete scene"},
     {"show scene",           cmd_list_scenes,               "List loaded scenes"},
-    {"show scene LINE",      cmd_show_scene,                "Show scene configuration"},
+    //{"show scene LINE",      cmd_show_scene,                "Show scene configuration"},
     {NULL,                          NULL,                   NULL}
 };
 
@@ -101,12 +101,28 @@ cli_command_t   scene_template_command_list[] = {
 
 //cli_node_t* scene_action_node;
 
+cli_node_t* scene_parent_node;
+
 void    cli_scene_init(cli_node_t* parent_node)
 {
     cli_append_to_node(parent_node, scene_root_list);
     cli_install_node(&scene_node, parent_node, scene_command_list, "scene", "scene");
     cli_install_node(&scene_action_node, scene_node, scene_action_command_list, "action-environment", "action");
     cli_install_node(&scene_template_token_node, scene_node, scene_template_command_list, "action-template", "action");
+    scene_parent_node = parent_node;
+}
+
+void    cli_add_scene(const char* scene_name)
+{
+    char* full_command = calloc(256, sizeof(char));
+    snprintf(full_command, 255, "show scene %s", scene_name);     
+
+    cli_command_t* command_list = calloc(2, sizeof(cli_command_t));
+    command_list[0].name = full_command;
+    command_list[0].func=cmd_show_scene;
+    command_list[0].help=strdup("Show scene configuration");
+
+    cli_append_to_node(scene_parent_node, command_list);
 }
 
 bool cmd_enter_scene_node(vty_t* vty, variant_stack_t* params)
@@ -118,6 +134,7 @@ bool cmd_enter_scene_node(vty_t* vty, variant_stack_t* params)
     if(NULL == scene_manager_get_scene(scene_node->context))
     {
         scene_manager_add_scene(scene_node->context);
+        cli_add_scene(scene_name);
     }
 }
 
