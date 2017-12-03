@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "hash.h"
 #include "vty.h"
+#include <pthread.h>
 
 #define MAX_LOG_ENTRY_LEN   512
 
@@ -39,6 +40,7 @@ typedef struct logger_handle_t
     hash_table_t*   logger_service_table;
     int log_buffer_size;
     variant_stack_t*    log_buffer;
+    pthread_mutex_t     logger_lock;
 } logger_handle_t;
 
 logger_handle_t*    logger_handle = NULL;
@@ -144,6 +146,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
 
 void logger_log(logger_handle_t* handle, int id, LogLevel level, const char* format, ...)
 {
+    pthread_mutex_lock(&handle->logger_lock);
     // First check if the service id is enabled
     variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, id);
 
@@ -156,12 +159,15 @@ void logger_log(logger_handle_t* handle, int id, LogLevel level, const char* for
     }
     else
     {
-        printf("Unregistered module id: %d\n", id);
+        //printf("Unregistered module id: %d\n", id);
     }
+
+    pthread_mutex_unlock(&handle->logger_lock);
 }
 
 void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const char* func, const char* format, ...)
 {
+    pthread_mutex_lock(&handle->logger_lock);
     // First check if the service id is enabled
     variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, id);
 
@@ -183,6 +189,7 @@ void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const
     {
         printf("Unregistered module id: %d\n", id);
     }
+    pthread_mutex_unlock(&handle->logger_lock);
 }
 
 void    logger_add_buffer(logger_log_entry_t* entry)

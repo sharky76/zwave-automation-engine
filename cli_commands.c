@@ -82,7 +82,7 @@ cli_command_t root_command_list[] = {
     {"controller restore-config",                             cmd_controller_config_restore, "Restore controller configuration"},
     //{"controller learn-mode stop",            cmd_controller_set_learn_mode, "Stop learn mode"},
     {"show controller queue",        cmd_show_controller_queue,   "Display the contents of controller job queue"},
-    {"show command-class",          cmd_list_command_classes,    "List all supported command classes"},
+    {"list command-class",          cmd_list_command_classes,    "List all supported command classes"},
     {"help",                 cmd_help,                      "(module) Display help for module"},
     {"banner CHAR",          cmd_set_banner,                "Set new banner"},
     {"no banner",            cmd_clear_banner,              "Clear banner"},
