@@ -15,7 +15,7 @@ typedef struct scene_t
     char*               name;
     //char*               source;
     variant_stack_t*    source_list;
-    char*               condition;
+    variant_stack_t*    condition_list;
     variant_stack_t*    actions;
     bool                is_valid;
     bool                is_enabled;

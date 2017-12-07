@@ -94,6 +94,7 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
         {
     		LOG_DEBUG(DeviceCallback, "No data holder for deviceId=%i instanceId=%i command_id=%i",node_id,instance_id,command_id);
     	}
+
     	zdata_release_lock(ZDataRoot(zway));
     }
 }

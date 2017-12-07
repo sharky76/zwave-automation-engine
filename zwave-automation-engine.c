@@ -98,11 +98,20 @@ void sigsegv(int sig) {
   size = backtrace(array, 100);
 
   // print out all the frames to stderr
-  //FILE* btfile = fopen("/tmp/zaebt", "w+");
-  printf("Error: signal %d, btsize %d:\n", sig, size);
-  backtrace_symbols_fd(array, size, 1);
-  //fclose(btfile);
+  FILE* btfile = fopen("/tmp/zaebt", "w+");
+  fprintf(btfile, "Error: signal %d, btsize %d\n", sig, size);
+  backtrace_symbols_fd(array, size, fileno(btfile));
+
+  fclose(btfile);
   exit(1);
+}
+
+void sighup(int sig)
+{
+    event_manager_shutdown();
+    zway_stop(zway);
+    zway_terminate(&zway);
+    exit(1);
 }
 
 /* Signale wrapper for vtysh. We don't use sigevent because
@@ -128,8 +137,9 @@ main_signal_set (int signo, void (*func)(int))
 void signal_init()
 {
   //main_signal_set (SIGTSTP, sigtstp);
-  main_signal_set (SIGPIPE, sigpipe);
-  //signal(SIGSEGV, sigsegv);
+  main_signal_set(SIGPIPE, sigpipe);
+  main_signal_set(SIGSEGV, sigsegv);
+  main_signal_set(SIGHUP, sighup);
 }
 
 char* null_function(const char *ignore, int key)

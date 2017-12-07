@@ -10,12 +10,10 @@ DECLARE_LOGGER(Scene)
 void scene_delete(void* arg)
 {
     scene_t* scene = (scene_t*)arg;
-    free(scene->condition);
     free(scene->name);
-    //free(scene->source);
-    //stack_free(scene->compiled_condition);
     stack_free(scene->actions);
     stack_free(scene->source_list);
+    stack_free(scene->condition_list);
     free(scene);
 }
 
@@ -27,6 +25,7 @@ scene_t*    scene_create(const char* name)
     new_scene->is_enabled = true;
     new_scene->name = strdup(name);
     new_scene->source_list = stack_create();
+    new_scene->condition_list = stack_create();
 
     return new_scene;
 }
@@ -172,45 +171,53 @@ void scene_exec(scene_t* scene)
 
     if(!scene->is_enabled)
     {
-        LOG_ERROR(Scene, "Unable to execute: scene %s is disabled", scene->name);
+        LOG_ADVANCED(Scene, "Unable to execute: scene %s is disabled", scene->name);
         return;
     }
     
     bool isOk;
-    variant_stack_t* compiled_condition = command_parser_compile_expression(scene->condition, &isOk);
-
-    if(!isOk)
+    bool condition_match = false;
+    stack_for_each(scene->condition_list, condition_var)
     {
-        LOG_ERROR(Scene, "Error compiling condition %s", scene->condition);
-    }
-    else
-    {
-        variant_t* condition = command_parser_execute_expression(compiled_condition);
+        variant_stack_t* compiled_condition = command_parser_compile_expression(variant_get_string(condition_var), &isOk);
     
-        if(NULL != condition && variant_get_bool(condition))
+        if(!isOk)
         {
-            LOG_ADVANCED(Scene, "Scene %s condition match", scene->name);
-            // The condition is true - execute scene triggers!
-            stack_for_each(scene->actions, action_data)
-            {
-                action_t* action = (action_t*)variant_get_ptr(action_data);
-    
-                if(NULL != action)
-                {
-                    LOG_DEBUG(Scene, "Call action %s", action->path);
-                    scene_action_exec(action);
-                }
-            }
-
-            variant_free(condition);
+            LOG_ERROR(Scene, "Error compiling condition %s", variant_get_string(condition_var));
         }
         else
         {
-            LOG_ADVANCED(Scene, "Scene %s condition mismatch", scene->name);
+            variant_t* condition = command_parser_execute_expression(compiled_condition);
+            condition_match = (NULL != condition && variant_get_bool(condition));
+            stack_free(compiled_condition);
+            variant_free(condition);
+        }
+
+        if(condition_match)
+        {
+            break;
         }
     }
 
-    stack_free(compiled_condition);
+    if(condition_match)
+    {
+        LOG_ADVANCED(Scene, "Scene %s condition match", scene->name);
+        // The condition is true - execute scene triggers!
+        stack_for_each(scene->actions, action_data)
+        {
+            action_t* action = (action_t*)variant_get_ptr(action_data);
+
+            if(NULL != action)
+            {
+                LOG_DEBUG(Scene, "Call action %s", action->path);
+                scene_action_exec(action);
+            }
+        }
+    }
+    else
+    {
+        LOG_ADVANCED(Scene, "Scene %s condition mismatch", scene->name);
+    }
 }
 
 void    scene_for_each_action(scene_t* scene, void (*visitor)(action_t*, void*), void* arg)

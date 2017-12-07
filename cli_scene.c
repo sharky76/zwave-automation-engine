@@ -22,6 +22,7 @@ bool cmd_show_scene(vty_t* vty, variant_stack_t* params);
 bool cmd_set_scene_source(vty_t* vty, variant_stack_t* params);
 bool cmd_del_scene_source(vty_t* vty, variant_stack_t* params);
 bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params);
+bool cmd_del_scene_condition(vty_t* vty, variant_stack_t* params);
 bool cmd_exit_scene_node(vty_t* vty, variant_stack_t* params);
 
 bool cmd_config_scene_action_script(vty_t* vty, variant_stack_t* params);
@@ -66,6 +67,7 @@ cli_command_t   scene_command_list[] = {
     {"source Sensor|WORD",             cmd_set_scene_source,      "Add scene source"},
     {"no source Sensor|WORD",          cmd_del_scene_source,      "Del scene source"},
     {"condition LINE",          cmd_set_scene_condition,   "Set scene condition"},
+    {"no condition LINE",       cmd_del_scene_condition,   "Delete scene condition"},
     {"action script WORD",      cmd_config_scene_action_script,   "Configure scene action script"},
     {"no action script WORD",   cmd_delete_scene_action_script,   "Delete scene action script"},
     {"action scene LINE",       cmd_config_scene_action_scene,    "Configure scene action scene"},
@@ -191,9 +193,25 @@ bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params)
 
     char condition[1024] = {0};
     cli_assemble_line(params, 1, condition);
-    scene->condition = strdup(condition);
+    stack_push_back(scene->condition_list, variant_create_string(strdup(condition)));
 }
- 
+
+bool cmd_del_scene_condition(vty_t* vty, variant_stack_t* params)
+{
+    scene_t* scene = scene_manager_get_scene(scene_node->context);
+
+    char condition[1024] = {0};
+    cli_assemble_line(params, 2, condition);
+
+    stack_for_each(scene->condition_list, condition_var)
+    {
+        if(strcmp(condition, variant_get_string(condition_var)) == 0)
+        {
+            stack_remove(scene->condition_list, condition_var);
+        }
+    }
+}
+
 bool cmd_config_scene_action_script(vty_t* vty, variant_stack_t* params)
 {
     cmd_enter_node_by_name(vty, "action-environment");
@@ -385,7 +403,11 @@ bool cmd_scene_show_action(vty_t* vty, variant_stack_t* params)
 bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params)
 {
     scene_t* scene = scene_manager_get_scene(scene_node->context);
-    vty_write(vty, "condition %s%s", scene->condition, VTY_NEWLINE(vty));
+
+    stack_for_each(scene->condition_list, condition_var)
+    {
+        vty_write(vty, "condition %s%s", variant_get_string(condition_var), VTY_NEWLINE(vty));
+    }
 }
 
 bool cmd_scene_enable(vty_t* vty, variant_stack_t* params)
@@ -419,8 +441,12 @@ void    show_scene_helper(scene_t* scene, void* arg)
     {
         vty_write(vty, " source %s%s", variant_get_string(source_variant), VTY_NEWLINE(vty));
     }
-    vty_write(vty, " condition %s%s", scene->condition, VTY_NEWLINE(vty));
-    
+
+    stack_for_each(scene->condition_list, condition_var)
+    {
+        vty_write(vty, " condition %s%s", variant_get_string(condition_var), VTY_NEWLINE(vty));
+    }
+
     scene_for_each_action(scene, show_scene_action_helper, vty);
 
     vty_write(vty, "!%s", VTY_NEWLINE(vty));

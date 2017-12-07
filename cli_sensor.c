@@ -314,26 +314,38 @@ void cli_print_data_holder(vty_t* vty, ZDataHolder data)
             break;
         case Binary:
             zdata_get_binary(data, &binary, &len);
-            vty_write(vty, "%-65sbyte[%d]%s", path, len, VTY_NEWLINE(vty));
-            //zway_dump(zway, Debug, ZSTR("  "), len, binary);
+            vty_write(vty, "%-65sbyte[%d] ", path, len);
+            for (i = 0; i < len; i++)
+                vty_write(vty, ZSTR(" 0x%hx"), i, binary[i]);
+
+            vty_write(vty, "%s", VTY_NEWLINE(vty));
             break;
         case ArrayOfInteger:
             zdata_get_integer_array(data, &int_arr, &len);
-            vty_write(vty, "%-65sint[%d]%s", path, len, VTY_NEWLINE(vty));
+            vty_write(vty, "%-65sint[%d] ", path, len);
             for (i = 0; i < len; i++)
-                vty_write(vty, ZSTR("  [%02d] %d"), i, int_arr[i]);
+                vty_write(vty, ZSTR(" [%02d] %d"), i, int_arr[i]);
+
+            vty_write(vty, "%s", VTY_NEWLINE(vty));
+
             break;
         case ArrayOfFloat:
             zdata_get_float_array(data, &float_arr, &len);
-            vty_write(vty, "%-65sfloat[%d]%s", path, len, VTY_NEWLINE(vty));
+            vty_write(vty, "%-65sfloat[%d] ", path, len);
             for (i = 0; i < len; i++)
-                vty_write(vty, ZSTR("  [%02d] %f"), i, float_arr[i]);
+                vty_write(vty, ZSTR(" [%02d] %f"), i, float_arr[i]);
+
+            vty_write(vty, "%s", VTY_NEWLINE(vty));
+
             break;
         case ArrayOfString:
             zdata_get_string_array(data, &str_arr, &len);
-            vty_write(vty, "%-65sstring[%d]%s", path, len, VTY_NEWLINE(vty));
+            vty_write(vty, "%-65sstring[%d] ", path, len);
             for (i = 0; i < len; i++)
-                vty_write(vty, ZSTR("  [%02d] \"%s\""), i, str_arr[i]);
+                vty_write(vty, ZSTR(" [%02d] \"%s\""), i, str_arr[i]);
+
+            vty_write(vty, "%s", VTY_NEWLINE(vty));
+
             break;
     }
     free(path);    

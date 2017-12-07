@@ -24,6 +24,7 @@ variant_t*   command_class_eval_sensor_multilevel(const char* method, device_rec
 variant_t*   command_class_eval_indicator(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_node_naming(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_current_scene(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_association(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -44,7 +45,7 @@ static command_class_t command_class_table[] = {
     {0x80, "Battery",      {"Get", 0, "", 
                             NULL, 0, NULL},                           
                            &command_class_eval_battery},
-    {0x71, "Alarm",        {"Get", 2, "<type>, <event>",  
+    {0x71, "Alarm",        {"Get", 1, "<type>",  
                             "Set", 2, "<type>, <level>", 
                             NULL, 0, NULL},  
                            &command_class_eval_alarm},
@@ -82,6 +83,10 @@ static command_class_t command_class_table[] = {
                              NULL, 0, NULL},
                              &command_class_eval_current_scene},
 
+    {0x85, "Association",   {"Set", 2, "<group id>,<node id>",
+                             "Remove", 2, "<group id>,<node id>",
+                             NULL, 0, NULL},
+                             &command_class_eval_association},
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -89,6 +94,11 @@ static command_class_t command_class_table[] = {
 
 void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void* arg)
 {
+    if(functionId == 0)
+    {
+        return;
+    }
+
     zway_data_read_ctx_t* ctx = (zway_data_read_ctx_t*)arg;
 
     LOG_DEBUG(DataCallback, "Data read success for device %s with function 0x%x",
@@ -103,6 +113,11 @@ void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void*
 
 void         zway_data_read_fail_cb(const ZWay zway, ZWBYTE functionId, void* arg)
 {
+    if(functionId == 0)
+    {
+        return;
+    }
+
     zway_data_read_ctx_t* ctx = (zway_data_read_ctx_t*)arg;
     LOG_DEBUG(DataCallback, "Data read failure for device %s with function 0x%x",
               ctx->record->deviceName,
@@ -321,19 +336,19 @@ variant_t*   command_class_eval_alarm(const char* method, device_record_t* recor
     if(strcmp(method, "Get") == 0)
     {
         variant_t* type_var = va_arg(args, variant_t*);
-        variant_t* event_var = va_arg(args, variant_t*);
+        //variant_t* event_var = va_arg(args, variant_t*);
 
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_alarm_get(zway, record->nodeId, record->instanceId, variant_get_int(type_var), variant_get_int(event_var), zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
         if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }
+        }*/
 
         char buf[128] = {0};
-        snprintf(buf, 127, "%d.level", variant_get_int(type_var));
+        snprintf(buf, 127, "%d.status", variant_get_int(type_var));
         ret_val = command_class_read_data(record, buf);
     }
     else if(strcmp(method, "Set") == 0)
@@ -562,6 +577,28 @@ variant_t*   command_class_eval_node_naming(const char* method, device_record_t*
         variant_t* param = va_arg(args, variant_t*);
         LOG_ADVANCED(DataCallback, "Setting node location to %s", variant_get_string(param));
         ZWError err = zway_cc_node_naming_set_location(zway, record->nodeId, record->instanceId, variant_get_string(param), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_association(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+    variant_t* grp_param = va_arg(args, variant_t*);
+    variant_t* node_param = va_arg(args, variant_t*);
+    int group_id = variant_get_int(grp_param);
+    int node_id = variant_get_int(node_param);
+
+    if(strcmp(method, "Set") == 0)
+    {
+        ZWError err = zway_cc_association_set(zway, record->nodeId, record->instanceId, group_id, node_id, NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+    else if(strcmp(method, "Remove") == 0)
+    {
+        ZWError err = zway_cc_association_remove(zway, record->nodeId, record->instanceId, group_id, node_id, NULL, NULL, NULL);
         ret_val = variant_create_bool(err == NoError);
     }
 

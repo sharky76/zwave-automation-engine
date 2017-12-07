@@ -1,4 +1,5 @@
 #include "builtin_service.h"
+#include "cli_service.h"
 #include <logger.h>
 #include <crc32.h>
 
@@ -16,6 +17,8 @@ builtin_service_t*   builtin_service_create(hash_table_t* service_table, const c
 
     uint32_t key = crc32(0, new_service->service_name, strlen(new_service->service_name));
     variant_hash_insert(service_table, key, variant_create_ptr(DT_PTR, new_service, NULL));
+
+    cli_add_service(name);
 
     return new_service;
 }
