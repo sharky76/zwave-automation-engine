@@ -2,6 +2,7 @@
 
 #include "variant.h"
 #include <sys/param.h>
+#include <pthread.h>
 // This is the basic stack implementation for holding operands and operators
 
 typedef struct stack_item_t
@@ -13,6 +14,7 @@ typedef struct stack_item_t
 
 typedef struct variant_stack_t
 {
+    pthread_mutex_t lock;
     int count;
     stack_item_t*   head;
     stack_item_t*   tail;
@@ -68,4 +70,6 @@ variant_t*      stack_pop_back(variant_stack_t* stack);
 void            stack_remove(variant_stack_t* stack, variant_t* value);
 variant_stack_t*    stack_sort(variant_stack_t* stack, int (*compare_cb)(const void* left, const void* right));
 bool            stack_is_exists(variant_stack_t* stack, bool (*match_cb)(variant_t*, void* arg), void* arg);
+void            stack_lock(variant_stack_t* stack);
+void            stack_unlock(variant_stack_t* stack);
 

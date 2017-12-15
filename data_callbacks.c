@@ -180,7 +180,9 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
 
             json_object* json_resp = json_object_new_object();
             zway_json_data_holder_to_json(json_resp, data);
-            new_entry->event_data = strdup(json_object_to_json_string(json_resp));
+            json_object* dh_name_obj = json_object_new_string(zdata_get_name(data));
+            json_object_object_add(json_resp, "data_holder", dh_name_obj);
+            new_entry->event_data = strdup(json_object_to_json_string_ext(json_resp, JSON_C_TO_STRING_PLAIN));
             json_object_put(json_resp);
             event_log_add_event(new_entry);
             //free(json_resp);

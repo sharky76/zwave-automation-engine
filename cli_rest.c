@@ -121,11 +121,11 @@ void vdev_enumerate(device_record_t* record, void* arg)
         json_object_object_add(new_sensor, "type", json_object_new_string("VDEV"));
         json_object_object_add(new_sensor, "node_id", json_object_new_int(record->nodeId));
         json_object_object_add(new_sensor, "name", json_object_new_string(record->deviceName));
-        json_object_object_add(new_sensor, "failed", json_object_new_boolean(FALSE));
+        json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(FALSE));
     
-        char buf[4] = {0};
-        snprintf(buf, 3, "%d", record->nodeId);
-        json_object_object_add(sensor_array, buf, new_sensor);
+        //char buf[4] = {0};
+        //snprintf(buf, 3, "%d", record->nodeId);
+        json_object_array_add(sensor_array, new_sensor);
     }
 }
 
@@ -136,7 +136,7 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
     http_set_cache_control((http_vty_priv_t*)vty->priv, false, 3600);
 
     json_object* json_resp = json_object_new_object();
-    json_object* sensor_array = json_object_new_object();
+    json_object* sensor_array = /*json_object_new_object();*/ json_object_new_array();
     json_object_object_add(json_resp, "devices", sensor_array);
 
     ZWDevicesList node_array;
@@ -164,12 +164,32 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
 
             json_object_object_add(new_sensor, "node_id", json_object_new_int(node_array[i]));
             json_object_object_add(new_sensor, "name", json_object_new_string(dev_name));
-            json_object_object_add(new_sensor, "typeString", json_object_new_string(str_val));
-            json_object_object_add(new_sensor, "failed", json_object_new_boolean(is_failed == TRUE));
+            json_object_object_add(new_sensor, "deviceTypeString", json_object_new_string(str_val));
+            json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(is_failed == TRUE));
 
-            char buf[4] = {0};
-            snprintf(buf, 3, "%d", node_array[i]);
-            json_object_object_add(sensor_array, buf, new_sensor);
+
+            json_object* command_class_array = json_object_new_array();
+            json_object_object_add(new_sensor, "command_classes", command_class_array);
+
+            int k = 0;
+
+            ZWCommandClassesList commands = zway_command_classes_list(zway, node_array[i], 0);
+
+            if(NULL != commands)
+            {
+                while(commands[k])
+                {
+                    json_object_array_add(command_class_array, json_object_new_int(commands[k]));
+                    k++;
+                }
+            }
+    
+            zway_command_classes_list_free(commands);
+
+            //char buf[4] = {0};
+            //snprintf(buf, 3, "%d", node_array[i]);
+            //json_object_object_add(sensor_array, buf, new_sensor);
+            json_object_array_add(sensor_array, new_sensor);
         }
 
         i++;
@@ -724,7 +744,7 @@ void    sse_event_handler(event_t* event, void* context)
         http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
 
         // Add data...
-        vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":\"%s\"}\n\n", 
+        vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":%s}\n\n", 
                   e->event_id, 
                   EVENT_LOG_ADDED_EVENT, 
                   (e->device_type == ZWAVE)? "ZWAVE" : "VDEV",

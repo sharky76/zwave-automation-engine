@@ -67,4 +67,3 @@ void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* 
 int   http_request_find_header_value_index(http_vty_priv_t* http_priv, const char* name);
 bool  http_request_find_header_value_by_index(http_vty_priv_t* http_priv, int index, char** value);
 bool  http_request_find_header_value(http_vty_priv_t* http_priv, const char* name, char** value);
-

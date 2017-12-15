@@ -14,6 +14,10 @@
 #include <base64.h>
 #include "user_manager.h"
 #include "picohttpparser.h"
+#include "vty.h"
+#include "cli_commands.h"
+#include "cli_rest.h"
+#include "event.h"
 
 #define VERSION 23
 #define ERROR      42
@@ -27,6 +31,8 @@ DECLARE_LOGGER(HTTPServer)
 char*       request_get_data(const char* request);
 char*       request_create_command(const char* req_url);
 int         header_find_value(const char* name, struct phr_header* headers, int header_size);
+
+void  http_request_handle_event(event_t* event, void* context);
 
 int  http_server_get_socket(int port)
 {
@@ -55,6 +61,7 @@ int  http_server_get_socket(int port)
         }
         else
         {
+            event_register_handler(HTTPServer, "HTTPRequest", &http_request_handle_event,  NULL);
             return server_sock;
         }
     }
@@ -92,14 +99,13 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
 
     while(1) {
         /* read */
-        rret = recv(client_socket, http_priv->request->buffer + buflen, sizeof(http_priv->request->buffer) - buflen, MSG_WAITALL);
+        rret = recv(client_socket, http_priv->request->buffer + buflen, sizeof(http_priv->request->buffer) - buflen, 0);
         if (rret <= 0)
         {
             http_server_error_response(FORBIDDEN, client_socket);
             return NULL;
         }
 
-        
         prevbuflen = buflen;
         buflen += rret;
 
@@ -357,7 +363,7 @@ int   http_request_find_header_value_index(http_vty_priv_t* http_priv, const cha
 {
     for (int i = 0; i < http_priv->request->num_headers; i++)
     {
-        if(strncmp(http_priv->request->headers[i].name, name, http_priv->request->headers[i].name_len) == 0)
+        if(strncasecmp(http_priv->request->headers[i].name, name, http_priv->request->headers[i].name_len) == 0)
         {
             return i;
         }
@@ -385,3 +391,18 @@ bool  http_request_find_header_value(http_vty_priv_t* http_priv, const char* nam
                                                    value);
 }
 
+void  http_request_handle_event(event_t* event, void* context)
+{
+    //variant_stack_t* http_socket_list = (variant_stack_t*)context;
+    vty_t* http_vty = VARIANT_GET_PTR(vty_t, event->data);
+
+    char* str = vty_read(http_vty);
+
+    if(NULL != str)
+    {
+        cli_command_exec_custom_node(rest_root_node, http_vty, str);
+    }
+
+    vty_free(http_vty);
+    LOG_ADVANCED(HTTPServer, "HTTP request completed");
+}

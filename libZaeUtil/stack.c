@@ -280,3 +280,13 @@ bool            stack_is_exists(variant_stack_t* stack, bool (*match_cb)(variant
     return retVal;
 }
 
+void            stack_lock(variant_stack_t* stack)
+{
+    pthread_mutex_lock(&stack->lock);
+}
+
+void            stack_unlock(variant_stack_t* stack)
+{
+    pthread_mutex_unlock(&stack->lock);
+}
+
