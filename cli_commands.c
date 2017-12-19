@@ -1086,6 +1086,8 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show resolver");
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
+    cli_command_exec(vty, "show sensor role");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show service");
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show virtual-device");

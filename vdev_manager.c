@@ -173,7 +173,7 @@ command_class_t*    vdev_manager_create_command_class(vdev_t* vdev)
         cmd_class->supported_method_list[index].nargs = cmd->nargs;
 
         index++;
-        if(index >= 10)
+        if(index >= 20)
         {
             break;
         }
@@ -220,7 +220,7 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
 {
     vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_get(vdev_table, vdev_record->nodeId));
 
-    free(vdev_record);
+    //free(vdev_record);
 
     stack_for_each(vdev->supported_method_list, vdev_method_variant)
     {

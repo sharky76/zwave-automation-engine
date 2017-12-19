@@ -405,6 +405,8 @@
 		<F N="scene_manager.h"/>
 		<F N="script_action_handler.c"/>
 		<F N="script_action_handler.h"/>
+		<F N="sensor_manager.c"/>
+		<F N="sensor_manager.h"/>
 		<F N="service_manager.c"/>
 		<F N="service_manager.h"/>
 		<F N="socket_io.c"/>

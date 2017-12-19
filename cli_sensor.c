@@ -6,6 +6,7 @@
 #include "resolver.h"
 #include "config.h"
 #include "command_class.h"
+#include "sensor_manager.h"
 
 extern ZWay zway;
 
@@ -17,6 +18,8 @@ bool    cmd_sensor_show_node_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_force_interview(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_command_interview(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params);
+bool    cmd_sensor_set_role(vty_t* vty, variant_stack_t* params);
+bool    cmd_sensor_show_role(vty_t* vty, variant_stack_t* params);
 
 // Forward declaration of utility methods
 void cli_print_data_holder(vty_t* vty, ZDataHolder dh);
@@ -31,6 +34,8 @@ cli_command_t   sensor_root_list[] = {
     {"sensor interview node-id INT",            cmd_sensor_force_interview, "Force interview for a sensor"},
     {"sensor interview node-id INT instance INT command-class INT", cmd_sensor_command_interview, "Run a command interview"},
     {"sensor set-descriptor node-id INT WORD",              cmd_sensor_set_descriptor, "Set ZDDX descriptor file for sensor"},
+    {"sensor role node-id INT MotionSensor|ContactSensor|LeakSensor|OccupancySensor", cmd_sensor_set_role, "Set optional sensor role"},
+    {"show sensor role", cmd_sensor_show_role, "Show optional sensor role"},
     {NULL,                   NULL,                          NULL}
 };
 void    cli_sensor_init(cli_node_t* parent_node)
@@ -370,4 +375,24 @@ bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params)
     ZWError err = zway_device_load_xml(zway, node_id, file_name);
 
     return (err == 0);
+}
+
+bool    cmd_sensor_set_role(vty_t* vty, variant_stack_t* params)
+{
+    int node_id = variant_get_int(stack_peek_at(params, 3));
+    const char* role = variant_get_string(stack_peek_at(params, 4));
+
+    sensor_manager_set_role(node_id, role);
+}
+
+
+void    show_sensor_role_helper(sensor_role_t* sensor_role, void* arg)
+{
+    vty_t* vty = (vty_t*)arg;
+    vty_write(vty, "sensor role node-id %d %s%s", sensor_role->node_id, sensor_role->role, VTY_NEWLINE(vty));
+}
+
+bool    cmd_sensor_show_role(vty_t* vty, variant_stack_t* params)
+{
+    sensor_manager_for_each(show_sensor_role_helper, vty);
 }

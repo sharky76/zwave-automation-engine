@@ -35,6 +35,7 @@ typedef struct SS_event_keeper_t
     char*   camera_name;
     int     event_count;
     int     old_event_count;
+    bool    event_active;
     variant_stack_t*    events_info_stack;
 } SS_event_keeper_t;
 
@@ -52,4 +53,7 @@ extern hash_table_t* SS_camera_info_table;
 extern bool    SS_device_started;
 
 #define QUERY_RATE_SEC 30
-#define COMMAND_CLASS_MOTION_EVENTS 1
+#define EVENT_ACTIVE_TIMEOUT_SEC 60
+#define COMMAND_CLASS_MOTION_EVENTS 48
+#define COMMAND_CLASS_MODEL_INFO 114
+

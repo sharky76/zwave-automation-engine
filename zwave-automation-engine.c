@@ -34,6 +34,7 @@
 #include "cli_rest.h"
 #include <termios.h>
 #include "event_log.h"
+#include "sensor_manager.h"
 
 #define DEFAULT_PORT 9231
 
@@ -138,7 +139,7 @@ void signal_init()
 {
   //main_signal_set (SIGTSTP, sigtstp);
   main_signal_set(SIGPIPE, sigpipe);
-  main_signal_set(SIGSEGV, sigsegv);
+  //main_signal_set(SIGSEGV, sigsegv);
   main_signal_set(SIGHUP, sighup);
 }
 
@@ -271,6 +272,7 @@ int main (int argc, char *argv[])
         scene_manager_init();
         user_manager_init();
         builtin_service_manager_init();
+        sensor_manager_init();
 
         cli_load_config();
         

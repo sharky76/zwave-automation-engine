@@ -12,6 +12,7 @@
 #include "event.h"
 #include "zway_json.h"
 #include "vdev_manager.h"
+#include "sensor_manager.h"
 
 extern ZWay zway;
 cli_node_t*     rest_node;
@@ -123,6 +124,77 @@ void vdev_enumerate(device_record_t* record, void* arg)
         json_object_object_add(new_sensor, "name", json_object_new_string(record->deviceName));
         json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(FALSE));
     
+        char* sensor_role = sensor_manager_get_role(record->nodeId);
+        if(NULL != sensor_role)
+        {
+            json_object_object_add(new_sensor, "role", json_object_new_string(sensor_role));
+        }
+
+        // Command class enumeration...
+        vdev_t* vdev = vdev_manager_get_vdev(record->deviceName);
+        json_object* cmd_classes_array = json_object_new_array();
+        
+        stack_for_each(vdev->supported_method_list, vdev_command_variant)
+        {
+            vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
+            if(vdev_command->command_id > 0)
+            {
+                json_object* cmd_class = json_object_new_object();
+                json_object_object_add(cmd_class, "id", json_object_new_int(vdev_command->command_id));
+                
+                json_object* cmd_value = json_object_new_object();
+                command_class_t* vdev_cmd_class = vdev_manager_get_command_class(record->nodeId);
+                variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record);
+                char* string_value;
+                variant_to_string(value, &string_value);
+
+                if(NULL == vdev_command->data_holder)
+                {
+                    // The string value is json string to be appended directly under "dh" key
+                    json_object_put(cmd_value);
+                    cmd_value = json_tokener_parse(string_value);
+                }
+                else if(strchr(vdev_command->data_holder, '.') != NULL)
+                {
+                    json_object* parameter_array = json_object_new_array();
+                    char* data_holder = strdup(vdev_command->data_holder);
+                    char* saveptr;
+                    char* tok = strtok_r(data_holder, ".", &saveptr);
+                    json_object* dh_item = json_object_new_object();
+
+                    if(NULL != tok)
+                    {
+                        
+                        json_object_object_add(dh_item, "data_holder", json_object_new_string(tok));
+                    }
+
+                    tok = strtok_r(NULL, ".", &saveptr);
+
+                    if(NULL != tok)
+                    {
+                        json_object_object_add(dh_item, tok, json_object_new_string(string_value));
+                    }
+                    
+                    json_object_array_add(parameter_array, dh_item);
+                    json_object_object_add(cmd_value, "parameters", parameter_array);
+                    free(data_holder);
+                }
+                else
+                {
+    
+                    json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                }
+                
+                free(string_value);
+                variant_free(value);
+
+                json_object_object_add(cmd_class, "dh", cmd_value);
+
+                json_object_array_add(cmd_classes_array, cmd_class);
+            }
+        }
+
+        json_object_object_add(new_sensor, "command_classes", cmd_classes_array);
         //char buf[4] = {0};
         //snprintf(buf, 3, "%d", record->nodeId);
         json_object_array_add(sensor_array, new_sensor);
@@ -167,6 +239,11 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             json_object_object_add(new_sensor, "deviceTypeString", json_object_new_string(str_val));
             json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(is_failed == TRUE));
 
+            char* sensor_role = sensor_manager_get_role(node_array[i]);
+            if(NULL != sensor_role)
+            {
+                json_object_object_add(new_sensor, "role", json_object_new_string(sensor_role));
+            }
 
             json_object* command_class_array = json_object_new_array();
             json_object_object_add(new_sensor, "command_classes", command_class_array);
@@ -179,7 +256,14 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             {
                 while(commands[k])
                 {
-                    json_object_array_add(command_class_array, json_object_new_int(commands[k]));
+                    json_object* command_class_dh_obj = json_object_new_object();
+                    json_object_object_add(command_class_dh_obj, "id", json_object_new_int(commands[k]));
+
+                    ZDataHolder cmd_class_dh = zway_find_device_instance_cc_data(zway, node_array[i], 0, commands[k], ".");
+                    json_object* device_data = json_object_new_object();
+                    zway_json_data_holder_to_json(device_data, cmd_class_dh);
+                    json_object_object_add(command_class_dh_obj, "dh", device_data);
+                    json_object_array_add(command_class_array, command_class_dh_obj);
                     k++;
                 }
             }
@@ -514,9 +598,92 @@ bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instanc
     }
     else
     {
-        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
-    }
+        resolver_name = resolver_name_from_node_id(node_id);
+        if(NULL != resolver_name)
+        {
+            device_record_t* record = resolver_get_device_record(resolver_name);
+            if(NULL != record && record->devtype == VDEV)
+            {
+                // This is VDEV response...
+                // { "name": "3.0.SensorBinary", "device_data": { "sensorTypeString": "General purpose", "level": false, "parameters": [ ] } }
 
+                json_object_object_add(json_resp, "name", json_object_new_string(resolver_name));
+                
+                vdev_t* vdev = vdev_manager_get_vdev(record->deviceName);
+
+                stack_for_each(vdev->supported_method_list, vdev_command_variant)
+                {
+                    vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
+                    if(vdev_command->command_id == command_id)
+                    {
+                        json_object* cmd_value = json_object_new_object();
+                        command_class_t* vdev_cmd_class = vdev_manager_get_command_class(record->nodeId);
+                        variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record);
+                        char* string_value;
+                        variant_to_string(value, &string_value);
+
+                        if(strchr(vdev_command->data_holder, '.') != NULL)
+                        {
+                            char* data_holder = strdup(vdev_command->data_holder);
+                            char* saveptr;
+                            char* tok = strtok_r(data_holder, ".", &saveptr);
+                            json_object* dh_item = json_object_new_object();
+        
+                            if(NULL != tok)
+                            {
+                                
+                                json_object_object_add(dh_item, "data_holder", json_object_new_string(tok));
+                            }
+        
+                            tok = strtok_r(NULL, ".", &saveptr);
+        
+                            if(NULL != tok)
+                            {
+                                json_object_object_add(dh_item, tok, json_object_new_string(string_value));
+                            }
+                            
+                            if(NULL == path)
+                            {
+                                json_object* parameter_array = json_object_new_array();
+                                json_object_array_add(parameter_array, dh_item);
+                                json_object_object_add(cmd_value, "parameters", parameter_array);
+                            }
+                            else
+                            {
+                                json_object_object_add(cmd_value, tok, json_object_new_string(string_value));
+                                json_object_put(dh_item);
+                            }
+                            free(data_holder);
+                        }
+                        else
+                        {
+            
+                            json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                        }
+                        
+
+
+                        //json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                        free(string_value);
+                        variant_free(value);
+
+                        json_object_object_add(json_resp, "device_data", cmd_value);
+                        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_SERVER_ERR);
+            }
+        }
+        else
+        {
+            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+        }
+    }
+    
     http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
     http_set_cache_control((http_vty_priv_t*)vty->priv, true, 3600);
 

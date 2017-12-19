@@ -11,6 +11,8 @@ void zway_json_data_holder_to_json(json_object* root, ZDataHolder data)
         data_leaf_to_json(root, data);
         return;
     }
+    int index = 0;
+    json_object* child_array = json_object_new_array();
 
     while (child != NULL)
     {
@@ -23,11 +25,15 @@ void zway_json_data_holder_to_json(json_object* root, ZDataHolder data)
             const char* name = zdata_get_name(child->data);
             json_object* nested_data = json_object_new_object();
             zway_json_data_holder_to_json(nested_data, child->data);
-            json_object_object_add(root, name, nested_data);
+            json_object_object_add(nested_data, "data_holder", json_object_new_string(name));
+            //json_object_object_add(root, name, nested_data);
+            json_object_array_add(child_array, nested_data);
         }
 
         child = zdata_next_child(child);
     }
+
+    json_object_object_add(root, "parameters", child_array);
 }
 
 

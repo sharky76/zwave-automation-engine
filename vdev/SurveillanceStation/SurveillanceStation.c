@@ -23,7 +23,9 @@ int  DT_SURVEILLANCE_STATION;
 bool SS_device_started;
 
 static int timer_tick_counter;
+static int active_event_tick_counter;
 variant_t*  get_motion_events(va_list args);
+variant_t*  get_all_motion_events(va_list args);
 variant_t*  get_camera_list(va_list args);
 variant_t*  get_camera_name_by_id(va_list args);
 variant_t*  get_snapshot_path(va_list args);
@@ -31,6 +33,7 @@ variant_t*  get_event_list(va_list args);
 variant_t*  get_event_snapshot(va_list args);
 variant_t*  get_event_snapshot_range(va_list args);
 variant_t*  get_camera_snapshot(va_list args);
+variant_t*  get_model_info(va_list args);
 
 void        device_start(); 
 void        timer_tick_handler(event_t* pevent, void* context);
@@ -39,6 +42,11 @@ void        SS_on_data_change_event(event_t* event, void* context);
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
     VDEV_INIT("SurveillanceStation", device_start)
+
+    // Mimic the ZWAVE SENSOR_BINARY data holder path (1.level)
+    VDEV_ADD_COMMAND_CLASS("GetAllEvents", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
+    VDEV_ADD_COMMAND_CLASS("GetModelInfo", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
+
     VDEV_ADD_COMMAND("GetEvents", 1, get_motion_events, "Get Motion event count (arg: id)")
     VDEV_ADD_COMMAND("GetCameraName", 1, get_camera_name_by_id, "Get Camera name (arg: id)")
     VDEV_ADD_COMMAND("GetCameraList", 0, get_camera_list, "Get Camera list")
@@ -109,6 +117,22 @@ variant_t*  get_motion_events(va_list args)
 
     return variant_create_int32(DT_INT32, 0);
 }
+
+void    aggregate_motion_events(hash_node_data_t* node_data, void* arg)
+{
+    int* event_count = (int*)arg;
+    SS_event_keeper_t* ev = (SS_event_keeper_t*)variant_get_ptr(node_data->data);
+    *event_count += ev->event_count;
+}
+
+variant_t*  get_all_motion_events(va_list args)
+{
+    int total_event_count = 0;
+    variant_hash_for_each(SS_event_keeper_table, aggregate_motion_events, (void*)&total_event_count);
+
+    return variant_create_int32(DT_INT32, total_event_count);
+}
+
 
 variant_t*  get_event_list(va_list args)
 {
@@ -289,10 +313,11 @@ void SS_on_data_change_event(event_t* event, void* context)
 
     char json_buf[256] = {0};
     
-    snprintf(json_buf, 255, "{\"camera_id\":\"%d\",\"camera_name\":\"%s\",\"event_count\":\"%d\"}",
+    snprintf(json_buf, 255, "{\"camera_id\":\"%d\",\"camera_name\":\"%s\",\"event_count\":\"%d\",\"data_holder\":1,\"level\":%s}",
              ev->camera_id, 
              ev->camera_name,
-             ev->event_count);
+             ev->event_count,
+             (ev->event_active)? "true" : "false");
 
     event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
     new_entry->node_id = event_data->vdev_id;
@@ -309,8 +334,24 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
     if(ev->event_count > ev->old_event_count)
     {
+        ev->event_active = true;
+        active_event_tick_counter = 0;
         SS_api_get_events_info(ev);
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+    }
+
+    ev->old_event_count = ev->event_count;
+}
+
+void    reset_active_events(hash_node_data_t* node_data, void* arg)
+{
+    SS_event_keeper_t* ev = (SS_event_keeper_t*)variant_get_ptr(node_data->data);
+    LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
+    if(ev->event_active)
+    {
+        ev->event_active = false;
+        ev->event_count = ev->old_event_count = 0;
         vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
     }
 
@@ -332,11 +373,13 @@ void        timer_tick_handler(event_t* pevent, void* context)
         //SS_api_logout();
         variant_hash_for_each(SS_event_keeper_table, process_motion_event_table, NULL);
     }
-    /*else if(strcmp(timer_event_data->data, "GetCameraList") == 0)
+
+    if(++active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
     {
-        LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera List event received");
-        SS_api_get_camera_list();
-    }*/
+        LOG_DEBUG(DT_SURVEILLANCE_STATION, "Reset active events");
+        active_event_tick_counter = 0;
+        variant_hash_for_each(SS_event_keeper_table, reset_active_events, NULL);
+    }
 }
 
 variant_t*  get_camera_snapshot(va_list args)
@@ -347,5 +390,11 @@ variant_t*  get_camera_snapshot(va_list args)
 
     SS_api_get_camera_snapshot(cam_id, &snapshot);
     return variant_create_string(snapshot);
+}
+
+variant_t*  get_model_info(va_list args)
+{
+    char* model_info = "{\"vendor\":\"Synology\"}";
+    return variant_create_string(strdup(model_info));
 }
 

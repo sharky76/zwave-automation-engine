@@ -37,8 +37,9 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/scene.o $(OUTDIR)/scene_action.o \
 	$(OUTDIR)/scene_manager.o $(OUTDIR)/script_action_handler.o \
-	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
+	$(OUTDIR)/sensor_manager.o $(OUTDIR)/service_manager.o \
+	$(OUTDIR)/socket_io.o $(OUTDIR)/user_manager.o \
+	$(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
@@ -55,8 +56,9 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/scene.o $(OUTDIR)/scene_action.o \
 	$(OUTDIR)/scene_manager.o $(OUTDIR)/script_action_handler.o \
-	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
+	$(OUTDIR)/sensor_manager.o $(OUTDIR)/service_manager.o \
+	$(OUTDIR)/socket_io.o $(OUTDIR)/user_manager.o \
+	$(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
 	-lrt 
 
@@ -136,8 +138,9 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/scene.o $(OUTDIR)/scene_action.o \
 	$(OUTDIR)/scene_manager.o $(OUTDIR)/script_action_handler.o \
-	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
+	$(OUTDIR)/sensor_manager.o $(OUTDIR)/service_manager.o \
+	$(OUTDIR)/socket_io.o $(OUTDIR)/user_manager.o \
+	$(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
@@ -154,8 +157,9 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/scene.o $(OUTDIR)/scene_action.o \
 	$(OUTDIR)/scene_manager.o $(OUTDIR)/script_action_handler.o \
-	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
-	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
+	$(OUTDIR)/sensor_manager.o $(OUTDIR)/service_manager.o \
+	$(OUTDIR)/socket_io.o $(OUTDIR)/user_manager.o \
+	$(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
 	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
 	-lrt 
 
