@@ -176,20 +176,30 @@ var zae_port;
 
 					break;
 				case 91: // Scene Controller
-					var service = new Service.StatelessProgrammableSwitch(this.name);
-					service.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-						.on('get', function(callback) {callback(null, Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS)});
-					
-					this.serviceList.push(service);
+					// The device might have multiple buttons and we want to create
+					// multiple switch services for each button. The physical number of
+					// buttons is unknown but we try to guess it by reading maxScenes value...
+					var numButtons = deviceDescriptor.command_classes[index].dh.maxScenes;
 
-					this.registerEventListener(Characteristic.ProgrammableSwitchEvent, 
-						{
-							service:service,
-							node_id:this.nodeId,
-							command_class:deviceDescriptor.command_classes[index].id,
-							dh:1,
-							force_value:0
-						});
+					// The scene numbers assumed to be 1 and 2
+					for(var sceneIndex = 1; sceneIndex <= numButtons; sceneIndex++) {
+						var service = new Service.StatelessProgrammableSwitch(this.name, sceneIndex);
+						service.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+							.on('get', function(callback) {callback(null, Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS)});
+						
+						this.serviceList.push(service);
+
+						this.registerEventListener(Characteristic.ProgrammableSwitchEvent, 
+							{
+								service:service,
+								node_id:this.nodeId,
+								command_class:deviceDescriptor.command_classes[index].id,
+								dh:"currentScene",
+								valueHolder:"currentScene",	// Read event value from this data holder
+								force_value:0,				// Force Set this value to device (SINGLE_PRESS)
+								required_value:sceneIndex	// Only react to the event if value equal to required_value
+							});
+					}
 
 					break;
 				case 128:
@@ -246,6 +256,10 @@ var zae_port;
 	};
 
 	ZAEAccessory.prototype = {
+		identify: function(callback) {
+			this.log("Identify requested for " + this.name + " NodeID: " + this.nodeId);
+			callback(); // success
+		},
 		registerEventListener : function(Characteristics, data) {
 			this.log("Add event listener for device", this.name);
 			this.platform.eventSource.addEventListener('EventLogAddedEvent', function(e) {
@@ -255,16 +269,24 @@ var zae_port;
 				var command_id = json.command_id;
 				var dh = json.data.data_holder;
 				if(command_id == this.command_class && json.node_id == this.node_id && dh == this.dh) {
-					if(this.force_value) {
-						//console.log("Event: Setting Value to " + this.force_value);
-						this.service.getCharacteristic(Characteristics).setValue(this.force_value);
-					} else {
-						var sensorValue = json.data.level;
-						if(typeof this.convert === 'function') {
-							sensorValue = this.convert(sensorValue);
+
+					var sensorValue = json.data[this.valueHolder || "level"];
+					if(typeof this.convert === 'function') {
+						sensorValue = this.convert(sensorValue);
+					}
+
+					console.log(this.force_value);
+					if(typeof this.force_value !== 'undefined') {
+						//console.log("Event: Setting force value to " + this.force_value);
+						if(typeof this.required_value === 'undefined' || (this.required_value == sensorValue)) {
+							this.service.getCharacteristic(Characteristics).setValue(this.force_value);
 						}
+					} else {
 						//console.log("Event: Setting Value to " + sensorValue);
-						this.service.getCharacteristic(Characteristics).setValue(sensorValue);
+
+						if(typeof this.required_value === 'undefined' || (this.required_value == sensorValue)) {
+							this.service.getCharacteristic(Characteristics).setValue(sensorValue);
+						}
 					}
 				}
 			}.bind(data), false);
