@@ -44,7 +44,7 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_INIT("SurveillanceStation", device_start)
 
     // Mimic the ZWAVE SENSOR_BINARY data holder path (1.level)
-    VDEV_ADD_COMMAND_CLASS("GetAllEvents", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
+    VDEV_ADD_COMMAND_CLASS("Get", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
     VDEV_ADD_COMMAND_CLASS("GetModelInfo", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
 
     VDEV_ADD_COMMAND("GetEvents", 1, get_motion_events, "Get Motion event count (arg: id)")
@@ -338,7 +338,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
         active_event_tick_counter = 0;
         SS_api_get_events_info(ev);
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, 0, VDEV_DATA_CHANGE_EVENT, ev);
     }
 
     ev->old_event_count = ev->event_count;
@@ -352,7 +352,7 @@ void    reset_active_events(hash_node_data_t* node_data, void* arg)
     {
         ev->event_active = false;
         ev->event_count = ev->old_event_count = 0;
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, 0, VDEV_DATA_CHANGE_EVENT, ev);
     }
 
     ev->old_event_count = ev->event_count;

@@ -190,3 +190,14 @@ void    resolver_for_each(void (*visitor)(device_record_t*, void*), void* arg)
     variant_hash_for_each(resolver->record_table, call_resolver_visitor, &resolver_data);
 }
 
+device_record_t*        resolver_resolve_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId)
+{
+    const char* name = resolver_name_from_id(nodeId,instanceId,commandId);
+    if(NULL != name)
+    {
+        return resolver_get_device_record(name);
+    }
+
+    return NULL;
+}
+

@@ -80,6 +80,7 @@ static command_class_t command_class_table[] = {
                              NULL, 0, NULL},
                              &command_class_eval_node_naming},
     {0x5b, "CentralScene",  {"CurrentScene", 0, "Get current scene",
+                             "KeyAttribute", 0, "Get key attribute (0 - pressed, 1 - released, 2 - held down)",
                              NULL, 0, NULL},
                              &command_class_eval_current_scene},
 
@@ -251,7 +252,7 @@ variant_t*   command_class_eval_basic(const char* method, device_record_t* recor
 
     if(strcmp(method, "Get") == 0)
     {
-        variant_t* arg1 = va_arg(args, variant_t*);
+        //variant_t* arg1 = va_arg(args, variant_t*);
         /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_basic_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx); 
@@ -263,14 +264,14 @@ variant_t*   command_class_eval_basic(const char* method, device_record_t* recor
         zdata_get_integer(dh, &int_val);
         ret_val = variant_create_int32(DT_INT32, int_val);
         zdata_release_lock(ZDataRoot(zway));*/
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         ZWError err = zway_cc_basic_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }
-        ret_val = command_class_read_data(record, variant_get_string(arg1));
+        }*/
+        ret_val = command_class_read_data(record, ".");
     }
     else if(strcmp(method, "Set") == 0)
     {
@@ -452,14 +453,14 @@ variant_t*   command_class_eval_wakeup(const char* method, device_record_t* reco
 
     if(strcmp(method, "Get") == 0)
     {
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_wakeup_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
         if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }
+        }*/
         ret_val = command_class_read_data(record, NULL);
     }
     else if(strcmp(method, "Capabilities") == 0)
@@ -612,6 +613,10 @@ variant_t*   command_class_eval_current_scene(const char* method, device_record_
     if(strcmp(method, "CurrentScene") == 0)
     {
         ret_val = command_class_read_data(record, "currentScene");
+    }
+    else if(strcmp(method, "KeyAttribute") == 0)
+    {
+        ret_val = command_class_read_data(record, "keyAttribute");
     }
 
     return ret_val;

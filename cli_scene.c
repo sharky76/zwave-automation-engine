@@ -64,8 +64,8 @@ cli_command_t   scene_root_list[] = {
 };
 
 cli_command_t   scene_command_list[] = {
-    {"source Sensor|WORD",             cmd_set_scene_source,      "Add scene source"},
-    {"no source Sensor|WORD",          cmd_del_scene_source,      "Del scene source"},
+    {"source Sensor|VDEV|WORD",             cmd_set_scene_source,      "Add scene source"},
+    {"no source Sensor|VDEV|WORD",          cmd_del_scene_source,      "Del scene source"},
     {"condition LINE",          cmd_set_scene_condition,   "Set scene condition"},
     {"no condition LINE",       cmd_del_scene_condition,   "Delete scene condition"},
     {"action script WORD",      cmd_config_scene_action_script,   "Configure scene action script"},

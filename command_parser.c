@@ -49,7 +49,7 @@ void process_string_operand(const char* ch, variant_stack_t* operand_queue);
 bool process_service_method_operator(const char* class, const char* method, variant_stack_t* operator_stack);
 bool process_builtin_method_operator(const char* class, const char* method, variant_stack_t* operator_stack);
 bool process_device_function_operator(const char* device, const char* method, variant_stack_t* operator_stack);
-bool process_vdev_method_operator(const char* device, const char* method, variant_stack_t* operator_stack);
+bool process_vdev_method_operator(const char* device, device_record_t* record, const char* method, variant_stack_t* operator_stack);
 bool process_digit_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 
 void process_operator_token(variant_stack_t* operator_stack, variant_stack_t* operand_queue, OperatorType op_token);
@@ -586,7 +586,7 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
                 
                 if(record->devtype == VDEV)
                 {
-                    retVal = process_vdev_method_operator(ch, tok+1, operator_stack);
+                    retVal = process_vdev_method_operator(ch, record, tok+1, operator_stack);
                 }
                 else
                 {
@@ -603,7 +603,7 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
             }
             else if(vdev_manager_is_vdev_exists(ch))
             {
-                retVal = process_vdev_method_operator(ch, tok+1, operator_stack);
+                retVal = process_vdev_method_operator(ch, NULL, tok+1, operator_stack);
             }
             else
             {
@@ -650,20 +650,25 @@ bool process_device_function_operator(const char* device, const char* method, va
     return retVal;
 }
 
-bool process_vdev_method_operator(const char* device, const char* method, variant_stack_t* operator_stack)
+bool process_vdev_method_operator(const char* device, device_record_t* record, const char* method, variant_stack_t* operator_stack)
 {
     function_operator_data_t* op_data = (function_operator_data_t*)calloc(1, sizeof(function_operator_data_t));
     operator_t* function_operator = operator_create(OP_DEVICE_FUNCTION, op_data);
     bool    retVal = true;
 
-    device_record_t*    record = vdev_manager_create_device_record(device);
+    if(NULL == record)
+    {
+        // This is memory leak!!!
+        LOG_ERROR(Parser, "FIX IT - Memory leak right here. Device record is never deleted!");
+        record = vdev_manager_create_device_record(device);
+    }
+
     if(NULL != record)
     {
         op_data->device_record = record;
         op_data->command_class = vdev_manager_get_command_class(record->nodeId);
         strncpy(op_data->command_method, method, MAX_METHOD_LEN-1);
         stack_push_front(operator_stack, variant_create_ptr(T_FUNCTION, function_operator, &operator_delete_function_operator));
-
     }
     else 
     {
@@ -671,6 +676,7 @@ bool process_vdev_method_operator(const char* device, const char* method, varian
         LOG_ERROR(Parser, "Unresolved virtual device %s", device);
         retVal = false;
     }
+    
     return retVal;
 }
 

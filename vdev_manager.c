@@ -225,7 +225,11 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
     stack_for_each(vdev->supported_method_list, vdev_method_variant)
     {
         vdev_command_t* cmd = (vdev_command_t*)variant_get_ptr(vdev_method_variant);
-        if(strcmp(cmd->name, method) == 0)
+        // If command is defined as COMMAND_CLASS (VDEV_ADD_COMMAND_CLASS) we allow multiple 
+        // commands with the same name. In that case cmd->command_id must be non-null and unique
+        // for this command
+
+        if(strcmp(cmd->name, method) == 0 && (vdev_record->commandId == INVALID_INSTANCE || cmd->command_id == vdev_record->commandId))
         {
             return cmd->command_impl(args);
         }

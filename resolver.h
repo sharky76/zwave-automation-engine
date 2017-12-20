@@ -36,6 +36,7 @@ bool                    resolver_has_name(const char* name);
 const char*             resolver_name_from_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId);
 const char*             resolver_name_from_node_id(ZWBYTE nodeId);
 device_record_t*        resolver_get_device_record(const char* name);
+device_record_t*        resolver_resolve_id(ZWBYTE nodeId, ZWBYTE instanceId, ZWBYTE commandId);
 void                    resolver_for_each(void (*visitor)(device_record_t*, void*), void* arg);
 
 #endif // RESOLVER_H

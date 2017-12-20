@@ -97,6 +97,10 @@ void    scene_manager_on_vdev_event(event_t* event, void* context)
         {
             LOG_DEBUG(Scene, "Matching command-class %s found for virtual device %s", vdev_resolved_name, vdev->name);
             
+            // Create SensorEvent argument stack
+            service_args_stack_create("SensorEvent");
+            service_args_stack_add("SensorEvent", "EventData", variant_clone(event->data));
+
             hash_iterator_t* it = variant_hash_begin(scene_table);
 
             while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
@@ -107,7 +111,7 @@ void    scene_manager_on_vdev_event(event_t* event, void* context)
                 stack_for_each(scene->source_list, source_variant)
                 {
                     const char* source = variant_get_string(source_variant);
-                    if(strcmp(source, vdev_resolved_name) == 0)
+                    if(strcmp(source, vdev_resolved_name) == 0 || strcmp(source, "VDEV") == 0)
                     {
                         LOG_ADVANCED(Scene, "Scene event from virtual device %s for scene %s", vdev->name, scene->name);
                         scene_exec(scene);
@@ -116,6 +120,7 @@ void    scene_manager_on_vdev_event(event_t* event, void* context)
             }
 
             free(it);
+            service_args_stack_destroy("SensorEvent");
         }
         else
         {
