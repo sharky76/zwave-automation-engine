@@ -402,14 +402,14 @@ variant_t*   command_class_eval_configuration(const char* method, device_record_
     {
         char* param_str;
         variant_to_string(param, &param_str);
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_configuration_get(zway, record->nodeId, record->instanceId, variant_get_int(param), zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
         if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }
+        }*/
 
         ret_val = command_class_read_data(record, param_str);
         free(param_str);
@@ -432,14 +432,14 @@ variant_t*   command_class_eval_manufacturer_specific(const char* method, device
 
     if(strcmp(method, "Get") == 0)
     {
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_manufacturer_specific_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
         if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }
+        }*/
 
         ret_val = command_class_read_data(record, NULL);
     }
@@ -465,14 +465,14 @@ variant_t*   command_class_eval_wakeup(const char* method, device_record_t* reco
     }
     else if(strcmp(method, "Capabilities") == 0)
     {
-        zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
+        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
         zway_cc_wakeup_capabilities_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
         if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }
+        }*/
         ret_val = command_class_read_data(record, NULL);
     }
     else if(strcmp(method, "Sleep") == 0)

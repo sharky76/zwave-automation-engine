@@ -53,7 +53,7 @@ extern hash_table_t* SS_camera_info_table;
 extern bool    SS_device_started;
 
 #define QUERY_RATE_SEC 30
-#define EVENT_ACTIVE_TIMEOUT_SEC 60
+#define EVENT_ACTIVE_TIMEOUT_SEC 180
 #define COMMAND_CLASS_MOTION_EVENTS 48
 #define COMMAND_CLASS_MODEL_INFO 114
 

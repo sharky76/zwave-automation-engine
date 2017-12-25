@@ -27,6 +27,11 @@ void    sensor_manager_set_role(int node_id, const char* role)
     variant_hash_insert(sensor_role_table, node_id, variant_create_ptr(DT_PTR, sensor_role, &delete_sensor_role));
 }
 
+void    sensor_manager_remove_role(int node_id)
+{
+    variant_hash_remove(sensor_role_table, node_id);
+}
+
 char*   sensor_manager_get_role(int node_id)
 {
     variant_t* role_variant = variant_hash_get(sensor_role_table, node_id);

@@ -162,9 +162,7 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec
-					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -O2 %~other -o "%o" %objs'
-					OtherOptions="-LlibZaeUtil/Release -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -ljson-c -ldl"/>
+				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -rs %xup "%o" %f'/>
 			</Target>
 			<Target
 				Name="Build"
@@ -381,6 +379,8 @@
 		<F N="data_callbacks.h"/>
 		<F N="device_callbacks.c"/>
 		<F N="device_callbacks.h"/>
+		<F N="homebridge_manager.c"/>
+		<F N="homebridge_manager.h"/>
 		<F N="http_server.c"/>
 		<F N="http_server.h"/>
 		<F N="logging_modules.c"/>

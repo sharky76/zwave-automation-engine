@@ -35,6 +35,7 @@
 #include <termios.h>
 #include "event_log.h"
 #include "sensor_manager.h"
+#include "homebridge_manager.h"
 
 #define DEFAULT_PORT 9231
 
@@ -109,6 +110,7 @@ void sigsegv(int sig) {
 
 void sighup(int sig)
 {
+    homebridge_manager_stop();
     event_manager_shutdown();
     zway_stop(zway);
     zway_terminate(&zway);
@@ -298,7 +300,6 @@ int main (int argc, char *argv[])
            
             signal_init();
             
-
             int cli_sock = socket(AF_INET, SOCK_STREAM, 0);
             struct sockaddr_in addr;
             memset(&addr, 0, sizeof(struct sockaddr_in));
@@ -325,6 +326,8 @@ int main (int argc, char *argv[])
             variant_stack_t* client_socket_list = stack_create();
             int http_socket = http_server_get_socket(8088);
             
+            int homebridge_fd = homebridge_manager_init();
+
             // Create STD vty
             vty_t* vty_std = NULL;
             struct termios org_opts, new_opts;
@@ -362,7 +365,12 @@ int main (int argc, char *argv[])
                 FD_ZERO (&fds);
                 FD_SET(cli_sock,    &fds);    
                 FD_SET(http_socket, &fds);
-                
+
+                if(-1 != homebridge_fd)
+                {
+                    FD_SET(homebridge_fd, &fds);
+                }
+
                 stack_for_each(client_socket_list, cli_vty_variant)
                 {
                     vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
@@ -406,6 +414,7 @@ int main (int argc, char *argv[])
                             logger_unregister_target(vty_std);
                             vty_free(vty_std);
                             tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
+                            homebridge_manager_stop();
                             event_manager_shutdown();
                             zway_stop(zway);
                             zway_terminate(&zway);
@@ -420,6 +429,13 @@ int main (int argc, char *argv[])
                         }
                     }
                 }
+
+                if(FD_ISSET(homebridge_fd, &fds))
+                {
+                    event_t* homebridge_event = event_create(homebridge_fd, "HomebridgeEvent", NULL);
+                    event_post(homebridge_event);
+                }
+
                 if(FD_ISSET(cli_sock, &fds))
                 {
                     session_sock = accept(cli_sock, NULL, NULL);

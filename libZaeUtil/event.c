@@ -42,6 +42,8 @@ void event_manager_init()
     event_list = stack_create();
     registered_handlers = stack_create();
     //registered_types = stack_create();
+    
+    pthread_mutex_init(&event_list_mutex, NULL);
 
     // Init the semaphore
     sem_init(&event_semaphore, 0, 0);

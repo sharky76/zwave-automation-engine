@@ -57,6 +57,8 @@ void logger_init()
     logger_handle->log_buffer_size = 100;
     logger_handle->log_buffer = stack_create();
     logger_handle->registered_targets = stack_create();
+
+    pthread_mutex_init(&logger_handle->logger_lock, NULL);
 }
 
 void logger_register_target(vty_t* vty)

@@ -20,6 +20,7 @@ bool    cmd_sensor_command_interview(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_set_role(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_show_role(vty_t* vty, variant_stack_t* params);
+bool    cmd_sensor_remove_role(vty_t* vty, variant_stack_t* params);
 
 // Forward declaration of utility methods
 void cli_print_data_holder(vty_t* vty, ZDataHolder dh);
@@ -35,6 +36,7 @@ cli_command_t   sensor_root_list[] = {
     {"sensor interview node-id INT instance INT command-class INT", cmd_sensor_command_interview, "Run a command interview"},
     {"sensor set-descriptor node-id INT WORD",              cmd_sensor_set_descriptor, "Set ZDDX descriptor file for sensor"},
     {"sensor role node-id INT MotionSensor|ContactSensor|LeakSensor|OccupancySensor", cmd_sensor_set_role, "Set optional sensor role"},
+    {"no sensor role node-id INT", cmd_sensor_remove_role, "Remove optional sensor role"},
     {"show sensor role", cmd_sensor_show_role, "Show optional sensor role"},
     {NULL,                   NULL,                          NULL}
 };
@@ -385,6 +387,11 @@ bool    cmd_sensor_set_role(vty_t* vty, variant_stack_t* params)
     sensor_manager_set_role(node_id, role);
 }
 
+bool    cmd_sensor_remove_role(vty_t* vty, variant_stack_t* params)
+{
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    sensor_manager_remove_role(node_id);
+}
 
 void    show_sensor_role_helper(sensor_role_t* sensor_role, void* arg)
 {

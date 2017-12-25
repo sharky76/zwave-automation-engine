@@ -21,7 +21,9 @@ variant_t*  timer_invoke_command(service_method_t* method, va_list args);
 variant_t*  timer_interval_invoke_command(service_method_t* method, va_list args);
 variant_t*  timer_show_timers(service_method_t* method, va_list args);
 
-void alarm_expire_handler(int sig);
+void* timer_alarm_thread_func(void* arg);
+void  timer_thread_start();
+
 
 void service_create(service_t** service, int service_id)
 {
@@ -42,19 +44,7 @@ void service_create(service_t** service, int service_id)
     // Default config values
     timer_enabled = true;
 
-    // Setup SIGALARM handler
-    struct sigaction sa;
-    sa.sa_handler = &alarm_expire_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGALRM, &sa, 0) == -1) 
-    {
-        perror(0);
-    }
-    else
-    {
-        alarm(1);
-    }
+    timer_thread_start();
 }
 
 void    service_cli_create(cli_node_t* parent_node)
@@ -82,7 +72,9 @@ bool    add_timer_event(const char* name, int timeout, timer_event_type_t event_
     timer->timeout = timer->ticks_left = timeout;
     timer->singleshot = singleshot;
 
+    stack_lock(timer_list);
     stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
+    stack_unlock(timer_list);
 }
 
 variant_t*  timer_start(service_method_t* method, va_list args)
@@ -121,7 +113,7 @@ variant_t*  timer_start(service_method_t* method, va_list args)
 variant_t*  timer_stop(service_method_t* method, va_list args)
 {
     variant_t* name_variant = va_arg(args, variant_t*);
-    
+    stack_lock(timer_list);
     stack_for_each(timer_list, timer_variant)
     {
         timer_info_t* timer = variant_get_ptr(timer_variant);
@@ -132,6 +124,7 @@ variant_t*  timer_stop(service_method_t* method, va_list args)
             return variant_create_bool(true);
         }
     }
+    stack_unlock(timer_list);
 
     return variant_create_bool(false);
 }
@@ -170,36 +163,46 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
     }
 }
 
-void alarm_expire_handler(int sig)
+void* timer_alarm_thread_func(void* arg)
 {
-    if(timer_enabled)
+    while(true)
     {
-        stack_for_each(timer_list, timer_variant)
+        sleep(1);
+        if(timer_enabled)
         {
-            if(NULL != timer_variant)
+            stack_lock(timer_list);
+            stack_for_each(timer_list, timer_variant)
             {
-                timer_info_t* timer = variant_get_ptr(timer_variant);
-                if(--timer->ticks_left == 0)
+                if(NULL != timer_variant)
                 {
-                    service_post_event(DT_TIMER, timer->event_name, variant_create_string(strdup(timer->name)));
-        
-                    if(timer->singleshot)
+                    timer_info_t* timer = variant_get_ptr(timer_variant);
+                    if(--timer->ticks_left == 0)
                     {
-                        stack_remove(timer_list, timer_variant);
-                        variant_free(timer_variant);
-                    }
-                    else
-                    {
-                        timer->ticks_left = timer->timeout;
+                        service_post_event(DT_TIMER, timer->event_name, variant_create_string(strdup(timer->name)));
+            
+                        if(timer->singleshot)
+                        {
+                            stack_remove(timer_list, timer_variant);
+                            variant_free(timer_variant);
+                        }
+                        else
+                        {
+                            timer->ticks_left = timer->timeout;
+                        }
                     }
                 }
             }
+            stack_unlock(timer_list);
+            service_post_event(DT_TIMER, TIMER_TICK_EVENT, NULL);
         }
-    
-        service_post_event(DT_TIMER, TIMER_TICK_EVENT, NULL);
     }
+}
 
-    alarm(1);
+void timer_thread_start()
+{
+    pthread_t   timer_thread;
+    pthread_create(&timer_thread, NULL, timer_alarm_thread_func, NULL);
+    pthread_detach(timer_thread);
 }
 
 void timer_delete_timer(void* arg)
@@ -275,6 +278,7 @@ variant_t*  timer_show_timers(service_method_t* method, va_list args)
     {
         variant_stack_t* result = stack_create();
 
+        stack_lock(timer_list);
         stack_for_each(timer_list, timer_variant)
         {
             timer_info_t* timer = variant_get_ptr(timer_variant);
@@ -282,7 +286,7 @@ variant_t*  timer_show_timers(service_method_t* method, va_list args)
             snprintf(buf, 255, "%d %s: %s", timer->ticks_left, timer->event_name, timer->name);
             stack_push_back(result, variant_create_string(strdup(buf)));
         }
-
+        stack_unlock(timer_list);
         return variant_create_list(result);
     }
 

@@ -7,6 +7,7 @@
 #include "cli.h"
 #include <arpa/telnet.h>
 #include <stdio.h>
+#include "lcp.h"
 
 #define HISTORY_START   -1
 #define KEY_TAB       0x09
@@ -295,6 +296,11 @@ char*   vty_read(vty_t* vty)
                 int word_count = 0;
                 vty_write(vty, VTY_NEWLINE(vty));
 
+                // Display all possible completions...
+                // and remember the shortest completion for later...
+                int completion_len = 0;
+                char* shortest_completion = NULL;
+
                 stack_for_each(vty->completions, matching_command)
                 {
                     vty_write(vty, "%-25s", variant_get_string(matching_command));
@@ -303,13 +309,32 @@ char*   vty_read(vty_t* vty)
                         vty_write(vty, VTY_NEWLINE(vty));
                         word_count = 0;
                     }
+
+                    if(strlen(variant_get_string(matching_command)) < completion_len || completion_len == 0)
+                    {
+                        completion_len = strlen(variant_get_string(matching_command));
+                        shortest_completion = (char*)variant_get_string(matching_command);
+                    }
                 }
 
                 if(word_count > 0)
                 {
                     vty_write(vty, VTY_NEWLINE(vty));
                 }
+                
+                char* longest_prefix = lcp(vty->completions);
 
+                variant_stack_t* cmd_stack = create_cmd_vec(vty->buffer);
+                variant_t* incomplete_cmd = stack_pop_back(cmd_stack);                
+
+                if(NULL != longest_prefix)
+                {
+                    //printf("Longest prefix = %s\n", longest_prefix);
+                    stack_push_back(cmd_stack, variant_create_string(longest_prefix));
+                    vty_clear_buffer(vty);
+                    cli_assemble_line(cmd_stack, 0, vty->buffer);
+                }
+                stack_free(cmd_stack);
                 vty_redisplay(vty, vty->buffer);
             }
         }

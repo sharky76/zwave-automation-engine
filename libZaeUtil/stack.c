@@ -8,6 +8,9 @@ variant_stack_t*    stack_create()
     new_stack->count = 0;
     new_stack->head = NULL;
     new_stack->tail = NULL;
+
+    pthread_mutex_init(&new_stack->lock, NULL);
+
     return new_stack;
 }
 
@@ -289,4 +292,35 @@ void            stack_unlock(variant_stack_t* stack)
 {
     pthread_mutex_unlock(&stack->lock);
 }
+
+/**
+ * Splice the stack starting from Start position and ending at 
+ * End (not including). Original stack left intact, new stack is 
+ * returned containing elements from start till end-1 
+ * 
+ * @author alex (12/24/2017)
+ * 
+ * @param stack 
+ * @param start 
+ * @param end 
+ * 
+ * @return variant_stack_t* 
+ */
+variant_stack_t* stack_splice(variant_stack_t* stack, unsigned int start, unsigned int end)
+{
+    if(NULL == stack || stack->count == 0 || start >= stack->count || end > stack->count || start > end)
+    {
+        return NULL;
+    }
+
+    variant_stack_t* result_stack = stack_create();
+
+    stack_for_each_range(stack, start, end-1, stack_value)
+    {
+        stack_push_back(result_stack, stack_value);
+    }
+
+    return result_stack;
+}
+
 

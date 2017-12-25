@@ -61,6 +61,7 @@ int  http_server_get_socket(int port)
         }
         else
         {
+            LOG_ADVANCED(HTTPServer, "HTTP server initialized");
             event_register_handler(HTTPServer, "HTTPRequest", &http_request_handle_event,  NULL);
             return server_sock;
         }

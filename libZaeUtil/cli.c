@@ -572,6 +572,7 @@ char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, var
     }
     
     variant_stack_t* root = current_node->command_tree;
+    int cmd_vec_index = 0;
 
     // Traverse the cmd vec and find the last command part matching cmd_vec
     stack_for_each(cmd_vec, cmd_part_variant)
@@ -585,9 +586,22 @@ char**  cmd_find_matches(cli_node_t* current_node, variant_stack_t* cmd_vec, var
             {
                 break;
             }
+            if(matches->count > 1 && cmd_vec_index != cmd_vec->count-1 && *cmd_part_str != 0)
+            {
+                // We have more than one match for non-final command part. This is an error!
+                //printf("Invalid command part: %s (0x%x)\n", cmd_part_str, *cmd_part_str);
+                while(matches->count > 0)
+                {
+                    stack_pop_front(matches);
+                }
+                break;
+            }
         }
+
+        cmd_vec_index++;
     }
     
+        
     // We want to remove singe <CR> match otherwise it will be appended to the command line!
     if(matches->count == 1)
     {

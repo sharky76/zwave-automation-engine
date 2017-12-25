@@ -114,23 +114,16 @@ variant_t*  event_device_value_impl(struct service_method_t* method, va_list arg
             sensor_event_data_t* event_data = (sensor_event_data_t*)variant_get_ptr(event_data_variant);
             device_record_t* device_record = resolver_resolve_id(event_data->node_id, event_data->instance_id, event_data->command_id);
 
-            if(NULL != device_record && device_record->devtype == VDEV)
+            if(NULL != device_record)
             {
-                cmd_class = vdev_manager_get_command_class(event_data->node_id);
-            }
-            else
-            {   /*
-                zdata_acquire_lock(ZDataRoot(zway));
-                //ZDataHolder dh = zdata_find(event_data->data_holder, variant_get_string(path_variant));
-    
-                ZDataHolder dh = zway_find_device_instance_cc_data(zway, event_data->node_id, event_data->instance_id, event_data->command_id, variant_get_string(path_variant));
-    
-                variant_t* result = command_class_extract_data(dh);
-                zdata_release_lock(ZDataRoot(zway));
-
-                return result;
-                */
-                cmd_class = get_command_class_by_id(event_data->command_id);
+                if(device_record->devtype == VDEV)
+                {
+                    cmd_class = vdev_manager_get_command_class(event_data->node_id);
+                }
+                else
+                {
+                    cmd_class = get_command_class_by_id(event_data->command_id);
+                }
             }
             
             if(NULL != cmd_class)

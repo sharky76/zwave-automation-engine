@@ -123,7 +123,7 @@ ZAEPlatform.prototype = {
 							service:service,
 							node_id:this.nodeId,
 							command_class:deviceDescriptor.command_classes[index].id,
-							dh:1
+							dh:deviceDescriptor.command_classes[index].dh.parameters[0].data_holder
 						});
 
 					break;
