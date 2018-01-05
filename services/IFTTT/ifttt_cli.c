@@ -146,6 +146,18 @@ bool    cmd_configure_action(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_remove_action(vty_t* vty, variant_stack_t* params)
 {
+    const char* action_url = variant_get_string(stack_peek_at(params, 2));
+
+    stack_for_each(ifttt_action_list, action_variant)
+    {
+        ifttt_action_t* action = VARIANT_GET_PTR(ifttt_action_t, action_variant);
+        if(strcmp(action->url, action_url) == 0)
+        {
+            stack_remove(ifttt_action_list, action_variant);
+            variant_free(action_variant);
+            break;
+        }
+    }
     return true;
 }
 

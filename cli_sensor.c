@@ -232,7 +232,7 @@ bool    cmd_sensor_show_node_info(vty_t* vty, variant_stack_t* params)
     ZWDevicesList node_array;
     node_array = zway_devices_list(zway);
 
-    vty_write(vty, "%-10s%-25s%-20s%-20s%s", "Node ID", "Device Type", "Interview Done", "Is Failed", VTY_NEWLINE(vty));
+    vty_write(vty, "%-10s%-25s%-25s%-20s%-20s%s", "Node ID", "Device Type", "Name", "Interview Done", "Is Failed", VTY_NEWLINE(vty));
     int i = 0;
     zdata_acquire_lock(ZDataRoot(zway));
 
@@ -248,9 +248,10 @@ bool    cmd_sensor_show_node_info(vty_t* vty, variant_stack_t* params)
             ZWCSTR str_val;
             zdata_get_string(dh, &str_val);
 
-            vty_write(vty, "%-10d%-25s%-20s%-20s%s", 
+            vty_write(vty, "%-10d%-25s%-25s%-20s%-20s%s", 
                       node_array[i], 
                       str_val,
+                      resolver_name_from_node_id(node_array[i]),
                       (zway_device_is_interview_done(zway,node_array[i]) == TRUE)? "True" : "False",
                        (is_failed == TRUE)? "True" : "False",
                       VTY_NEWLINE(vty));
