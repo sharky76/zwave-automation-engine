@@ -896,3 +896,40 @@ variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, 
 
     return completions;
 }
+
+bool    cli_exec(cli_node_t* node, vty_t* vty, char* line)
+{
+    cmd_tree_node_t* cmd_node;
+    bool retVal = false;
+
+    if(line == 0 || *line == 0 || *line == '\n' || *line == '\r')
+    {
+        return false;
+    }
+    
+    if(isspace(line[strlen(line) - 1]))
+    {
+        line[strlen(line) - 1] = 0;
+    }
+
+    variant_stack_t* params;
+    CmdMatchStatus match_status = cli_get_custom_command(node, line, &cmd_node, &params);
+
+
+    switch(match_status)
+    {
+    case CMD_FULL_MATCH:
+        retVal = cmd_node->data->command->func(vty, params);
+        break;
+    case CMD_PARTIAL_MATCH:
+        vty_error(vty, "Ambiguous command%s", VTY_NEWLINE(vty));
+        break;
+    case CMD_NO_MATCH:
+        vty_error(vty, "Unknown command%s", VTY_NEWLINE(vty));
+        break;
+    }
+
+    stack_free(params);
+    return retVal;
+}
+

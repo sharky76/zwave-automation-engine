@@ -67,6 +67,7 @@ void    vty_io_config(vty_t* vty)
         vty->flush_cb = http_flush_cb;
         vty->free_priv_cb = http_free_priv_cb;
         http_vty_priv_t* http_priv = calloc(1, sizeof(http_vty_priv_t));
+        http_priv->resp_code = HTTP_RESP_OK;
         vty->priv = http_priv;
 
         //vty->buffer = calloc(BUFSIZE, sizeof(char));

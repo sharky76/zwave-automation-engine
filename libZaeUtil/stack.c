@@ -293,6 +293,11 @@ void            stack_unlock(variant_stack_t* stack)
     pthread_mutex_unlock(&stack->lock);
 }
 
+bool            stack_trylock(variant_stack_t* stack)
+{
+    return pthread_mutex_trylock(&stack->lock) == 0;
+}
+
 /**
  * Splice the stack starting from Start position and ending at 
  * End (not including). Original stack left intact, new stack is 
@@ -317,7 +322,7 @@ variant_stack_t* stack_splice(variant_stack_t* stack, unsigned int start, unsign
 
     stack_for_each_range(stack, start, end-1, stack_value)
     {
-        stack_push_back(result_stack, stack_value);
+        stack_push_back(result_stack, variant_clone(stack_value));
     }
 
     return result_stack;

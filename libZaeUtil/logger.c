@@ -330,11 +330,13 @@ void logger_set_online(vty_t* vty, bool is_online)
 
 void logger_print_buffer(vty_t* vty)
 {
+    pthread_mutex_lock(&logger_handle->logger_lock);
     stack_for_each(logger_handle->log_buffer, log_variant)
     {
         logger_log_entry_t* entry = VARIANT_GET_PTR(logger_log_entry_t, log_variant);
         vty_write(vty, "%s", entry->line);
     }
+    pthread_mutex_unlock(&logger_handle->logger_lock);
 }
 
 void logger_clear_buffer()

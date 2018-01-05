@@ -37,16 +37,16 @@ void evaluate_argument_value(uint32_t key, variant_t* value, void* arg)
 {
     // Now we want to unescape the expression to restore proper quotes...
     service_method_t* unescape_method = builtin_service_manager_get_method("Expression", "Unescape");
-    variant_t* unescaped_expression = service_manager_eval_method(unescape_method, value);
+    variant_t* unescaped_expression = service_eval_method(unescape_method, value);
 
     // Now we want to substitute $arg with the actial list item
     service_method_t* process_template_method = builtin_service_manager_get_method("Expression", "ProcessTemplate");
-    variant_t* processed_expression = service_manager_eval_method(process_template_method, unescaped_expression);
+    variant_t* processed_expression = service_eval_method(process_template_method, unescaped_expression);
     variant_free(unescaped_expression);
 
     // Now lets execute the expression
     service_method_t* eval_method = builtin_service_manager_get_method("Expression", "Eval");
-    variant_t* result = service_manager_eval_method(eval_method, processed_expression);
+    variant_t* result = service_eval_method(eval_method, processed_expression);
     variant_free(processed_expression);
     if(NULL != result)
     {
@@ -74,7 +74,7 @@ variant_t*  foreach_impl(struct service_method_t* method, va_list args)
 
     // Now we want to unescape the expression to restore proper quotes...
     service_method_t* unescape_method = builtin_service_manager_get_method("Expression", "Unescape");
-    variant_t* unescaped_expression = service_manager_eval_method(unescape_method, expression_variant);
+    variant_t* unescaped_expression = service_eval_method(unescape_method, expression_variant);
 
     service_args_stack_create("Expression.ProcessTemplate");
 
@@ -90,7 +90,7 @@ variant_t*  foreach_impl(struct service_method_t* method, va_list args)
         }
 
         service_method_t* process_template_method = builtin_service_manager_get_method("Expression", "ProcessTemplate");
-        variant_t* processed_expression = service_manager_eval_method(process_template_method, unescaped_expression);
+        variant_t* processed_expression = service_eval_method(process_template_method, unescaped_expression);
 
         // Now we have processed template with proper argument substitution.
         // We can remove this value from the stack:
@@ -99,7 +99,7 @@ variant_t*  foreach_impl(struct service_method_t* method, va_list args)
         if(NULL != processed_expression)
         {
             service_method_t* eval_method = builtin_service_manager_get_method("Expression", "Eval");
-            variant_t* result = service_manager_eval_method(eval_method, processed_expression);
+            variant_t* result = service_eval_method(eval_method, processed_expression);
             variant_free(processed_expression);
             if(NULL == result)
             {
@@ -135,7 +135,7 @@ variant_t*  has_item_impl(struct service_method_t* method, va_list args)
     variant_t* item_variant = va_arg(args, variant_t*);
     // Compile item variant (if needed)
     service_method_t* eval_method = builtin_service_manager_get_method("Expression", "Eval");
-    variant_t* compiled_item = service_manager_eval_method(eval_method, item_variant);
+    variant_t* compiled_item = service_eval_method(eval_method, item_variant);
 
     variant_stack_t* list = (variant_stack_t*)variant_get_ptr(list_variant);
 

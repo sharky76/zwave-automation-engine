@@ -38,7 +38,7 @@
 				RunFromDir="%rw">
 				<Exec
 					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -g %~other -o "%o" %objs'
-					OtherOptions="-Wl,-Rlibs/ -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -lcurl -ljson-c -ldl"/>
+					OtherOptions="-Wl,-Rlibs/ -Wl,--dynamic-list=exports.txt -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -lcurl -ljson-c -ldl"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -162,7 +162,9 @@
 				Deletable="0"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -rs %xup "%o" %f'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc %xup -O2 %~other -o "%o" %objs'
+					OtherOptions="-Wl,-Rlibs/ -Wl,--dynamic-list=exports.txt -LlibZaeUtil/Release -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -lcurl -ljson-c -ldl"/>
 			</Target>
 			<Target
 				Name="Build"
@@ -379,6 +381,7 @@
 		<F N="data_callbacks.h"/>
 		<F N="device_callbacks.c"/>
 		<F N="device_callbacks.h"/>
+		<F N="exports.txt"/>
 		<F N="homebridge_manager.c"/>
 		<F N="homebridge_manager.h"/>
 		<F N="http_server.c"/>

@@ -59,6 +59,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
         char* template = (char*)variant_get_string(template_var);
         if(NULL == template)
         {
+            LOG_ERROR(BuiltinService, "Template is empty");
             return NULL;
         }
 
@@ -145,6 +146,10 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
         LOG_DEBUG(BuiltinService, "Converted template: %s", result_string);
         //variant_free(token_table_var);
         return variant_create_string(result_string);
+    }
+    else
+    {
+        LOG_ERROR(BuiltinService, "Template stack is NULL");
     }
 
     // Remove last space...

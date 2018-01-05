@@ -74,3 +74,5 @@ bool    cli_exit_node(vty_t* vty, variant_stack_t* params);
 void    cli_command_describe_norl(vty_t* vty);
 variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size);
 CmdMatchStatus cli_get_custom_command(cli_node_t* node, const char* cmdline, cmd_tree_node_t** cmd_node, variant_stack_t** complete_cmd_vec);
+bool    cli_exec(cli_node_t* node, vty_t* vty, char* line);
+

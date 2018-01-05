@@ -300,33 +300,15 @@ int main (int argc, char *argv[])
            
             signal_init();
             
-            int cli_sock = socket(AF_INET, SOCK_STREAM, 0);
-            struct sockaddr_in addr;
-            memset(&addr, 0, sizeof(struct sockaddr_in));
-            addr.sin_family = AF_INET;
-            addr.sin_port = htons(global_config.client_port);
-            addr.sin_addr.s_addr = /*inet_addr("192.168.1.91");*/INADDR_ANY;
-            if(-1 == bind(cli_sock, &addr, sizeof(struct sockaddr_in)))
-            {
-                perror("bind");
-                return EXIT_FAILURE;
-            }
 
+            int cli_sock = http_server_get_socket(global_config.client_port);
+            event_register_fd(cli_sock, &cli_commands_handle_connect_event, NULL);
 
-            int on = 1;
-            setsockopt(cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int));
-            //setsockopt(cli_sock, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(int));
-
-            listen(cli_sock, 1);
-
-            fd_set fds;
-            int session_sock = -1;
-            vty_t* vty_sock;
-
-            variant_stack_t* client_socket_list = stack_create();
             int http_socket = http_server_get_socket(8088);
-            
+            event_register_fd(http_socket, &cli_rest_handle_connect_event, NULL);
+
             int homebridge_fd = homebridge_manager_init();
+            event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
 
             // Create STD vty
             vty_t* vty_std = NULL;
@@ -357,40 +339,29 @@ int main (int argc, char *argv[])
                 }
 
                 vty_display_prompt(vty_std);
-                //event_register_handler(General, "VTY_COMMAND_RECEIVED", on_command_received, vty_std);
-            }
+                
+                fd_set fds;
 
-            while(true)
-            {
-                FD_ZERO (&fds);
-                FD_SET(cli_sock,    &fds);    
-                FD_SET(http_socket, &fds);
-
-                if(-1 != homebridge_fd)
+                while(true)
                 {
-                    FD_SET(homebridge_fd, &fds);
-                }
-
-                stack_for_each(client_socket_list, cli_vty_variant)
-                {
-                    vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
-                    FD_SET(vty_ptr->data->desc.socket, &fds);
-                }
-
-                if(!is_daemon)
-                {
+                    FD_ZERO (&fds);
+                    //FD_SET(cli_sock,    &fds);    
+    
+                    /*stack_for_each(client_socket_list, cli_vty_variant)
+                    {
+                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
+                        FD_SET(vty_ptr->data->desc.socket, &fds);
+                    }*/
+    
                     FD_SET(STDIN_FILENO, &fds);
-                }
-
-                r = select (FD_SETSIZE, &fds, NULL, NULL, NULL);
-
-                if(r <= 0)
-                {
-                    continue;
-                }
-
-                if(!is_daemon)
-                {
+    
+                    r = select (FD_SETSIZE, &fds, NULL, NULL, NULL);
+    
+                    if(r <= 0)
+                    {
+                        continue;
+                    }
+    
                     if(FD_ISSET(STDIN_FILENO, &fds))
                     {
                         char* str = vty_read(vty_std);
@@ -419,116 +390,14 @@ int main (int argc, char *argv[])
                             zway_stop(zway);
                             zway_terminate(&zway);
 
-                            stack_for_each(client_socket_list, vty_variant)
-                            {
-                                vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, vty_variant);
-                                vty_free(vty_ptr);
-                            }
 
                             exit(0);
                         }
                     }
                 }
-
-                if(FD_ISSET(homebridge_fd, &fds))
-                {
-                    event_t* homebridge_event = event_create(homebridge_fd, "HomebridgeEvent", NULL);
-                    event_post(homebridge_event);
-                }
-
-                if(FD_ISSET(cli_sock, &fds))
-                {
-                    session_sock = accept(cli_sock, NULL, NULL);
-                        
-                    vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
-                    vty_data->desc.socket = session_sock;
-                    vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
-                    
-                    stack_push_back(client_socket_list, variant_create_ptr(DT_PTR, vty_sock, variant_delete_none));
-                    logger_register_target(vty_sock);
-                    LOG_ADVANCED(General, "Remote client connected");
-
-                    cli_set_vty(vty_sock);
-
-                    vty_display_banner(vty_sock);
-                        
-                    if(user_manager_get_count() > 0)
-                    {
-                        cmd_enter_auth_node(vty_sock);
-                    }
-                
-                    vty_display_prompt(vty_sock);
-                }
-
-                if(FD_ISSET(http_socket, &fds))
-                {
-                    session_sock = accept(http_socket, NULL, NULL);
-                    vty_io_data_t* vty_data = malloc(sizeof(vty_io_data_t));
-                    vty_data->desc.socket = session_sock;
-
-                    vty_sock = vty_io_create(VTY_HTTP, vty_data);
-                    vty_set_echo(vty_sock, false);
-                    event_t* http_request = event_create(session_sock, "HTTPRequest", variant_create_ptr(DT_PTR, vty_sock, variant_delete_none));
-                    event_post(http_request);
-                }
-                else
-                {
-                    /*stack_for_each(http_socket_list, http_vty_variant)
-                    {   
-                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, http_vty_variant);
-                        if(FD_ISSET(vty_ptr->data->desc.socket, &fds))
-                        {
-                            char* str = vty_read(vty_ptr);
-
-                            if(NULL != str)
-                            {
-                                cli_command_exec_custom_node(rest_root_node, vty_ptr, str);
-                            }
-
-                            LOG_ADVANCED(General, "HTTP request completed");
-                            vty_free(vty_ptr);
-                            stack_remove(http_socket_list, http_vty_variant);
-                            variant_free(http_vty_variant);
-                        }
-                    }*/
-                }
-
-                {
-                    stack_for_each(client_socket_list, cli_vty_variant)
-                    {
-                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
-                        if(FD_ISSET(vty_ptr->data->desc.socket, &fds))
-                        {
-                            char* str = vty_read(vty_ptr);
-    
-                            if(vty_is_command_received(vty_ptr))
-                            {
-                                vty_new_line(vty_ptr);
-                                cli_command_exec(vty_ptr, str);
-                                vty_display_prompt(vty_ptr);
-                                vty_flush(vty_ptr);
-                            }
-                            else if(vty_is_error(vty_ptr))
-                            {
-                                LOG_ERROR(General, "Socket error");
-                                logger_unregister_target(vty_ptr);
-                                vty_free(vty_ptr);
-                                stack_remove(client_socket_list, cli_vty_variant);
-                                variant_free(cli_vty_variant);
-                            }
-    
-                            if(vty_is_shutdown(vty_ptr))
-                            {
-                                LOG_ADVANCED(General, "Remote client disconnected");
-                                logger_unregister_target(vty_ptr);
-                                vty_free(vty_ptr);
-                                stack_remove(client_socket_list, cli_vty_variant);
-                                variant_free(cli_vty_variant);
-                            }
-                        }
-                    }
-                }
             }
+
+            event_manager_join();
         }
         else
         {
@@ -543,4 +412,5 @@ int main (int argc, char *argv[])
 
     return(0);
 }
+
 

@@ -97,14 +97,14 @@ void    service_manager_init(const char* service_dir)
     }
 }
 
-variant_t*  service_manager_eval_method(service_method_t* method, ...)
+/*variant_t*  service_manager_eval_method(service_method_t* method, ...)
 {
     variant_t*  retVal = NULL;
     va_list args;
     va_start(args, method);
 
     return method->eval_callback(method, args);
-}
+}*/
 
 service_method_t*  service_manager_get_method(const char* service_class, const char* name)
 {
@@ -182,27 +182,34 @@ void service_manager_on_command_activation_event(event_t* event, void* context)
 {
     const char* cmd = variant_get_string(event->data);
 
-    LOG_ADVANCED(ServiceManager, "Command activation event from id %d with command %s", event->source_id, cmd);
-    bool isOk = true;
-    variant_stack_t* compiled = command_parser_compile_expression(cmd, &isOk);
-
-    if(isOk)
+    if(NULL != cmd)
     {
-        variant_t* result = command_parser_execute_expression(compiled);
-
-        if(NULL != result)
+        LOG_ADVANCED(ServiceManager, "Command activation event from id %d with command %s", event->source_id, cmd);
+        bool isOk = true;
+        variant_stack_t* compiled = command_parser_compile_expression(cmd, &isOk);
+    
+        if(isOk)
         {
-            LOG_ADVANCED(ServiceManager, "Command %s executed successfully", cmd);
-            variant_free(result);
+            variant_t* result = command_parser_execute_expression(compiled);
+    
+            if(NULL != result)
+            {
+                LOG_ADVANCED(ServiceManager, "Command %s executed successfully", cmd);
+                variant_free(result);
+            }
+            else
+            {
+                LOG_ERROR(ServiceManager, "Failed to execute command %s", cmd);
+            }
         }
         else
         {
-            LOG_ERROR(ServiceManager, "Failed to execute command %s", cmd);
+            LOG_ERROR(ServiceManager, "Error parsing command %s", cmd);
         }
     }
     else
     {
-        LOG_ERROR(ServiceManager, "Error parsing command %s", cmd);
+        LOG_ERROR(ServiceManager, "Empty command");
     }
 }
 

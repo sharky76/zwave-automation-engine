@@ -19,4 +19,5 @@ void logging_modules_init()
     REGISTER_LOGGER(SocketIO)
     REGISTER_LOGGER(EventLog)
     REGISTER_LOGGER(HomebridgeManager)
+    REGISTER_LOGGER(CLI)
 }

@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include "picohttpparser.h"
+#include "vty.h"
 
 /*
 Simple HTTP server implementation. 
@@ -58,6 +59,7 @@ typedef struct http_vty_priv_t
 } http_vty_priv_t;
 
 int   http_server_get_socket(int port);
+void  http_server_register_with_event_loop(int socket, void (*http_event_handler)(int,void*), void* arg);
 char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv);
 bool  http_server_write_response(int client_socket, http_vty_priv_t* http_priv);
 void  http_set_response(http_vty_priv_t* http_priv, int http_resp);
@@ -67,3 +69,6 @@ void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* 
 int   http_request_find_header_value_index(http_vty_priv_t* http_priv, const char* name);
 bool  http_request_find_header_value_by_index(http_vty_priv_t* http_priv, int index, char** value);
 bool  http_request_find_header_value(http_vty_priv_t* http_priv, const char* name, char** value);
+
+char* http_response_get_post_data(vty_t* vty);
+

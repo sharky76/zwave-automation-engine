@@ -17,7 +17,7 @@
 #include <event.h>
 
 void                service_manager_init(const char* service_dir);
-variant_t*          service_manager_eval_method(service_method_t* service, ...);
+//variant_t*          service_manager_eval_method(service_method_t* service, ...);
 service_method_t*   service_manager_get_method(const char* service_class, const char* name);
 service_t*          service_manager_get_class(const char* service_class);
 service_t*          service_manager_get_class_by_id(int service_id);

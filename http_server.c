@@ -18,6 +18,8 @@
 #include "cli_commands.h"
 #include "cli_rest.h"
 #include "event.h"
+#include "vty_io.h"
+#include "socket.h"
 
 #define VERSION 23
 #define ERROR      42
@@ -32,42 +34,38 @@ char*       request_get_data(const char* request);
 char*       request_create_command(const char* req_url);
 int         header_find_value(const char* name, struct phr_header* headers, int header_size);
 
-void  http_request_handle_event(event_t* event, void* context);
+typedef struct http_event_context_t
+{
+    void (*private_event_handler)(int,void*);
+    void* context;
+} http_event_context_t;
+
+void  http_request_handle_event(int fd, void* context);
 
 int  http_server_get_socket(int port)
 {
-    int server_sock;
-	socklen_t length;
-	static struct sockaddr_in serv_addr; /* static = initialised to zeros */
+    return socket_create_server(port);
+}
 
-    if((server_sock = socket(AF_INET, SOCK_STREAM,0)) <0)
-    {
-		LOG_ERROR(HTTPServer, "socket %s", strerror(errno));
-    }
-    else
-    {
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        serv_addr.sin_port = htons(port);
-        int on = 1;
-        setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int));
-        if(bind(server_sock, (struct sockaddr *)&serv_addr,sizeof(serv_addr)) <0)
-        {
-            LOG_ERROR(HTTPServer, "bind: %s", strerror(errno));
-        }
-        else if(listen(server_sock, 1) <0)
-        {
-            LOG_ERROR(HTTPServer, "listen %s", strerror(errno));
-        }
-        else
-        {
-            LOG_ADVANCED(HTTPServer, "HTTP server initialized");
-            event_register_handler(HTTPServer, "HTTPRequest", &http_request_handle_event,  NULL);
-            return server_sock;
-        }
-    }
+void  http_server_register_with_event_loop(int socket, void (*http_event_handler)(int,void*), void* arg)
+{
+    http_event_context_t* new_context = malloc(sizeof(http_event_context_t)); 
+    new_context->private_event_handler = http_event_handler;
+    new_context->context = arg;
+    event_register_fd(socket, &http_request_handle_event, (void*)new_context);
+}
 
-    return -1;
+void http_request_handle_event(int fd, void* context)
+{
+    http_event_context_t* context_data = (http_event_context_t*)context;
+    int session_sock = accept(fd, NULL, NULL);
+    vty_io_data_t* vty_data = malloc(sizeof(vty_io_data_t));
+    vty_data->desc.socket = session_sock;
+
+    vty_t* vty_sock = vty_io_create(VTY_HTTP, vty_data);
+    vty_set_echo(vty_sock, false);
+
+    event_register_fd(session_sock, context_data->private_event_handler, (void*)vty_sock);
 }
 
 void http_server_error_response(int type, int socket_fd)
@@ -116,10 +114,28 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
                                  &minor_version, http_priv->request->headers, &http_priv->request->num_headers, prevbuflen);
         if (pret > 0)
         {
-                break; /* successfully parsed the request */
+            // The request has been parsed, now make sure we got the entire body...
+            char* content_len_buf;
+            if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
+            {
+                int content_len = atoi(content_len_buf);
+                if(content_len > 0)
+                {
+                    char* request = request_get_data(http_priv->request->buffer);
+
+                    if(request == NULL || strlen(request) < content_len)
+                    {
+                        // Read some more data...
+                        continue;
+                    }
+                }
+            }
+
+            break; /* successfully parsed the request */
         }
         else if(pret == -1)
         {
+            printf("Parse errir\n");
             http_server_error_response(FORBIDDEN, client_socket);
             return NULL;
         }
@@ -392,18 +408,8 @@ bool  http_request_find_header_value(http_vty_priv_t* http_priv, const char* nam
                                                    value);
 }
 
-void  http_request_handle_event(event_t* event, void* context)
+char* http_response_get_post_data(vty_t* vty)
 {
-    //variant_stack_t* http_socket_list = (variant_stack_t*)context;
-    vty_t* http_vty = VARIANT_GET_PTR(vty_t, event->data);
-
-    char* str = vty_read(http_vty);
-
-    if(NULL != str)
-    {
-        cli_command_exec_custom_node(rest_root_node, http_vty, str);
-    }
-
-    vty_free(http_vty);
-    LOG_ADVANCED(HTTPServer, "HTTP request completed");
+    return ((http_vty_priv_t*)vty->priv)->post_data;
 }
+

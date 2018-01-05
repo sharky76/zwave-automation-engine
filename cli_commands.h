@@ -34,10 +34,9 @@ char**  cli_command_completer(const char* text, int start, int stop);
 char**  cli_command_completer_norl(vty_t* vty, const char* text, int size);
 int     cli_command_describe();
 int     cli_command_quit(int count, int key);
-variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size);
+//variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size);
 void    cmd_enter_root_node(vty_t* vty);
 
-//void    cli_install_node(cli_node_t** node, cli_node_t* parent, cli_command_t command_list[], char* name, char* prompt);
-//void    cli_append_to_node(cli_node_t* node, cli_command_t command_list[]);
-//void    cli_assemble_line(variant_stack_t* params, int start, char* out_line);
+void    cli_commands_handle_connect_event(int cli_socket, void* context);
+void    cli_commands_handle_data_event(int cli_socket, void* context);
 

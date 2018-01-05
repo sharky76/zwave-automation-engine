@@ -72,6 +72,7 @@ variant_stack_t*    stack_sort(variant_stack_t* stack, int (*compare_cb)(const v
 bool            stack_is_exists(variant_stack_t* stack, bool (*match_cb)(variant_t*, void* arg), void* arg);
 void            stack_lock(variant_stack_t* stack);
 void            stack_unlock(variant_stack_t* stack);
+bool            stack_trylock(variant_stack_t* stack);            
 variant_stack_t* stack_splice(variant_stack_t* stack, unsigned int start, unsigned int end);
 
 

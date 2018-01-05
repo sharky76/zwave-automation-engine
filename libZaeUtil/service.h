@@ -82,4 +82,5 @@ void    service_post_event(int service_id, const char* name, variant_t* data);
 service_t*  service_self(const char* service_name);
 service_t*  service_by_id(int service_id);
 variant_t*  service_call_method(const char* service_name, const char* method_name, ...);
+variant_t*  service_eval_method(service_method_t* method, ...);
 

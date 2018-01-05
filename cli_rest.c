@@ -13,6 +13,7 @@
 #include "zway_json.h"
 #include "vdev_manager.h"
 #include "sensor_manager.h"
+#include "vty_io.h"
 
 extern ZWay zway;
 cli_node_t*     rest_node;
@@ -1006,4 +1007,28 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
     return true;
 }
 
+void cli_rest_handle_connect_event(int fd, void* context)
+{
+    int session_sock = accept(fd, NULL, NULL);
+    vty_io_data_t* vty_data = malloc(sizeof(vty_io_data_t));
+    vty_data->desc.socket = session_sock;
 
+    vty_t* vty_sock = vty_io_create(VTY_HTTP, vty_data);
+    vty_set_echo(vty_sock, false);
+
+    event_register_fd(session_sock, &cli_rest_handle_data_event, (void*)vty_sock);
+}
+
+void    cli_rest_handle_data_event(int socket, void* context)
+{
+    vty_t* vty_sock = (vty_t*)context;
+    char* str = vty_read(vty_sock);
+
+    if(NULL != str)
+    {
+        cli_command_exec_custom_node(rest_root_node, vty_sock, str);
+    }
+
+    event_unregister_fd(socket);
+    vty_free(vty_sock);
+}

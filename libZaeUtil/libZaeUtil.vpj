@@ -227,6 +227,7 @@
 			<F N="logger.h"/>
 			<F N="service.h"/>
 			<F N="service_args.h"/>
+			<F N="socket.h"/>
 			<F N="stack.h"/>
 			<F N="variant.h"/>
 			<F N="vdev.h"/>
@@ -255,6 +256,7 @@
 			<F N="logger.c"/>
 			<F N="service.c"/>
 			<F N="service_args.c"/>
+			<F N="socket.c"/>
 			<F N="stack.c"/>
 			<F N="variant.c"/>
 			<F N="vdev.c"/>

@@ -16,9 +16,9 @@ DECLARE_LOGGER(HomebridgeManager)
 
 int homebridge_start();
 void homebridge_stopped_handler(int sig);
-void homebridge_handle_event(event_t* event, void* context);
 
 pid_t   homebridge_pid;
+int     homebridge_fd = -1;
 
 int homebridge_manager_init()
 {
@@ -26,13 +26,7 @@ int homebridge_manager_init()
     {
         LOG_ADVANCED(HomebridgeManager, "Initializing Homebridge manager...");
         
-        int homebridge_fd = homebridge_start();
-
-        if(-1 != homebridge_fd)
-        {
-            event_register_handler(HomebridgeManager, "HomebridgeEvent", &homebridge_handle_event,  (void*)homebridge_fd);
-        }
-
+        homebridge_fd = homebridge_start();
         return homebridge_fd;
     }
     else
@@ -113,14 +107,22 @@ void homebridge_stopped_handler(int sig)
   int saved_errno = errno;
   int status = WNOHANG;
   pid_t pid = waitpid((pid_t)(-1), &status, 0);
+
+  // The following 2 lines cause hangs if signal is received from within malloc() call
   LOG_DEBUG(HomebridgeManager, "Homebridge stopped");
+  event_unregister_fd(homebridge_fd);
+
   errno = saved_errno;
 }
 
-void homebridge_handle_event(event_t* event, void* context)
+void homebridge_manager_stop()
 {
-    int homebridge_fd = (int)context;
+    event_unregister_fd(homebridge_fd);
+    kill(homebridge_pid, SIGINT);
+}
 
+void homebridge_on_event(int homebridge_fd, void* context)
+{
     char buf[512] = {0};
     int nread = 0;
 
@@ -133,9 +135,3 @@ void homebridge_handle_event(event_t* event, void* context)
         LOG_INFO(HomebridgeManager, buf);
     }
 }
-
-void homebridge_manager_stop()
-{
-    kill(homebridge_pid, SIGINT);
-}
-

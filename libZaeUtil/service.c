@@ -75,3 +75,13 @@ service_t*  service_by_id(int service_id)
     free(it);
     return retVal;
 }
+
+variant_t*  service_eval_method(service_method_t* method, ...)
+{
+    variant_t*  retVal = NULL;
+    va_list args;
+    va_start(args, method);
+
+    return method->eval_callback(method, args);
+}
+

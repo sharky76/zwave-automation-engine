@@ -6,9 +6,12 @@
 #include <curl/curl.h>
 #include <json-c/json.h>
 #include "crc32.h"
+#include "socket.h"
 
 int DT_IFTTT;
 char*    ifttt_key;
+extern cli_node_t* ifttt_action_node;
+void    ifttt_handle_data_event(int socket, void* context);
 
 #define IFTTT_MAKER_URL "https://maker.ifttt.com/trigger/%s/with/key/%s"
 
@@ -22,6 +25,10 @@ void    service_create(service_t** service, int service_id)
     (*service)->get_config_callback = ifttt_cli_get_config;
     DT_IFTTT = service_id;
     ifttt_key = NULL;
+
+    int action_socket = socket_create_server(16777);
+    http_server_register_with_event_loop(action_socket, &ifttt_handle_data_event, NULL);
+
 }
 
 void    service_cli_create(cli_node_t* parent_node)
@@ -118,4 +125,18 @@ variant_t* ifttt_trigger_event(service_method_t* method, va_list args)
     json_object_put(payload_obj);
 
     return variant_create_bool(true);
+}
+
+void    ifttt_handle_data_event(int socket, void* context)
+{
+    vty_t* vty_sock = (vty_t*)context;
+    char* str = vty_read(vty_sock);
+
+    if(NULL != str)
+    {
+        cli_exec(ifttt_action_node, vty_sock, str);
+    }
+
+    event_unregister_fd(socket);
+    vty_free(vty_sock);
 }
