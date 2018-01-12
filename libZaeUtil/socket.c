@@ -41,7 +41,7 @@ int socket_create_server(int port)
         }
         else
         {
-            LOG_ADVANCED(General, "HTTP server initialized");
+            LOG_ADVANCED(General, "Server initialized on port %d", port);
             return server_sock;
         }
     }

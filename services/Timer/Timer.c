@@ -112,6 +112,7 @@ variant_t*  timer_start(service_method_t* method, va_list args)
 
 variant_t*  timer_stop(service_method_t* method, va_list args)
 {
+    bool retVal = false;
     variant_t* name_variant = va_arg(args, variant_t*);
     stack_lock(timer_list);
     stack_for_each(timer_list, timer_variant)
@@ -121,12 +122,12 @@ variant_t*  timer_stop(service_method_t* method, va_list args)
         {
             stack_remove(timer_list, timer_variant);
             variant_free(timer_variant);
-            return variant_create_bool(true);
+            retVal = true;
         }
     }
     stack_unlock(timer_list);
 
-    return variant_create_bool(false);
+    return variant_create_bool(retVal);
 }
 
 variant_t*  timer_start_interval(service_method_t* method, va_list args)

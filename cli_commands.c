@@ -231,8 +231,9 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
             char eof_ch = (char)EOF;
             vty_pipe->write_cb(vty_pipe, &eof_ch, 1);
 
+            int status = 0;
             // Wait for pipe to process all input
-            pid_t pid = waitpid((pid_t)(-1), 0, 0);
+            pid_t pid = waitpid(pid, &status, 0);
 
             // Recover
             cli_set_vty(vty);

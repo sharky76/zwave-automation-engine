@@ -105,12 +105,15 @@ int homebridge_start()
 void homebridge_stopped_handler(int sig)
 {
   int saved_errno = errno;
-  int status = WNOHANG;
-  pid_t pid = waitpid((pid_t)(-1), &status, 0);
+  int status = 0;
+  pid_t pid = waitpid(homebridge_pid, &status, WNOHANG);
 
-  // The following 2 lines cause hangs if signal is received from within malloc() call
-  LOG_DEBUG(HomebridgeManager, "Homebridge stopped");
-  event_unregister_fd(homebridge_fd);
+  if(WIFEXITED(status))
+  {
+      // The following 2 lines cause hangs if signal is received from within malloc() call
+      LOG_DEBUG(HomebridgeManager, "Homebridge stopped");
+      event_unregister_fd(homebridge_fd);
+  }
 
   errno = saved_errno;
 }
