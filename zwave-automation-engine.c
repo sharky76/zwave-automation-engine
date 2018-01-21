@@ -36,6 +36,7 @@
 #include "event_log.h"
 #include "sensor_manager.h"
 #include "homebridge_manager.h"
+#include <pwd.h>
 
 #define DEFAULT_PORT 9231
 
@@ -152,16 +153,17 @@ char* null_function(const char *ignore, int key)
 
 void print_help()
 {
-    printf("-c <config_file>\n-d daemonize\n");
+    printf("-c <config_file>\n-u <user>\n-d daemonize\n");
 }
 
 int main (int argc, char *argv[])
 {
     bool is_daemon = false;
     char* config_file = NULL;
+    char* setuid_name = NULL;
     int c;
 
-    while((c = getopt(argc, argv, "dhc:")) != -1)
+    while((c = getopt(argc, argv, "dhc:u:")) != -1)
     {
         switch(c)
         {
@@ -171,10 +173,23 @@ int main (int argc, char *argv[])
         case 'c':
             config_file = optarg;
             break;
+        case 'u':
+            setuid_name = optarg;
+            break;
         case 'h':
             print_help();
             exit(1);
             break;
+        }
+    }
+
+    if(NULL != setuid_name)
+    {
+        struct passwd* pw = getpwnam(setuid_name);
+        if(NULL == pw || setuid(pw->pw_uid) != 0)
+        {
+            printf("Error setting UID of %s\n", setuid_name);
+            exit(1);
         }
     }
 

@@ -18,12 +18,19 @@ bool    cmd_sensor_show_node_info(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_force_interview(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_command_interview(vty_t* vty, variant_stack_t* params);
 bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params);
-bool    cmd_sensor_set_role(vty_t* vty, variant_stack_t* params);
-bool    cmd_sensor_show_role(vty_t* vty, variant_stack_t* params);
-bool    cmd_sensor_remove_role(vty_t* vty, variant_stack_t* params);
+bool    cmd_sensor_show_descriptor(vty_t* vty, variant_stack_t* params);
+
+bool cmd_enter_sensor_descriptor_node(vty_t* vty, variant_stack_t* params);
+bool cmd_sensor_remove_descriptor(vty_t* vty, variant_stack_t* params);
+
+bool cmd_sensor_descriptor_set_role(vty_t* vty, variant_stack_t* params);
+bool cmd_sensor_descriptor_set_name(vty_t* vty, variant_stack_t* params);
+bool cmd_sensor_descriptor_set_notification(vty_t* vty, variant_stack_t* params);
 
 // Forward declaration of utility methods
 void cli_print_data_holder(vty_t* vty, ZDataHolder dh);
+
+cli_node_t*     sensor_descriptor_node;
 
 cli_command_t   sensor_root_list[] = {
     {"show sensor",                             cmd_sensor_show_nodes,     "List sensors"},
@@ -35,14 +42,26 @@ cli_command_t   sensor_root_list[] = {
     {"sensor interview node-id INT",            cmd_sensor_force_interview, "Force interview for a sensor"},
     {"sensor interview node-id INT instance INT command-class INT", cmd_sensor_command_interview, "Run a command interview"},
     {"sensor set-descriptor node-id INT WORD",              cmd_sensor_set_descriptor, "Set ZDDX descriptor file for sensor"},
-    {"sensor role node-id INT MotionSensor|ContactSensor|LeakSensor|OccupancySensor", cmd_sensor_set_role, "Set optional sensor role"},
-    {"no sensor role node-id INT", cmd_sensor_remove_role, "Remove optional sensor role"},
-    {"show sensor role", cmd_sensor_show_role, "Show optional sensor role"},
+    //{"sensor role node-id INT MotionSensor|ContactSensor|LeakSensor|OccupancySensor", cmd_sensor_set_role, "Set optional sensor role"},
+    //{"sensor notification node-id INT MotionDetected|Tampered", }
+    //{"no sensor role node-id INT", cmd_sensor_remove_role, "Remove optional sensor role"},
+    {"show sensor descriptor", cmd_sensor_show_descriptor, "Show sensor descriptor"},
+    {"sensor descriptor node-id INT", cmd_enter_sensor_descriptor_node, "Configure sensor descriptor"},
+    {"no sensor descriptor node-id INT", cmd_sensor_remove_descriptor, "Remove sensor descriptor"},
     {NULL,                   NULL,                          NULL}
 };
+
+cli_command_t sensor_descriptor_command_list[] = {
+    {"role MotionSensor|ContactSensor|LeakSensor|OccupancySensor", cmd_sensor_descriptor_set_role, "Set sensor role"},
+    {"name LINE",                                                  cmd_sensor_descriptor_set_name, "Set sensor name"},
+    {"notification MotionDetected|LeakDetected",                       cmd_sensor_descriptor_set_notification, "Set sensor notification"},
+    {NULL,                   NULL,                          NULL}
+};
+
 void    cli_sensor_init(cli_node_t* parent_node)
 {
     cli_append_to_node(parent_node, sensor_root_list);
+    cli_install_node(&sensor_descriptor_node, parent_node, sensor_descriptor_command_list, "sensor-descriptor", "sensor-descriptor");
 }
 
 bool    cmd_sensor_info(vty_t* vty, variant_stack_t* params)
@@ -380,27 +399,75 @@ bool    cmd_sensor_set_descriptor(vty_t* vty, variant_stack_t* params)
     return (err == 0);
 }
 
-bool    cmd_sensor_set_role(vty_t* vty, variant_stack_t* params)
-{
-    int node_id = variant_get_int(stack_peek_at(params, 3));
-    const char* role = variant_get_string(stack_peek_at(params, 4));
-
-    sensor_manager_set_role(node_id, role);
-}
-
-bool    cmd_sensor_remove_role(vty_t* vty, variant_stack_t* params)
+bool    cmd_sensor_remove_descriptor(vty_t* vty, variant_stack_t* params)
 {
     int node_id = variant_get_int(stack_peek_at(params, 4));
-    sensor_manager_remove_role(node_id);
+    sensor_manager_remove_descriptor(node_id);
 }
 
-void    show_sensor_role_helper(sensor_role_t* sensor_role, void* arg)
+void    show_sensor_notification_helper(char* notification, void* arg)
 {
     vty_t* vty = (vty_t*)arg;
-    vty_write(vty, "sensor role node-id %d %s%s", sensor_role->node_id, sensor_role->role, VTY_NEWLINE(vty));
+
+    vty_write(vty, " notification %s%s", notification, VTY_NEWLINE(vty));
 }
 
-bool    cmd_sensor_show_role(vty_t* vty, variant_stack_t* params)
+void    show_sensor_descriptor_helper(sensor_descriptor_t* sensor_desc, void* arg)
 {
-    sensor_manager_for_each(show_sensor_role_helper, vty);
+    vty_t* vty = (vty_t*)arg;
+
+    vty_write(vty, "sensor descriptor node-id %d%s", sensor_desc->node_id, VTY_NEWLINE(vty));
+
+    if(NULL != sensor_desc->name)
+    {
+        vty_write(vty, " name %s%s", sensor_desc->name, VTY_NEWLINE(vty));
+    }
+
+    if(NULL != sensor_desc->role)
+    {
+        vty_write(vty, " role %s%s", sensor_desc->role, VTY_NEWLINE(vty));
+    }
+
+    variant_hash_for_each_value(sensor_desc->supported_notification_set, char*, show_sensor_notification_helper, vty);
+
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
+}
+
+bool    cmd_sensor_show_descriptor(vty_t* vty, variant_stack_t* params)
+{
+    sensor_manager_for_each(show_sensor_descriptor_helper, vty);
+}
+
+bool cmd_enter_sensor_descriptor_node(vty_t* vty, variant_stack_t* params)
+{
+    cli_enter_node(vty, "sensor-descriptor");
+    int node_id = variant_get_int(stack_peek_at(params, 3));
+
+    sensor_descriptor_node->context_data.int_data = node_id;
+
+    if(NULL == sensor_manager_get_descriptor(node_id))
+    {
+        sensor_manager_add_descriptor(node_id);
+    }
+}
+
+bool cmd_sensor_descriptor_set_role(vty_t* vty, variant_stack_t* params)
+{
+    const char* role = variant_get_string(stack_peek_at(params, 1));
+
+    sensor_manager_set_role(sensor_descriptor_node->context_data.int_data, role);
+}
+
+bool cmd_sensor_descriptor_set_name(vty_t* vty, variant_stack_t* params)
+{
+    const char* name = variant_get_string(stack_peek_at(params, 1));
+
+    sensor_manager_set_name(sensor_descriptor_node->context_data.int_data, name);
+}
+
+bool cmd_sensor_descriptor_set_notification(vty_t* vty, variant_stack_t* params)
+{
+    const char* notification = variant_get_string(stack_peek_at(params, 1));
+
+    sensor_manager_set_notification(sensor_descriptor_node->context_data.int_data, notification);
 }

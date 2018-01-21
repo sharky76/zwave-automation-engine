@@ -125,11 +125,7 @@ void vdev_enumerate(device_record_t* record, void* arg)
         json_object_object_add(new_sensor, "name", json_object_new_string(record->deviceName));
         json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(FALSE));
     
-        char* sensor_role = sensor_manager_get_role(record->nodeId);
-        if(NULL != sensor_role)
-        {
-            json_object_object_add(new_sensor, "role", json_object_new_string(sensor_role));
-        }
+        json_object_object_add(new_sensor, "descriptor", sensor_manager_serialize(record->nodeId));
 
         // Command class enumeration...
         vdev_t* vdev = vdev_manager_get_vdev(record->deviceName);
@@ -257,11 +253,13 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             json_object_object_add(new_sensor, "deviceTypeString", json_object_new_string(str_val));
             json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(is_failed == TRUE));
 
-            char* sensor_role = sensor_manager_get_role(node_array[i]);
-            if(NULL != sensor_role)
-            {
-                json_object_object_add(new_sensor, "role", json_object_new_string(sensor_role));
-            }
+            // char* sensor_role = sensor_manager_get_role(node_array[i]);
+            // if(NULL != sensor_role)
+            // {
+            //     json_object_object_add(new_sensor, "role", json_object_new_string(sensor_role));
+            // }
+
+            json_object_object_add(new_sensor, "descriptor", sensor_manager_serialize(node_array[i]));
 
             json_object* command_class_array = json_object_new_array();
             json_object_object_add(new_sensor, "command_classes", command_class_array);
@@ -943,6 +941,7 @@ void    sse_event_handler(event_t* event, void* context)
 {
     variant_stack_t* event_listeners = (variant_stack_t*)context;
 
+    stack_lock(event_listeners);
     stack_for_each(event_listeners, vty_variant)
     {
         vty_t* vty = VARIANT_GET_PTR(vty_t, vty_variant);
@@ -966,8 +965,10 @@ void    sse_event_handler(event_t* event, void* context)
             stack_remove(event_listeners, vty_variant);
             vty_set_in_use(vty, false);
             vty_free(vty);
+            free(vty_variant);
         }
     }
+    stack_unlock(event_listeners);
 }
 
 bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
@@ -999,7 +1000,9 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
             }
 
             vty_set_in_use(vty, true); // Mark this VTY as "in use" so it will not be deleted
+            stack_lock(sse_event_listener_list);
             stack_push_back(sse_event_listener_list, variant_create_ptr(DT_PTR, vty, variant_delete_none));
+            stack_unlock(sse_event_listener_list);
         }
 
         free(accept_type);

@@ -165,7 +165,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
 
         LOG_DEBUG(DataCallback, "Value changed for device %s time: %lu, old time: %lu, dh name: %s", event_data->device_name, time_msec, event_data->last_update_time, zdata_get_name(data));
 
-        if(time_msec >  event_data->last_update_time + 100)
+        //if(time_msec >  event_data->last_update_time + 100)
         {
             LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
             event_data->last_update_time = time_msec;

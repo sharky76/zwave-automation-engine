@@ -99,18 +99,24 @@ ZAEPlatform.prototype = {
 		this.additionalCharacteristics = [];
 		this.serviceList = [];
 
-		var CharacteristicForService = {
+		this.CharacteristicForService = {
 			ContactSensor: Characteristic.ContactSensorState,
-			MotionSensor:Characteristic.MotionDetected
+			MotionSensor: Characteristic.MotionDetected,
+			LeakSensor:Characteristic.LeakDetected
+		};
+
+		this.NotificationForService = {
+			MotionDetected: Characteristic.MotionDetected,
+			LeakDetected: Characteristic.LeakDetected
 		};
 
 		for(var index in deviceDescriptor.command_classes) {
 			switch(deviceDescriptor.command_classes[index].id) {
 				case 48: // Binary Sensor
-					var serviceType = deviceDescriptor.role || "ContactSensor";
+					var serviceType = deviceDescriptor.descriptor.role || "ContactSensor";
 					var service = new Service[serviceType](this.name);
 
-					service.getCharacteristic(CharacteristicForService[serviceType]).on('get', this.getBinaryState.bind(
+					service.getCharacteristic(this.CharacteristicForService[serviceType]).on('get', this.getBinaryState.bind(
 							{
 								dh: deviceDescriptor.command_classes[index].dh.parameters[0].data_holder,
 								accessory:this,
@@ -118,7 +124,7 @@ ZAEPlatform.prototype = {
 							}));
 					this.serviceList.push(service);
 
-					this.registerEventListener(CharacteristicForService[serviceType], 
+					this.registerEventListener(this.CharacteristicForService[serviceType], 
 						{
 							service:service,
 							node_id:this.nodeId,
@@ -265,8 +271,33 @@ ZAEPlatform.prototype = {
 							
 					this.serviceList.push(service);
 					break;
+				case 113:
+					var notificationList = deviceDescriptor.descriptor.notifications;
+					if(typeof notificationList !== 'undefined' && notificationList.length > 0) {
+						this.createNotificationAccessory(deviceDescriptor.command_classes[index], notificationList);
+					}
+					break;
 			}
 		}
+
+		this.serviceList.forEach(function(service) {
+			service.setCharacteristic(Characteristic.StatusTampered, false);
+			this.registerEventListener(Characteristic.StatusTampered, 
+				{
+					service:service,
+					node_id:this.nodeId,
+					command_class: 113,
+					dh:7,
+					valueHolder: "event",
+					convert:function(value) { 
+						if(value == 3) {
+							return Characteristic.StatusTampered.TAMPERED;
+						} else {
+							return Characteristic.StatusTampered.NOT_TAMPERED;
+						}
+					}
+				});
+		}.bind(this));
 
 		for(var index in this.additionalCharacteristics) {
 			this.serviceList.forEach(function(service) {
@@ -291,7 +322,7 @@ ZAEPlatform.prototype = {
 				var command_id = json.command_id;
 				var dh = json.data.data_holder;
 				if(command_id == this.command_class && json.node_id == this.node_id && dh == this.dh) {
-
+					//console.log("Event accepted");
 					var sensorValue = json.data[this.valueHolder || "level"];
 					if(typeof this.convert === 'function') {
 						sensorValue = this.convert(sensorValue);
@@ -319,6 +350,96 @@ ZAEPlatform.prototype = {
 					}
 				}
 			}.bind(data), false);
+		},
+		createNotificationAccessory : function(commandClass, notificationList) {
+			// Alert notification supported. Lets see what services and characteristics
+			// we can create for this device
+			for(var  index in notificationList) {
+				var notification = notificationList[index];
+				this.log("Creating notification for " + notification);
+				switch(notification) {
+					case 'MotionDetected':
+						var existingService = this.serviceList.find(function(element) {
+							return typeof element === Service.MotionSensor;
+						});
+
+						if(typeof existingService === 'undefined') {
+							var service = new Service.MotionSensor(this.name);
+							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
+								{
+									dh: 7,
+									valueHolder: "event",
+									accessory:this,
+									commandClass: 113,
+									convert:function(value) { 
+										if(value == 8) {
+											return true;
+										} else {
+											return false;
+										}
+									}
+								}));
+							this.serviceList.push(service);
+
+							this.registerEventListener(this.NotificationForService[notification], 
+								{
+									service:service,
+									node_id:this.nodeId,
+									command_class: 113,
+									dh:7,
+									valueHolder: "event",
+									convert:function(value) { 
+										if(value == 8) {
+											return true;
+										} else {
+											return false;
+										}
+									}
+								});
+						}
+					break;
+					case 'Water':
+						var existingService = this.serviceList.find(function(element) {
+							return typeof element === Service.LeakSensor;
+						});
+
+						if(typeof existingService === 'undefined') {
+							var service = new Service.LeakSensor(this.name);
+							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
+								{
+									dh: 5,
+									valueHolder: "event",
+									accessory:this,
+									commandClass: 113,
+									convert:function(value) { 
+										if(value == 2) {
+											return Characteristic.LeakDetected.LEAK_DETECTED;
+										} else {
+											return Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+										}
+									}
+								}));
+							this.serviceList.push(service);
+
+							this.registerEventListener(this.NotificationForService[notification], 
+								{
+									service:service,
+									node_id:this.nodeId,
+									command_class: 113,
+									dh:5,
+									valueHolder: "event",
+									convert:function(value) { 
+										if(value == 2) {
+											return Characteristic.LeakDetected.LEAK_DETECTED;
+										} else {
+											return Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+										}
+									}
+								});
+						}
+					break;
+				}
+			}
 		},
 		createMultiSensorAccessory : function(commandClass) {
 			for(var index in commandClass.dh.parameters) {
@@ -463,471 +584,3 @@ ZAEPlatform.prototype = {
 			}.bind(this));
 		}
 	}
-
-
-	function HttpAccessory(log, config) {
-		this.log = log;
-
-		// url info
-		this.on_url                 = config["on_url"];
-		this.on_body                = config["on_body"];
-		this.off_url                = config["off_url"];
-		this.off_body               = config["off_body"];
-		this.status_url             = config["status_url"];
-		this.brightness_url         = config["brightness_url"];
-		this.brightnesslvl_url      = config["brightnesslvl_url"];
-		this.http_method            = config["http_method"] 	  	 	|| "GET";;
-		this.http_set_method 	    = config["http_set_method"]  		|| this.http_method;
-		this.username               = config["username"] 	  	 	 	|| "";
-		this.password               = config["password"] 	  	 	 	|| "";
-		this.sendimmediately        = config["sendimmediately"] 	 	|| "";
-		this.service                = config["service"] 	  	 	 	|| "Switch";
-		this.name                   = config["name"];
-		this.brightnessHandling     = config["brightnessHandling"] 	 	|| "no";
-		this.switchHandling 		= config["switchHandling"] 		 	|| "no";
-		this.pollingFrequency       = config["pollingFrequency"]		|| 1000;
-		this.status_on				= config["status_on"]				|| true;
-		this.status_off				= config["status_off"]				|| false;
-		this.node_id				= config["node_id"];
-
-		//realtime polling info
-		this.state = false;
-		this.currentlevel = 0;
-		var that = this;
-		
-		this.log("Add event listener for device", this.name);
-		eventSource.addEventListener('EventLogAddedEvent', function(e) {
-			console.log(that.name + " -> " + e.data);
-  	      	var json = JSON.parse(e.data);
-			var type = json.type;
-
-			if(type == "ZWAVE") {
-				var node_id = json.node_id;
-				if(node_id == that.node_id) {
-			  		switch (that.service) {
-					case "SensorBinary":
-						if(that.sensorBinaryService)
-						{	var command_id = json.command_id;
-							if(command_id == 48) {
-								that.state = json.data.level;
-								that.sensorBinaryService.getCharacteristic(Characteristic.ContactSensorState)
-									.setValue(that.state);
-							}
-						}
-						break;
-					case "MotionSensor":
-						if(that.motionSensorService)
-						{
-							var command_id = json.command_id;
-							if(command_id == 48) {
-								that.state = json.data.level;
-								that.motionSensorService.getCharacteristic(Characteristic.MotionDetected)
-									.setValue(that.state);
-							}
-						}
-						break;
-					case "Switch":
-						if(that.switchService) {
-							var command_id = json.command_id;
-							if(command_id == 37) {
-								that.state = json.data.level;
-								that.switchService.getCharacteristic(Characteristic.On)
-									.setValue(that.state);
-							}
-						}
-					case "TemperatureSensor":
-						if(that.temperatureService) {
-							var command_id = json.command_id;
-							var dh_name = json.data.data_holder;
-
-							if(command_id == 49 && dh_name == 1) {
-								that.state = (json.data.val - 32) * 5/9;
-								that.temperatureService.getCharacteristic(Characteristic.CurrentTemperature)
-									.setValue(that.state);
-							}
-						}
-						break;
-					case "HumiditySensor":
-						if(that.humidityService) {
-							var command_id = json.command_id;
-							var dh_name = json.data.data_holder;
-
-							if(command_id == 49 && dh_name == 5) {
-								that.state = json.data.val;
-								that.humidityService.getCharacteristic(Characteristic.CurrentRelativeHumidity)
-									.setValue(that.state);
-							}
-						}
-						break;
-					case "LightSensor":
-						if(that.lightService) {
-							var command_id = json.command_id;
-							var dh_name = json.data.data_holder;
-
-							if(command_id == 49 && dh_name == 3) {
-								that.state = json.data.val;
-								that.lightService.getCharacteristic(Characteristic.CurrentAmbientLightLevel)
-									.setValue(that.state);
-							}
-						}
-						break;
-					case "StatelessProgrammableSwitch":
-						if(that.sceneControllerService) {
-							var command_id = json.command_id;
-
-							if(command_id == 91) {
-								that.state = 0;
-								that.sceneControllerService.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-									.setValue(that.state);
-							}
-						}
-						break;
-					}
-				}        
-			}
-		}, false);
-
-		
-
-	HttpAccessory.prototype = {
-
-	httpRequest: function(url, body, method, username, password, sendimmediately, callback) {
-		request({
-			url: url,
-			body: body,
-			method: method,
-			rejectUnauthorized: false,
-			auth: {
-				user: username,
-				pass: password,
-				sendImmediately: sendimmediately
-			}
-		},
-		function(error, response, body) {
-			callback(error, response, body)
-		})
-	},
-
-	setBinaryState: function(isTrue, callback) {
-		var url;
-		var body;
-		
-		if (!this.on_url || !this.off_url) {
-				this.log.warn("Ignoring request; No power url defined.");
-				callback(new Error("No power url defined."));
-				return;
-		}
-		
-		if (isTrue) {
-			url = this.on_url;
-			body = this.on_body;
-			this.log("Setting power state to on");
-		} else {
-			url = this.off_url;
-			body = this.off_body;
-			this.log("Setting power state to off");
-		}
-		
-		this.httpRequest(url, body, this.http_set_method, this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
-			if (error) {
-			this.log('HTTP set power function failed: %s', error.message);
-			callback(error);
-			} else {
-			this.log('HTTP set power function succeeded!');
-			callback();
-			}
-		}.bind(this));
-	},
-  
-  getBinaryState: function(callback) {
-	if (!this.status_url) {
-		this.log.warn("Ignoring request; No status url defined.");
-		callback(new Error("No status url defined."));
-		return;
-	}
-	
-	var url = this.status_url;
-	this.log("Getting Binary state");
-	
-	this.httpRequest(url, "", this.http_method, this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
-	if (error) {
-		this.log('HTTP get power function failed: %s', error.message);
-		callback(error);
-	} else {
-		var json = JSON.parse(responseBody);
-
-		var binaryState = json.device_data.level;
-
-		this.log("Binary state is currently %s", binaryState);
-		callback(null, binaryState);
-	}
-	}.bind(this));
-  },
-  getSensorValue: function(callback) {
-	if (!this.status_url) {
-		this.log.warn("Ignoring request; No status url defined.");
-		callback(new Error("No status url defined."));
-		return;
-	}
-	
-	var url = this.status_url;
-	this.log("Getting Sensor value");
-	
-	this.httpRequest(url, "", this.http_method, this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
-	if (error) {
-		this.log('HTTP get power function failed: %s', error.message);
-		callback(error);
-	} else {
-		var json = JSON.parse(responseBody);
-
-		var sensorValue = json.device_data.val;
-		if(typeof this.convert === 'function') {
-			sensorValue = this.convert(sensorValue);
-		}
-
-		this.log("Sensor value is %s", sensorValue);
-		callback(null, sensorValue);
-	}
-	}.bind(this));
-  },
-  getLowBattery: function(callback) {
-	var url = 'http://' + zae_host + ':' + zae_port + '/rest/v1/devices/' + this.node_id + '/0/128';
-	this.log("Getting Battery value");
-	
-	this.httpRequest(url, "", this.http_method, this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
-	if (error) {
-		this.log('HTTP get power function failed: %s', error.message);
-		callback(error);
-	} else {
-		var json = JSON.parse(responseBody);
-
-		var batteryValue = json.device_data.last;
-		this.log("Battery value is %s", batteryValue);
-		callback(null, batteryValue < 20);
-	}
-	}.bind(this));
-  },
-  getSceneControllerValue: function(callback) {
-  	var url = 'http://' + zae_host + ':' + zae_port + '/rest/v1/devices/' + this.node_id + '/0/91';
-	this.log("Getting Scene Controller value");
-	
-	this.httpRequest(url, "", this.http_method, this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
-	if (error) {
-		this.log('HTTP get power function failed: %s', error.message);
-		callback(error);
-	} else {
-		var json = JSON.parse(responseBody);
-
-		var currentScene = json.device_data.currentScene;
-		this.log("Current scene is %s", currentScene);
-		callback(null, currentScene);
-	}
-	}.bind(this));
-  },
-  	getBrightness: function(callback) {
-		if (!this.brightnesslvl_url) {
-			this.log.warn("Ignoring request; No brightness level url defined.");
-			callback(new Error("No brightness level url defined."));
-			return;
-		}		
-			var url = this.brightnesslvl_url;
-			this.log("Getting Brightness level");
-	
-			this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
-			if (error) {
-				this.log('HTTP get brightness function failed: %s', error.message);
-				callback(error);
-			} else {			
-				var binaryState = parseInt(responseBody);
-				var level = binaryState;
-				this.log("brightness state is currently %s", binaryState);
-				callback(null, level);
-			}
-			}.bind(this));
-	  },
-
-	setBrightness: function(level, callback) {
-		
-		if (!this.brightness_url) {
-			this.log.warn("Ignoring request; No brightness url defined.");
-			callback(new Error("No brightness url defined."));
-			return;
-		}    
-	
-		var url = this.brightness_url.replace("%b", level)
-	
-		this.log("Setting brightness to %s", level);
-	
-		this.httpRequest(url, "", this.http_brightness_method, this.username, this.password, this.sendimmediately, function(error, response, body) {
-		if (error) {
-			this.log('HTTP brightness function failed: %s', error);
-			callback(error);
-		} else {
-			this.log('HTTP brightness function succeeded!');
-			callback();
-		}
-		}.bind(this));
-	},
-
-	identify: function(callback) {
-		this.log("Identify requested!");
-		callback(); // success
-	},
-
-	getServices: function() {
-		
-		var that = this;
-		
-		// you can OPTIONALLY create an information service if you wish to override
-		// the default values for things like serial number, model, etc.
-		var informationService = new Service.AccessoryInformation();
-	
-		informationService
-		.setCharacteristic(Characteristic.Manufacturer, "Alex")
-		.setCharacteristic(Characteristic.Model, "ZWAVE Automation Engine")
-		.setCharacteristic(Characteristic.SerialNumber, "0");
-	
-		switch (this.service) {
-			case "Switch": 
-				this.switchService = new Service.Switch(this.name);
-				this.switchService
-					.getCharacteristic(Characteristic.On)
-						.on('get', this.getBinaryState.bind(this))
-						.on('set', this.setBinaryState.bind(this));						
-				// case "realtime":				
-				// 	this.switchService
-				// 	.getCharacteristic(Characteristic.On)
-				// 	.on('get', function(callback) {callback(null, that.state)})
-				// 	.on('set', this.setPowerState.bind(this));
-				// 	break;
-				// default	:	
-				// 	this.switchService
-				// 	.getCharacteristic(Characteristic.On)	
-				// 	.on('set', this.setPowerState.bind(this));					
-				// 	break;}
-					return [this.switchService];
-					break;
-		case "Light":	
-			this.lightbulbService = new Service.Lightbulb(this.name);			
-			switch (this.switchHandling) {
-			//Power Polling
-			case "yes" :
-				this.lightbulbService
-				.getCharacteristic(Characteristic.On)
-				.on('get', this.getBinaryState.bind(this))
-				.on('set', this.setBinaryState.bind(this));
-				break;
-			case "realtime":
-				this.lightbulbService
-				.getCharacteristic(Characteristic.On)
-				.on('get', function(callback) {callback(null, that.state)})
-				.on('set', this.setBinaryState.bind(this));
-				break;
-			default:		
-				this.lightbulbService
-				.getCharacteristic(Characteristic.On)	
-				.on('set', this.setBinaryState.bind(this));
-				break;
-			}
-			// Brightness Polling 
-			if (this.brightnessHandling == "realtime") {
-				this.lightbulbService 
-				.addCharacteristic(new Characteristic.Brightness())
-				.on('get', function(callback) {callback(null, that.currentlevel)})
-				.on('set', this.setBrightness.bind(this));
-			} else if (this.brightnessHandling == "yes") {
-				this.lightbulbService
-				.addCharacteristic(new Characteristic.Brightness())
-				.on('get', this.getBrightness.bind(this))
-				.on('set', this.setBrightness.bind(this));							
-			}
-	
-			return [informationService, this.lightbulbService];
-			break;
-			case "SensorBinary":
-			{
-				this.sensorBinaryService = new Service.ContactSensor(this.name);
-				this.sensorBinaryService
-					.getCharacteristic(Characteristic.ContactSensorState)
-						.on('get', this.getBinaryState.bind(this));
-
-				this.sensorBinaryService
-					.getCharacteristic(Characteristic.StatusLowBattery)
-						.on('get', this.getLowBattery.bind(this));
-			}
-			return [informationService, this.sensorBinaryService];
-			break;		
-			case "MotionSensor":
-			{
-				this.motionSensorService = new Service.MotionSensor(this.name);
-				this.motionSensorService
-					.getCharacteristic(Characteristic.MotionDetected)
-						.on('get', this.getBinaryState.bind(this));
-
-				this.motionSensorService
-					.getCharacteristic(Characteristic.StatusLowBattery)
-						.on('get', this.getLowBattery.bind(this));
-			}
-			return [informationService, this.motionSensorService];
-			break;
-			case "TemperatureSensor":
-			{
-				this.temperatureService = new Service.TemperatureSensor(this.name);
-				this.convert = function(value) { return (value - 32) * 5/9; }
-				this.temperatureService
-					.getCharacteristic(Characteristic.CurrentTemperature)
-						.on('get', this.getSensorValue.bind(this));
-
-				this.temperatureService
-					.getCharacteristic(Characteristic.StatusLowBattery)
-						.on('get', this.getLowBattery.bind(this));
-			}
-			return [informationService, this.temperatureService];
-			break;
-			case "HumiditySensor":
-			{
-				this.humidityService = new Service.HumiditySensor(this.name);
-				this.humidityService
-					.getCharacteristic(Characteristic.CurrentRelativeHumidity)
-						.on('get', this.getSensorValue.bind(this));
-
-				this.humidityService
-					.getCharacteristic(Characteristic.StatusLowBattery)
-						.on('get', this.getLowBattery.bind(this));
-			}
-			return [informationService, this.humidityService];
-			break;
-			case "LightSensor":
-			{
-				this.lightService = new Service.LightSensor(this.name);
-				this.lightService
-					.getCharacteristic(Characteristic.CurrentAmbientLightLevel)
-						.on('get', this.getSensorValue.bind(this));
-
-				this.lightService
-					.getCharacteristic(Characteristic.StatusLowBattery)
-						.on('get', this.getLowBattery.bind(this));
-			}
-			return [informationService, this.lightService];
-			break;
-			case "StatelessProgrammableSwitch":
-			{
-				this.sceneControllerService = new Service.StatelessProgrammableSwitch(this.name);
-
-				this.sceneControllerService
-					.getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-						.on('get', function(callback) {callback(null, that.state)});
-
-				this.sceneControllerService
-					.getCharacteristic(Characteristic.ServiceLabelIndex)
-						.on('get', this.getSceneControllerValue.bind(this));
-
-				this.sceneControllerService
-					.getCharacteristic(Characteristic.StatusLowBattery)
-						.on('get', this.getLowBattery.bind(this));
-			}
-			return [informationService, this.sceneControllerService];
-			break;
-		}
-	}
-};

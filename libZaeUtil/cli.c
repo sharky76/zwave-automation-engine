@@ -407,6 +407,34 @@ void  cli_append_to_node(cli_node_t* node, cli_command_t command_list[])
     }
 }
 
+bool    cli_enter_node(vty_t* vty, const char* node_name)
+{
+    stack_for_each(cli_node_list, cli_node_variant)
+    {
+        
+        cli_node_t* node = (cli_node_t*)variant_get_ptr(cli_node_variant);
+
+        if(strstr(node->name, node_name) == node->name)
+        {
+            char prompt[256] = {0};
+            strncpy(prompt, vty->prompt, 255);
+
+            // vty->prompt = (config-scene)#
+            // node->prompt = env
+            // new prompt = (config-scene-env)#
+            char* prompt_end = strstr(prompt, ")#");
+            *prompt_end = '\0';
+            sprintf(prompt_end, "-%s)# ", node->prompt);
+            //sprintf(prompt, "(%s-%s)# ", current_node->prompt, node->prompt);
+            vty_set_prompt(vty, prompt);
+            //current_node = node;
+            vty->current_node = node;
+            sprintf(prompt, "(%s)# ", vty->current_node->prompt);
+            break;
+        }
+    }
+}
+
 // Execute "end" callback on root node
 bool    cli_exit_node(vty_t* vty, variant_stack_t* params)
 {

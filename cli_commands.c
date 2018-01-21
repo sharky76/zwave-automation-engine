@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+//#include <readline/readline.h>
+//#include <readline/history.h>
 #include <stack.h>
 #include <cli.h>
 #include <signal.h>
@@ -713,7 +713,7 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show resolver");
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
-    cli_command_exec(vty, "show sensor role");
+    cli_command_exec(vty, "show sensor descriptor");
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show service");
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
