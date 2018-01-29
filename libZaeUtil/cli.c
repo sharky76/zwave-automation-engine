@@ -446,11 +446,11 @@ bool    cli_exit_node(vty_t* vty, variant_stack_t* params)
     }
 }
 
-void    cli_assemble_line(variant_stack_t* params, int start, char* out_line)
+void    cli_assemble_line(variant_stack_t* params, int start, char* out_line, int length)
 {
     for(int i = start; i < params->count; i++)
     {
-        strcat(out_line, variant_get_string(stack_peek_at(params, i)));
+        strncat(out_line, variant_get_string(stack_peek_at(params, i)), length - strlen(out_line) - 1);
         strcat(out_line, " ");
     }
 

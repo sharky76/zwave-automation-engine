@@ -99,6 +99,8 @@ ZAEPlatform.prototype = {
 		this.additionalCharacteristics = [];
 		this.serviceList = [];
 
+		this.onServiceCreatedCallback = [];
+
 		this.CharacteristicForService = {
 			ContactSensor: Characteristic.ContactSensorState,
 			MotionSensor: Characteristic.MotionDetected,
@@ -107,31 +109,15 @@ ZAEPlatform.prototype = {
 
 		this.NotificationForService = {
 			MotionDetected: Characteristic.MotionDetected,
-			LeakDetected: Characteristic.LeakDetected
+			LeakDetected: Characteristic.LeakDetected,
+			Tampered: Characteristic.StatusTampered
 		};
 
 		for(var index in deviceDescriptor.command_classes) {
 			switch(deviceDescriptor.command_classes[index].id) {
 				case 48: // Binary Sensor
-					var serviceType = deviceDescriptor.descriptor.role || "ContactSensor";
-					var service = new Service[serviceType](this.name);
-
-					service.getCharacteristic(this.CharacteristicForService[serviceType]).on('get', this.getBinaryState.bind(
-							{
-								dh: deviceDescriptor.command_classes[index].dh.parameters[0].data_holder,
-								accessory:this,
-								commandClass:deviceDescriptor.command_classes[index].id
-							}));
-					this.serviceList.push(service);
-
-					this.registerEventListener(this.CharacteristicForService[serviceType], 
-						{
-							service:service,
-							node_id:this.nodeId,
-							command_class:deviceDescriptor.command_classes[index].id,
-							dh:deviceDescriptor.command_classes[index].dh.parameters[0].data_holder
-						});
-
+					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[48]) || "ContactSensor";
+					this.createBinarySensorAccessory(deviceDescriptor.command_classes[index], serviceType);
 					break;
 				case 49: // Sensor Multilevel
 					this.createMultiSensorAccessory(deviceDescriptor.command_classes[index]);
@@ -142,11 +128,13 @@ ZAEPlatform.prototype = {
 						.on('get', this.getBinaryState.bind(
 							{
 								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
 								commandClass:deviceDescriptor.command_classes[index].id
 							}))
 						.on('set', this.setBinaryState.bind(
 							{
 								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
 								commandClass:deviceDescriptor.command_classes[index].id
 							}));
 					this.serviceList.push(service);
@@ -155,6 +143,7 @@ ZAEPlatform.prototype = {
 						{
 							service:service,
 							node_id:this.nodeId,
+							instance:deviceDescriptor.command_classes[index].instance,
 							command_class:deviceDescriptor.command_classes[index].id,
 							dh:1
 						});
@@ -178,6 +167,7 @@ ZAEPlatform.prototype = {
 							{
 								service:service,
 								node_id:this.nodeId,
+								instance:deviceDescriptor.command_classes[index].instance,
 								command_class:deviceDescriptor.command_classes[index].id,
 								dh:"currentScene",
 								valueHolder:"currentScene",	// Read event value from this data holder
@@ -191,6 +181,7 @@ ZAEPlatform.prototype = {
 							{
 								service:service,
 								node_id:this.nodeId,
+								instance:deviceDescriptor.command_classes[index].instance,
 								command_class:deviceDescriptor.command_classes[index].id,
 								dh:"keyAttribute",
 								valueHolder:"keyAttribute",	// Read event value from this data holder (instead of a default "level")
@@ -209,6 +200,7 @@ ZAEPlatform.prototype = {
 										dh: "currentScene",
 										valueHolder:"currentScene",
 										accessory:this.accessory,
+										instance:deviceDescriptor.command_classes[index].instance,
 										commandClass:91
 								 	});
 
@@ -240,6 +232,7 @@ ZAEPlatform.prototype = {
 								dh: "last",
 								valueHolder:"last",
 								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
 								commandClass:deviceDescriptor.command_classes[index].id,
 								convert:function(value) { return (value < 20)? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL }
 							}));
@@ -249,6 +242,7 @@ ZAEPlatform.prototype = {
 								dh: "last",
 								valueHolder:"last",
 								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
 								commandClass:deviceDescriptor.command_classes[index].id
 							}));
 
@@ -277,15 +271,30 @@ ZAEPlatform.prototype = {
 						this.createNotificationAccessory(deviceDescriptor.command_classes[index], notificationList);
 					}
 					break;
+				case 156:
+					var sensorAlarmList = deviceDescriptor.descriptor.alarmRoles;
+					this.log("Sensor Alarm List:" + sensorAlarmList);
+					if(typeof sensorAlarmList !== 'undefined') {
+						this.log("Creating alarm roles for " + this.name);
+						this.createSensorAlarmAccessory(deviceDescriptor.command_classes[index], sensorAlarmList);
+					}
+
+					break;
 			}
 		}
 
+		for(var index in this.onServiceCreatedCallback) {
+			this.onServiceCreatedCallback[index]();
+		}
+
+		// Unconditionally configure Tampered status
 		this.serviceList.forEach(function(service) {
-			service.setCharacteristic(Characteristic.StatusTampered, false);
+			service.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED);
 			this.registerEventListener(Characteristic.StatusTampered, 
 				{
 					service:service,
 					node_id:this.nodeId,
+					instance:0,
 					command_class: 113,
 					dh:7,
 					valueHolder: "event",
@@ -314,14 +323,15 @@ ZAEPlatform.prototype = {
 			callback(); // success
 		},
 		registerEventListener : function(Characteristics, data) {
-			this.log("Add event listener for device", this.name);
+			this.log("Add event listener for device " +  this.name + " command_id " + data.command_class);
 			this.platform.eventSource.addEventListener('EventLogAddedEvent', function(e) {
 				//console.log(e.data);
     			var json = JSON.parse(e.data);
 				var type = json.type;
+				var instance = json.instance_id;
 				var command_id = json.command_id;
 				var dh = json.data.data_holder;
-				if(command_id == this.command_class && json.node_id == this.node_id && dh == this.dh) {
+				if(command_id == this.command_class && json.node_id == this.node_id && dh == this.dh && instance == this.instance)  {
 					//console.log("Event accepted");
 					var sensorValue = json.data[this.valueHolder || "level"];
 					if(typeof this.convert === 'function') {
@@ -351,6 +361,32 @@ ZAEPlatform.prototype = {
 				}
 			}.bind(data), false);
 		},
+		createBinarySensorAccessory : function(commandClass, serviceType) {
+			if(serviceType != 'Disabled')
+			{
+				var service = new Service[serviceType](this.name);
+				service.subtype = "instance" + commandClass.instance;
+				service.getCharacteristic(this.CharacteristicForService[serviceType]).on('get', this.getBinaryState.bind(
+						{
+							dh: commandClass.dh.parameters[0].data_holder,
+							accessory:this,
+							instance:commandClass.instance,
+							commandClass:commandClass.id
+						}));
+				this.serviceList.push(service);
+
+				this.registerEventListener(this.CharacteristicForService[serviceType], 
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:commandClass.instance,
+						command_class:commandClass.id,
+						dh:commandClass.dh.parameters[0].data_holder
+					});
+			} else {
+				this.log("Service 48 is disabled for " + this.name);
+			}
+		},
 		createNotificationAccessory : function(commandClass, notificationList) {
 			// Alert notification supported. Lets see what services and characteristics
 			// we can create for this device
@@ -370,6 +406,7 @@ ZAEPlatform.prototype = {
 									dh: 7,
 									valueHolder: "event",
 									accessory:this,
+									instance:commandClass.instance,
 									commandClass: 113,
 									convert:function(value) { 
 										if(value == 8) {
@@ -385,6 +422,7 @@ ZAEPlatform.prototype = {
 								{
 									service:service,
 									node_id:this.nodeId,
+									instance:commandClass.instance,
 									command_class: 113,
 									dh:7,
 									valueHolder: "event",
@@ -410,6 +448,7 @@ ZAEPlatform.prototype = {
 									dh: 5,
 									valueHolder: "event",
 									accessory:this,
+									instance:commandClass.instance,
 									commandClass: 113,
 									convert:function(value) { 
 										if(value == 2) {
@@ -425,6 +464,7 @@ ZAEPlatform.prototype = {
 								{
 									service:service,
 									node_id:this.nodeId,
+									instance:commandClass.instance,
 									command_class: 113,
 									dh:5,
 									valueHolder: "event",
@@ -441,6 +481,74 @@ ZAEPlatform.prototype = {
 				}
 			}
 		},
+		createSensorAlarmAccessory : function(commandClass, sensorAlarmList) {
+			for(var  index in sensorAlarmList) {
+				var sensorAlarm = sensorAlarmList[index];
+				if(typeof commandClass.dh[index] !== 'undefined') {
+					this.log("Creating sensor alarm for " + sensorAlarm);
+					switch(sensorAlarm) {
+						case 'Tampered':
+							this.onServiceCreatedCallback.push(function() { 
+								this.serviceList.forEach(function(service) {
+									this.registerEventListener(Characteristic.StatusTampered, 
+										{
+											service:service,
+											node_id:this.nodeId,
+											instance:commandClass.instance,
+											command_class: commandClass.id,
+											dh:0,
+											valueHolder: "sensorState",
+											convert:function(value) { 
+												if(value == 255) {
+													return Characteristic.StatusTampered.TAMPERED;
+												} else {
+													return Characteristic.StatusTampered.NOT_TAMPERED;
+												}
+											}
+										});
+								}.bind(this))}.bind(this));
+							break;
+						case 'LeakDetected':
+							var service = new Service.LeakSensor(this.name);
+							service.subtype = "instance"+commandClass.instance;
+							service.getCharacteristic(this.NotificationForService[sensorAlarm]).on('get', this.getSensorValue.bind(
+								{
+									dh: 5,
+									valueHolder: "sensorState",
+									accessory:this,
+									instance:commandClass.instance,
+									commandClass: commandClass.id,
+									convert:function(value) { 
+										if(value == 255) {
+											return Characteristic.LeakDetected.LEAK_DETECTED;
+										} else {
+											return Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+										}
+									}
+								}));
+							this.serviceList.push(service);
+
+							this.registerEventListener(this.NotificationForService[sensorAlarm], 
+								{
+									service:service,
+									node_id:this.nodeId,
+									instance:commandClass.instance,
+									command_class: commandClass.id,
+									dh:5,
+									valueHolder: "sensorState",
+									convert:function(value) { 
+										if(value == 255) {
+											return Characteristic.LeakDetected.LEAK_DETECTED;
+										} else {
+											return Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+										}
+									}
+								});
+							break;
+					}
+				}
+			}
+		},
 		createMultiSensorAccessory : function(commandClass) {
 			for(var index in commandClass.dh.parameters) {
 				switch(commandClass.dh.parameters[index].data_holder) {
@@ -451,6 +559,7 @@ ZAEPlatform.prototype = {
 								{
 									dh: 1,
 									accessory:this,
+									instance:commandClass.instance,
 									commandClass:commandClass.id,
 									convert:function(value) { return (value - 32) * 5/9; }
 								}));
@@ -460,6 +569,7 @@ ZAEPlatform.prototype = {
 							{
 								service:service,
 								node_id:this.nodeId,
+								instance:commandClass.instance,
 								command_class:this.commandClass,
 								dh:1,
 								convert:function(value) { return (value - 32) * 5/9; }
@@ -472,6 +582,7 @@ ZAEPlatform.prototype = {
 							{
 								dh: 3,
 								accessory:this,
+								instance:commandClass.instance,
 								commandClass:commandClass.id
 							}));
 						this.serviceList.push(service);
@@ -479,6 +590,7 @@ ZAEPlatform.prototype = {
 							{
 								service:service,
 								node_id:this.nodeId,
+								instance:commandClass.instance,
 								command_class:this.commandClass,
 								dh:3
 							});
@@ -489,6 +601,7 @@ ZAEPlatform.prototype = {
 						service.getCharacteristic(Characteristic.CurrentRelativeHumidity).on('get', this.getSensorValue.bind(
 							{
 								dh: 5,
+								instance:commandClass.instance,
 								commandClass:commandClass.id,
 								accessory:this
 							}));
@@ -497,6 +610,7 @@ ZAEPlatform.prototype = {
 							{
 								service:service,
 								node_id:this.nodeId,
+								instance:commandClass.instance,
 								command_class:this.commandClass,
 								dh:5
 							});
@@ -522,7 +636,7 @@ ZAEPlatform.prototype = {
 		},
 		getBinaryState: function(callback) {
 			var url = 'http://' + this.accessory.config.zae_host + ':' + this.accessory.config.zae_port + '/rest/v1/devices/'
-				+ this.accessory.nodeId + '/0/' + this.commandClass;
+				+ this.accessory.nodeId + '/' + this.instance + '/' + this.commandClass;
 
 			if(this.dh) {
 				url += '/' + this.dh;
@@ -546,7 +660,7 @@ ZAEPlatform.prototype = {
 		},
 		setBinaryState: function(isTrue, callback) {
 			var url = 'http://' + this.accessory.config.zae_host + ':' + this.accessory.config.zae_port + '/rest/v1/devices/'
-				+ this.accessory.nodeId + '/0/' + this.commandClass;
+				+ this.accessory.nodeId + '/' + this.instance + '/' + this.commandClass;
 			this.accessory.log("Setting Binary state at " + url);
 			
 			var body = "{\"command\":\"Set\",\"arguments\":[" + isTrue + "]}}";
@@ -563,7 +677,7 @@ ZAEPlatform.prototype = {
 			//this.dh = 1;
 			//console.log(JSON.stringify(this, null, 4));
 			var url = 'http://' + this.accessory.config.zae_host + ':' + this.accessory.config.zae_port + '/rest/v1/devices/'
-				+ this.accessory.nodeId + '/0/' + this.commandClass + '/' + this.dh;
+				+ this.accessory.nodeId + '/' + this.instance + '/' + this.commandClass + '/' + this.dh;
 			this.accessory.log("Getting Sensor value: " + url);
 			
 			this.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {

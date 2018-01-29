@@ -25,6 +25,7 @@ variant_t*   command_class_eval_indicator(const char* method, device_record_t* r
 variant_t*   command_class_eval_node_naming(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_current_scene(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_association(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_alarm_sensor(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -88,6 +89,9 @@ static command_class_t command_class_table[] = {
                              "Remove", 2, "<group id>,<node id>",
                              NULL, 0, NULL},
                              &command_class_eval_association},
+    {0x9C, "AlarmSensor",   {"Get", 1, "type",
+                             NULL, 0, NULL},
+                             &command_class_eval_alarm_sensor},
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -622,6 +626,21 @@ variant_t*   command_class_eval_current_scene(const char* method, device_record_
     return ret_val;
 }
 
+variant_t*   command_class_eval_alarm_sensor(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    variant_t* param = va_arg(args, variant_t*);
+    if(strcmp(method, "Get") == 0)
+    {
+        char buf[32] = {0};
+        snprintf(buf, 31, "%d.sensorState", variant_get_int(param));
+        ret_val = command_class_read_data(record, buf);
+    }
+
+    return ret_val;
+}
+
 variant_t*  command_class_exec(command_class_t* cmd_class, const char* cmd_name, device_record_t* record, ...)
 {
     variant_t* retVal = NULL;
@@ -632,3 +651,4 @@ variant_t*  command_class_exec(command_class_t* cmd_class, const char* cmd_name,
 
     return retVal;
 }
+

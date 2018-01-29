@@ -2,12 +2,14 @@
 #include "crc32.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 void delete_sensor_descriptor(void* arg)
 {
     sensor_descriptor_t* sensor_desc = (sensor_descriptor_t*)arg;
-    free(sensor_desc->role);
     free(sensor_desc->name);
+    variant_hash_free(sensor_desc->sensor_roles);
+    variant_hash_free(sensor_desc->alarm_roles);
     variant_hash_free(sensor_desc->supported_notification_set);
 
     free(sensor_desc);
@@ -19,7 +21,8 @@ sensor_descriptor_t*    sensor_descriptor_new(int node_id)
 {
     sensor_descriptor_t* sensor_desc = malloc(sizeof(sensor_descriptor_t));
     sensor_desc->node_id = node_id;
-    sensor_desc->role = NULL;
+    sensor_desc->sensor_roles = variant_hash_init();
+    sensor_desc->alarm_roles = variant_hash_init();
     sensor_desc->name = NULL;
     sensor_desc->supported_notification_set = variant_hash_init();
 
@@ -31,22 +34,55 @@ void    sensor_manager_init()
     sensor_descriptor_table = variant_hash_init();
 }
 
-void    sensor_manager_set_role(int node_id, const char* role)
+void    sensor_manager_set_role(int node_id, int command_id, const char* role)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
 
     if(NULL == sensor_desc_variant)
     {
         sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
-        sensor_desc->role = strdup(role);
+        //sensor_desc->role = strdup(role);
+
+        variant_hash_insert(sensor_desc->sensor_roles, 
+                            command_id, 
+                            variant_create_string(strdup(role)));
 
         variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
     }
     else
     {
         sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
-        free(sensor_desc->role);
-        sensor_desc->role = strdup(role);
+
+        variant_hash_remove(sensor_desc->sensor_roles, command_id);
+        variant_hash_insert(sensor_desc->sensor_roles, 
+                            command_id, 
+                            variant_create_string(strdup(role)));
+    }
+}
+
+void    sensor_manager_set_alarm_role(int node_id, int alarm_id, const char* role)
+{
+    variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
+
+    if(NULL == sensor_desc_variant)
+    {
+        sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
+        //sensor_desc->role = strdup(role);
+
+        variant_hash_insert(sensor_desc->alarm_roles, 
+                            alarm_id, 
+                            variant_create_string(strdup(role)));
+
+        variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
+    }
+    else
+    {
+        sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
+
+        variant_hash_remove(sensor_desc->alarm_roles, alarm_id);
+        variant_hash_insert(sensor_desc->alarm_roles, 
+                            alarm_id, 
+                            variant_create_string(strdup(role)));
     }
 }
 
@@ -154,6 +190,15 @@ void serialize_sensor_notification(char* notification, void* arg)
     json_object_array_add(notification_array, json_object_new_string(notification));
 }
 
+void serialize_sensor_roles(hash_node_data_t* node_data, void* arg)
+{
+    struct json_object* role_object = (struct json_object*)arg;
+
+    char command_id_buf[4] = {0};
+    snprintf(command_id_buf, 3, "%d", node_data->key);
+    json_object_object_add(role_object, command_id_buf, json_object_new_string(variant_get_string(node_data->data)));
+}
+
 struct json_object*    sensor_manager_serialize(int node_id)
 {
     struct json_object* result = json_object_new_object();
@@ -166,9 +211,20 @@ struct json_object*    sensor_manager_serialize(int node_id)
             json_object_object_add(result, "name", json_object_new_string(sensor_desc->name));
         }
 
-        if(NULL != sensor_desc->role)
+        if(sensor_desc->sensor_roles->count > 0)
         {
-            json_object_object_add(result, "role", json_object_new_string(sensor_desc->role));
+            struct json_object* role_object = json_object_new_object();
+            variant_hash_for_each(sensor_desc->sensor_roles, serialize_sensor_roles, role_object);
+
+            json_object_object_add(result, "roles", role_object);
+        }
+
+        if(sensor_desc->alarm_roles->count > 0)
+        {
+            struct json_object* role_object = json_object_new_object();
+            variant_hash_for_each(sensor_desc->alarm_roles, serialize_sensor_roles, role_object);
+
+            json_object_object_add(result, "alarmRoles", role_object);
         }
 
         if(sensor_desc->supported_notification_set->count > 0)

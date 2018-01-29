@@ -138,7 +138,7 @@ void vdev_enumerate(device_record_t* record, void* arg)
             {
                 json_object* cmd_class = json_object_new_object();
                 json_object_object_add(cmd_class, "id", json_object_new_int(vdev_command->command_id));
-                
+
                 json_object* cmd_value = json_object_new_object();
                 command_class_t* vdev_cmd_class = vdev_manager_get_command_class(record->nodeId);
                 
@@ -156,6 +156,8 @@ void vdev_enumerate(device_record_t* record, void* arg)
     
                     if(NULL != device_record)
                     {
+                        json_object_object_add(cmd_class, "instance", json_object_new_int(device_record->instanceId));
+
                         variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, device_record);
                         char* string_value;
                         variant_to_string(value, &string_value);
@@ -264,16 +266,52 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             json_object* command_class_array = json_object_new_array();
             json_object_object_add(new_sensor, "command_classes", command_class_array);
 
-            int k = 0;
+            
+            int j = 0;
+
+            ZWInstancesList instances = zway_instances_list(zway, node_array[i]);
+
+            if(NULL != instances)
+            {
+                while(instances[j])
+                {
+                    int k = 0;
+                    ZWCommandClassesList commands = zway_command_classes_list(zway, node_array[i], instances[j]);
+
+                    if(NULL != commands)
+                    {
+                        while(commands[k])
+                        {
+                            json_object* command_class_dh_obj = json_object_new_object();
+                            json_object_object_add(command_class_dh_obj, "id", json_object_new_int(commands[k]));
+                            json_object_object_add(command_class_dh_obj, "instance", json_object_new_int(instances[j]));
+
+                            ZDataHolder cmd_class_dh = zway_find_device_instance_cc_data(zway, node_array[i], instances[j], commands[k], ".");
+                            json_object* device_data = json_object_new_object();
+                            zway_json_data_holder_to_json(device_data, cmd_class_dh);
+                            json_object_object_add(command_class_dh_obj, "dh", device_data);
+                            json_object_array_add(command_class_array, command_class_dh_obj);
+                            k++;
+                        }
+                    }
+            
+                    zway_command_classes_list_free(commands);
+                    j++;
+                }
+
+                zway_instances_list_free(instances);
+            }
 
             ZWCommandClassesList commands = zway_command_classes_list(zway, node_array[i], 0);
 
             if(NULL != commands)
             {
+                int k = 0;
                 while(commands[k])
                 {
                     json_object* command_class_dh_obj = json_object_new_object();
                     json_object_object_add(command_class_dh_obj, "id", json_object_new_int(commands[k]));
+                    json_object_object_add(command_class_dh_obj, "instance", json_object_new_int(0));
 
                     ZDataHolder cmd_class_dh = zway_find_device_instance_cc_data(zway, node_array[i], 0, commands[k], ".");
                     json_object* device_data = json_object_new_object();
