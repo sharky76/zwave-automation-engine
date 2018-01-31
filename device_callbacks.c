@@ -31,6 +31,9 @@ void device_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE node
                 resolver_add_device_entry(ZWAVE, buf, node_id);
             }
         }
+
+        event_t* device_added_event = event_create(DeviceCallback, "DeviceAddedEvent", variant_create_int32(DT_INT8, node_id));
+        event_post(device_added_event);
     }
 }
 

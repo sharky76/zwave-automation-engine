@@ -341,6 +341,18 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
     {
         err = zway_controller_add_node_to_network(zway, TRUE);
         vty_write(vty, "%% Inclusion started%s", VTY_NEWLINE(vty));
+        USING_LOGGER(DeviceCallback)
+        variant_t* event_data = event_wait(DeviceCallback, "DeviceAddedEvent", 260000);
+
+        if(NULL == event_data)
+        {
+            vty_write(vty, "%% No new device discovered%s", VTY_NEWLINE(vty));
+        }
+        else
+        {
+            vty_write(vty, "%% Discovered new device with ID: %d%s", variant_get_int(event_data), VTY_NEWLINE(vty));
+            variant_free(event_data);
+        }
         //err = zway_fc_add_node_to_network(zway, TRUE, TRUE, NULL, NULL, NULL);
     }
     else
@@ -544,7 +556,7 @@ bool    cmd_line_filter(vty_t* vty, variant_stack_t* params)
 {
     bool isOk;
     char expression[512] = {0};
-    cli_assemble_line(params, 1, expression);
+    cli_assemble_line(params, 1, expression, 511);
 
     char buf[512] = {0};
     char* ch = NULL;
@@ -793,7 +805,7 @@ bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
 {
     bool isOk;
     char expression[512] = {0};
-    cli_assemble_line(params, 1, expression);
+    cli_assemble_line(params, 1, expression, 511);
     variant_stack_t* compiled_value = command_parser_compile_expression(expression, &isOk);
     bool retVal = false;
 

@@ -348,6 +348,7 @@ typedef struct event_wait_context_t
 {
     pthread_cond_t* wait_cond;
     const char*     event_name;
+    variant_t*      event_data;
 } event_wait_context_t;
 
 void    event_wait_handler(event_t* event, void* arg)
@@ -356,11 +357,12 @@ void    event_wait_handler(event_t* event, void* arg)
     if(strcmp(event_ctx->event_name, event->name) == 0)
     {
         LOG_DEBUG(Event, "Wait for %s completed", event->name);
+        event_ctx->event_data = variant_clone(event->data);
         pthread_cond_signal(event_ctx->wait_cond);
     }
 }
 
-int    event_wait(int source_id, const char* event_name, uint32_t timeout)
+variant_t*    event_wait(int source_id, const char* event_name, uint32_t timeout)
 {
     pthread_mutex_t wait_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t  wait_cond = PTHREAD_COND_INITIALIZER;
@@ -368,7 +370,8 @@ int    event_wait(int source_id, const char* event_name, uint32_t timeout)
 
     event_wait_context_t    event_wait_ctx = {
         .wait_cond = &wait_cond,
-        .event_name = event_name
+        .event_name = event_name,
+        .event_data = NULL
     };
 
     event_register_handler(source_id, event_name, event_wait_handler, &event_wait_ctx);
@@ -391,5 +394,5 @@ int    event_wait(int source_id, const char* event_name, uint32_t timeout)
     pthread_mutex_unlock(&wait_lock);
 
     event_unregister_handler(source_id, event_name);
-    return retVal;
+    return event_wait_ctx.event_data;
 }

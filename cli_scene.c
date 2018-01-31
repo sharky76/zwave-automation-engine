@@ -131,7 +131,7 @@ bool cmd_enter_scene_node(vty_t* vty, variant_stack_t* params)
 {
     cmd_enter_node(vty, params);
     char scene_name[256] = {0};
-    cli_assemble_line(params, 1, scene_name);
+    cli_assemble_line(params, 1, scene_name, 255);
     scene_node->context = strdup(scene_name);
     if(NULL == scene_manager_get_scene(scene_node->context))
     {
@@ -149,7 +149,7 @@ bool cmd_exit_scene_node(vty_t* vty, variant_stack_t* params)
 bool cmd_del_scene(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 2, scene_name);
+    cli_assemble_line(params, 2, scene_name, 255);
     if(NULL != scene_manager_get_scene(scene_name))
     {
         scene_manager_remove_scene(scene_name);
@@ -164,7 +164,7 @@ bool cmd_list_scenes(vty_t* vty, variant_stack_t* params)
 bool cmd_show_scene(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 2, scene_name);
+    cli_assemble_line(params, 2, scene_name, 255);
     scene_t* scene = scene_manager_get_scene(scene_name);
 
     if(NULL != scene)
@@ -192,7 +192,7 @@ bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params)
     scene_t* scene = scene_manager_get_scene(scene_node->context);
 
     char condition[1024] = {0};
-    cli_assemble_line(params, 1, condition);
+    cli_assemble_line(params, 1, condition, 1023);
     stack_push_back(scene->condition_list, variant_create_string(strdup(condition)));
 }
 
@@ -201,7 +201,7 @@ bool cmd_del_scene_condition(vty_t* vty, variant_stack_t* params)
     scene_t* scene = scene_manager_get_scene(scene_node->context);
 
     char condition[1024] = {0};
-    cli_assemble_line(params, 2, condition);
+    cli_assemble_line(params, 2, condition, 1023);
 
     stack_for_each(scene->condition_list, condition_var)
     {
@@ -233,7 +233,7 @@ bool cmd_config_scene_action_script(vty_t* vty, variant_stack_t* params)
 bool cmd_config_scene_action_scene(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[512] = {0};
-    cli_assemble_line(params, 2, scene_name);
+    cli_assemble_line(params, 2, scene_name, 511);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* new_action = scene_get_action_with_type(scene, scene_name, A_SCENE);
@@ -248,7 +248,7 @@ bool cmd_config_scene_action_command(vty_t* vty, variant_stack_t* params)
 {
     cmd_enter_node_by_name(vty, "action-template");
     char command[1024] = {0};
-    cli_assemble_line(params, 2, command);
+    cli_assemble_line(params, 2, command, 1023);
     scene_t* scene = scene_manager_get_scene(scene_node->context);
 
     action_t* new_action = scene_get_action(scene, command);
@@ -264,7 +264,7 @@ bool cmd_config_scene_action_command(vty_t* vty, variant_stack_t* params)
 bool cmd_add_action_environment(vty_t* vty, variant_stack_t* params)
 {
     char command[1024] = {0};
-    cli_assemble_line(params, 3, command);
+    cli_assemble_line(params, 3, command, 1023);
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action(scene, scene_action_node->context);
     scene_action_add_environment(action,
@@ -275,7 +275,7 @@ bool cmd_add_action_environment(vty_t* vty, variant_stack_t* params)
 bool cmd_add_action_token(vty_t* vty, variant_stack_t* params)
 {
     char command[1024] = {0};
-    cli_assemble_line(params, 6, command);
+    cli_assemble_line(params, 6, command, 1023);
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action(scene, scene_template_token_node->context);
     scene_action_add_method_stack_item(action, variant_get_string(stack_peek_at(params, 2)),
@@ -305,7 +305,7 @@ bool cmd_delete_scene_action_script(vty_t* vty, variant_stack_t* params)
 bool cmd_delete_scene_action_scene(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[512] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 511);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action_with_type(scene, scene_name, A_SCENE);
@@ -319,7 +319,7 @@ bool cmd_delete_scene_action_scene(vty_t* vty, variant_stack_t* params)
 bool cmd_delete_scene_action_command(vty_t* vty, variant_stack_t* params)
 {
     char command[1024] = {0};
-    cli_assemble_line(params, 3, command);
+    cli_assemble_line(params, 3, command, 1023);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action(scene, command);
@@ -341,7 +341,7 @@ bool cmd_delete_action_environment(vty_t* vty, variant_stack_t* params)
 bool cmd_config_scene_action_enable(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[512] = {0};
-    cli_assemble_line(params, 2, scene_name);
+    cli_assemble_line(params, 2, scene_name, 511);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* new_action = scene_get_action_with_type(scene, scene_name, A_ENABLE);
@@ -355,7 +355,7 @@ bool cmd_config_scene_action_enable(vty_t* vty, variant_stack_t* params)
 bool cmd_delete_scene_action_enable(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[512] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 511);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action_with_type(scene, scene_name, A_ENABLE);
@@ -369,7 +369,7 @@ bool cmd_delete_scene_action_enable(vty_t* vty, variant_stack_t* params)
 bool cmd_config_scene_action_disable(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[512] = {0};
-    cli_assemble_line(params, 2, scene_name);
+    cli_assemble_line(params, 2, scene_name, 511);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* new_action = scene_get_action_with_type(scene, scene_name, A_DISABLE);
@@ -383,7 +383,7 @@ bool cmd_config_scene_action_disable(vty_t* vty, variant_stack_t* params)
 bool cmd_delete_scene_action_disable(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[512] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 511);
 
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     action_t* action = scene_get_action_with_type(scene, scene_name, A_DISABLE);

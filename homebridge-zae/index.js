@@ -93,7 +93,9 @@ ZAEPlatform.prototype = {
 		this.platform = platform;
 		// install event handler for each command class
 		this.nodeId = deviceDescriptor.node_id;
-		this.name = deviceDescriptor.name;
+		this.name = (deviceDescriptor.descriptor && deviceDescriptor.descriptor.name) || deviceDescriptor.name;
+		this.uuid_base = "UUID" + this.nodeId;
+
 		this.commands = deviceDescriptor.command_classes;
 		this.config = config;
 		this.additionalCharacteristics = [];
@@ -365,7 +367,7 @@ ZAEPlatform.prototype = {
 			if(serviceType != 'Disabled')
 			{
 				var service = new Service[serviceType](this.name);
-				service.subtype = "instance" + commandClass.instance;
+				service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 				service.getCharacteristic(this.CharacteristicForService[serviceType]).on('get', this.getBinaryState.bind(
 						{
 							dh: commandClass.dh.parameters[0].data_holder,
@@ -401,6 +403,7 @@ ZAEPlatform.prototype = {
 
 						if(typeof existingService === 'undefined') {
 							var service = new Service.MotionSensor(this.name);
+							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
 								{
 									dh: 7,
@@ -443,6 +446,7 @@ ZAEPlatform.prototype = {
 
 						if(typeof existingService === 'undefined') {
 							var service = new Service.LeakSensor(this.name);
+							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
 								{
 									dh: 5,
@@ -510,7 +514,7 @@ ZAEPlatform.prototype = {
 							break;
 						case 'LeakDetected':
 							var service = new Service.LeakSensor(this.name);
-							service.subtype = "instance"+commandClass.instance;
+							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 							service.getCharacteristic(this.NotificationForService[sensorAlarm]).on('get', this.getSensorValue.bind(
 								{
 									dh: 5,
@@ -554,7 +558,8 @@ ZAEPlatform.prototype = {
 				switch(commandClass.dh.parameters[index].data_holder) {
 					case "1":
 						// Temperature...
-						var service = new Service.TemperatureSensor(this.name);
+						var service = new Service.TemperatureSensor(commandClass.dh.parameters[index].sensorTypeString);
+						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 						service.getCharacteristic(Characteristic.CurrentTemperature).on('get', this.getSensorValue.bind(
 								{
 									dh: 1,
@@ -577,7 +582,8 @@ ZAEPlatform.prototype = {
 						break;
 					case "3":
 						// Luminiscense
-						var service = new Service.LightSensor(this.name);
+						var service = new Service.LightSensor(commandClass.dh.parameters[index].sensorTypeString);
+						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 						service.getCharacteristic(Characteristic.CurrentAmbientLightLevel).on('get', this.getSensorValue.bind(
 							{
 								dh: 3,
@@ -597,7 +603,8 @@ ZAEPlatform.prototype = {
 						break;
 					case "5":
 						// Humidity
-						var service = new Service.HumiditySensor(this.name);
+						var service = new Service.HumiditySensor(commandClass.dh.parameters[index].sensorTypeString);
+						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 						service.getCharacteristic(Characteristic.CurrentRelativeHumidity).on('get', this.getSensorValue.bind(
 							{
 								dh: 5,
