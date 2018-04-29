@@ -194,8 +194,8 @@ void serialize_sensor_roles(hash_node_data_t* node_data, void* arg)
 {
     struct json_object* role_object = (struct json_object*)arg;
 
-    char command_id_buf[4] = {0};
-    snprintf(command_id_buf, 3, "%d", node_data->key);
+    char command_id_buf[5] = {0};
+    snprintf(command_id_buf, 4, "%d", node_data->key);
     json_object_object_add(role_object, command_id_buf, json_object_new_string(variant_get_string(node_data->data)));
 }
 

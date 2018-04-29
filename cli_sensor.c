@@ -53,7 +53,7 @@ cli_command_t   sensor_root_list[] = {
 };
 
 cli_command_t sensor_descriptor_command_list[] = {
-    {"command-class INT role MotionSensor|ContactSensor|LeakSensor|OccupancySensor|Disabled", cmd_sensor_descriptor_set_role, "Set sensor role"},
+    {"command-class INT role MotionSensor|ContactSensor|LeakSensor|OccupancySensor|GarageDoorOpener|Disabled", cmd_sensor_descriptor_set_role, "Set sensor role"},
     {"name LINE",                                                  cmd_sensor_descriptor_set_name, "Set sensor name"},
     {"notification MotionDetected|LeakDetected|SirenActive",       cmd_sensor_descriptor_set_notification, "Set sensor notification"},
     {"sensor-alarm INT role Tampered|LeakDetected|Smoke|CO|CO2|Heat",  cmd_sensor_descriptor_set_sensor_alarm, "Set sensor alarm notification"},

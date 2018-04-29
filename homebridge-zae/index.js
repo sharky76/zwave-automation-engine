@@ -106,7 +106,7 @@ ZAEPlatform.prototype = {
 		this.CharacteristicForService = {
 			ContactSensor: Characteristic.ContactSensorState,
 			MotionSensor: Characteristic.MotionDetected,
-			LeakSensor:Characteristic.LeakDetected
+			LeakSensor:Characteristic.LeakDetected,
 		};
 
 		this.NotificationForService = {
@@ -282,6 +282,11 @@ ZAEPlatform.prototype = {
 					}
 
 					break;
+				case 102: // Barrier
+					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[102]) || "Disabled";
+					this.createBarrierAccessory(deviceDescriptor.command_classes[index], serviceType);					
+					break; 
+
 			}
 		}
 
@@ -327,7 +332,7 @@ ZAEPlatform.prototype = {
 		registerEventListener : function(Characteristics, data) {
 			this.log("Add event listener for device " +  this.name + " command_id " + data.command_class);
 			this.platform.eventSource.addEventListener('EventLogAddedEvent', function(e) {
-				//console.log(e.data);
+				console.log(e.data);
     			var json = JSON.parse(e.data);
 				var type = json.type;
 				var instance = json.instance_id;
@@ -356,6 +361,7 @@ ZAEPlatform.prototype = {
 							if(typeof this.callback === 'function') {
 								this.callback(sensorValue);
 							} else {
+								//console.log("!!! Event: Setting Value to " + sensorValue);
 								this.service.getCharacteristic(Characteristics).setValue(sensorValue);
 							}
 						}
@@ -387,6 +393,97 @@ ZAEPlatform.prototype = {
 					});
 			} else {
 				this.log("Service 48 is disabled for " + this.name);
+			}
+		},
+		createBarrierAccessory : function(commandClass, serviceType) {
+			if(serviceType != 'Disabled') 
+			{
+				var service = new Service[serviceType](this.name);
+				service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
+				service.getCharacteristic(Characteristic.CurrentDoorState).on('get', this.getSensorValue.bind(
+								{
+									dh: "state",
+									valueHolder: "state",
+									accessory:this,
+									instance:commandClass.instance,
+									commandClass: commandClass.id,
+									convert:function(value) { 
+										if(value == 255) {
+											return Characteristic.CurrentDoorState.OPEN;
+										} else if(value == 0) {
+											return Characteristic.CurrentDoorState.CLOSED;
+										} else if(value == 254) {
+											return Characteristic.CurrentDoorState.OPENING;
+										} else if(value == 252) {
+											return Characteristic.CurrentDoorState.CLOSING;
+										}
+									}
+								}));
+								
+				service.getCharacteristic(Characteristic.TargetDoorState)
+								.on('get', (callback) => {
+									var targetDoorState = service.getCharacteristic(Characteristic.CurrentDoorState).value;
+									callback(null, targetDoorState);
+								})
+								.on('set', this.setSensorValue.bind(
+								{
+									accessory:this,
+									instance:commandClass.instance,
+									commandClass:commandClass.id,
+									convert: function(value) {
+										//console.log("Value: " + value);
+										if(value == Characteristic.TargetDoorState.CLOSED) {
+											return 0;
+										} else if(value == Characteristic.TargetDoorState.OPEN){ 
+											return 255;
+										}
+									}
+								}));
+
+				service.setCharacteristic(Characteristic.ObstructionDetected, false);
+
+				this.registerEventListener(Characteristic.CurrentDoorState,
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:commandClass.instance,
+						command_class:commandClass.id,
+						dh:"state",
+						valueHolder:"state",
+						convert:function(value) {
+							if(value == 255) {
+								//console.log("DOOR OPEN");
+								return Characteristic.CurrentDoorState.OPEN;
+							} else if(value == 0) {
+								//console.log("DOOR CLOSED");
+								return Characteristic.CurrentDoorState.CLOSED;
+							} else if(value == 254) {
+								//console.log("DOOR OPENING");
+								return Characteristic.CurrentDoorState.OPENING;
+							} else if(value == 252) {
+								//console.log("DOOR CLOSING");
+								return Characteristic.CurrentDoorState.CLOSING;
+							}
+						}
+					});
+				/*this.registerEventListener(Characteristic.TargetDoorState,
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:commandClass.instance,
+						command_class:commandClass.id,
+						dh:"state",
+						valueHolder:"state",
+						convert:function(value) {
+							if(value == 255) {
+								return Characteristic.TargetDoorState.OPEN;
+							} else if(value == 0) {
+								return Characteristic.TargetDoorState.CLOSED;
+							} 
+						}
+					});*/
+
+				this.serviceList.push(service);
 			}
 		},
 		createNotificationAccessory : function(commandClass, notificationList) {
@@ -701,6 +798,26 @@ ZAEPlatform.prototype = {
 
 					this.accessory.log("Sensor " + this.accessory.nodeId + " CC " + this.commandClass + " value is %s", sensorValue);
 					callback(null, sensorValue);
+				}
+			}.bind(this));
+		},
+		setSensorValue: function(value, callback) {
+			var url = 'http://' + this.accessory.config.zae_host + ':' + this.accessory.config.zae_port + '/rest/v1/devices/'
+				+ this.accessory.nodeId + '/' + this.instance + '/' + this.commandClass;
+
+			var sensorValue = value;
+			if(typeof this.convert === 'function') {
+				sensorValue = this.convert(sensorValue);
+			}
+			this.accessory.log("Setting Sensor value at " + url + " to " + sensorValue);
+			
+			var body = "{\"command\":\"Set\",\"arguments\":[" + sensorValue + "]}}";
+
+			this.accessory.platform.httpRequest(url, body, "POST", "", "", true, function(error, response, responseBody) {
+				if (error) {
+					callback(error);
+				} else {
+					callback(null);
 				}
 			}.bind(this));
 		}

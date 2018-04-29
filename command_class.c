@@ -26,6 +26,7 @@ variant_t*   command_class_eval_node_naming(const char* method, device_record_t*
 variant_t*   command_class_eval_current_scene(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_association(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_alarm_sensor(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_barrier(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -92,6 +93,10 @@ static command_class_t command_class_table[] = {
     {0x9C, "AlarmSensor",   {"Get", 1, "type",
                              NULL, 0, NULL},
                              &command_class_eval_alarm_sensor},
+
+    {0x66, "Barrier", {"Set", 1, "<state: 0/255>",
+                       NULL, 0, NULL},
+                       &command_class_eval_barrier},
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -636,6 +641,21 @@ variant_t*   command_class_eval_alarm_sensor(const char* method, device_record_t
         char buf[32] = {0};
         snprintf(buf, 31, "%d.sensorState", variant_get_int(param));
         ret_val = command_class_read_data(record, buf);
+    }
+
+    return ret_val;
+}
+
+variant_t*   command_class_eval_barrier(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    variant_t* param = va_arg(args, variant_t*);
+    int state = variant_get_int(param);
+    if(strcmp(method, "Set") == 0)
+    {
+        ZWError err = zway_cc_barrier_operator_set(zway, record->nodeId, record->instanceId, state, NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
     }
 
     return ret_val;

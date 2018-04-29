@@ -979,6 +979,8 @@ void    sse_event_handler(event_t* event, void* context)
 {
     variant_stack_t* event_listeners = (variant_stack_t*)context;
 
+    variant_stack_t* vty_to_remove = stack_create();
+
     stack_lock(event_listeners);
     stack_for_each(event_listeners, vty_variant)
     {
@@ -1000,13 +1002,23 @@ void    sse_event_handler(event_t* event, void* context)
         // Send data
         if(!vty_flush(vty))
         {
-            stack_remove(event_listeners, vty_variant);
-            vty_set_in_use(vty, false);
-            vty_free(vty);
-            free(vty_variant);
+            stack_push_back(vty_to_remove, vty_variant);
+            
         }
     }
+
+    stack_for_each(vty_to_remove, dead_vty_variant)
+    {
+        stack_remove(event_listeners, dead_vty_variant);
+        vty_t* vty = VARIANT_GET_PTR(vty_t, dead_vty_variant);
+        vty_set_in_use(vty, false);
+        vty_free(vty);
+    }
+
+    stack_free(vty_to_remove);
+
     stack_unlock(event_listeners);
+
 }
 
 bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
