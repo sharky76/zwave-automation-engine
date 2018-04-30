@@ -332,6 +332,23 @@ void    cli_commands_handle_data_event(int cli_socket, void* context)
     }
 }
 
+void    controller_inclusion_wait_handler(variant_t* event_data, void* context)
+{
+    vty_t* vty = (vty_t*)context;
+
+    if(NULL == event_data)
+    {
+        vty_write(vty, "%% No new device discovered%s", VTY_NEWLINE(vty));
+    }
+    else
+    {
+        vty_write(vty, "%% Discovered new device with ID: %d%s", variant_get_int(event_data), VTY_NEWLINE(vty));
+        variant_free(event_data);
+    }
+
+    zway_controller_add_node_to_network(zway, FALSE);
+}
+
 bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
 {
     const char* mode = variant_get_string(stack_peek_at(params, 2));
@@ -342,18 +359,7 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
         err = zway_controller_add_node_to_network(zway, TRUE);
         vty_write(vty, "%% Inclusion started%s", VTY_NEWLINE(vty));
         USING_LOGGER(DeviceCallback)
-        variant_t* event_data = event_wait(DeviceCallback, "DeviceAddedEvent", 260000);
-
-        if(NULL == event_data)
-        {
-            vty_write(vty, "%% No new device discovered%s", VTY_NEWLINE(vty));
-        }
-        else
-        {
-            vty_write(vty, "%% Discovered new device with ID: %d%s", variant_get_int(event_data), VTY_NEWLINE(vty));
-            variant_free(event_data);
-        }
-        //err = zway_fc_add_node_to_network(zway, TRUE, TRUE, NULL, NULL, NULL);
+        event_wait_async("DeviceAddedEvent", 260, controller_inclusion_wait_handler, (void*)vty);
     }
     else
     {

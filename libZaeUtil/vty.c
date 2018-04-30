@@ -332,7 +332,7 @@ char*   vty_read(vty_t* vty)
                     //printf("Longest prefix = %s\n", longest_prefix);
                     stack_push_back(cmd_stack, variant_create_string(longest_prefix));
                     vty_clear_buffer(vty);
-                    cli_assemble_line(cmd_stack, 0, vty->buffer);
+                    cli_assemble_line(cmd_stack, 0, vty->buffer, BUFSIZE);
                 }
                 stack_free(cmd_stack);
                 vty_redisplay(vty, vty->buffer);

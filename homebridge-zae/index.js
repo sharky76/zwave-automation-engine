@@ -286,7 +286,10 @@ ZAEPlatform.prototype = {
 					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[102]) || "Disabled";
 					this.createBarrierAccessory(deviceDescriptor.command_classes[index], serviceType);					
 					break; 
-
+				case 38:  // Switch Multilevel
+					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[38]) || "Disabled";
+					this.createLightbulbAccessory(deviceDescriptor.command_classes[index], serviceType);
+					break;
 			}
 		}
 
@@ -332,7 +335,7 @@ ZAEPlatform.prototype = {
 		registerEventListener : function(Characteristics, data) {
 			this.log("Add event listener for device " +  this.name + " command_id " + data.command_class);
 			this.platform.eventSource.addEventListener('EventLogAddedEvent', function(e) {
-				console.log(e.data);
+				//console.log(e.data);
     			var json = JSON.parse(e.data);
 				var type = json.type;
 				var instance = json.instance_id;
@@ -351,7 +354,7 @@ ZAEPlatform.prototype = {
 							if(typeof this.callback === 'function') {
 								this.callback(this.force_value);
 							} else {
-								this.service.getCharacteristic(Characteristics).setValue(this.force_value);
+								this.service.getCharacteristic(Characteristics).updateValue(this.force_value);
 							}
 						}
 					} else {
@@ -362,7 +365,7 @@ ZAEPlatform.prototype = {
 								this.callback(sensorValue);
 							} else {
 								//console.log("!!! Event: Setting Value to " + sensorValue);
-								this.service.getCharacteristic(Characteristics).setValue(sensorValue);
+								this.service.getCharacteristic(Characteristics).updateValue(sensorValue);
 							}
 						}
 					}
@@ -393,6 +396,77 @@ ZAEPlatform.prototype = {
 					});
 			} else {
 				this.log("Service 48 is disabled for " + this.name);
+			}
+		},
+		createLightbulbAccessory : function(commandClass, serviceType) {
+			if(serviceType != 'Disabled')
+			{
+				var service = new Service[serviceType](this.name);
+				service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
+				service.getCharacteristic(Characteristic.On).on('get', this.getSensorValue.bind(
+				{
+					dh: "level",
+					valueHolder: "level",
+					accessory:this,
+					instance:commandClass.instance,
+					commandClass: commandClass.id,
+					convert:function(value) { 
+							return value > 0;
+						}
+				}))
+				.on('set', this.setSensorValue.bind(
+				{
+					accessory:this,
+					instance:commandClass.instance,
+					commandClass:commandClass.id,
+					convert: function(value) {
+						if(value) {
+							return 100;
+						} else {
+							return 0;
+						}
+									
+					}
+				}));
+
+				service.getCharacteristic(Characteristic.Brightness).on('get', this.getSensorValue.bind(
+				{
+					dh: "level",
+					valueHolder: "level",
+					accessory:this,
+					instance:commandClass.instance,
+					commandClass: commandClass.id,
+				}))
+				.on('set', this.setSensorValue.bind(
+				{
+					accessory:this,
+					instance:commandClass.instance,
+					commandClass:commandClass.id,
+				}));
+
+				this.registerEventListener(Characteristic.On, 
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:commandClass.instance,
+						command_class:commandClass.id,
+						dh:"level",
+						valueHolder:"level",
+						convert:function(value) {
+							return value > 0;
+						}
+					});
+				this.registerEventListener(Characteristic.Brightness, 
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:commandClass.instance,
+						command_class:commandClass.id,
+						dh:"level",
+						valueHolder:"level"
+					});
+
+				this.serviceList.push(service);
 			}
 		},
 		createBarrierAccessory : function(commandClass, serviceType) {
@@ -810,7 +884,7 @@ ZAEPlatform.prototype = {
 				sensorValue = this.convert(sensorValue);
 			}
 			this.accessory.log("Setting Sensor value at " + url + " to " + sensorValue);
-			
+
 			var body = "{\"command\":\"Set\",\"arguments\":[" + sensorValue + "]}}";
 
 			this.accessory.platform.httpRequest(url, body, "POST", "", "", true, function(error, response, responseBody) {

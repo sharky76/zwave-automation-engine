@@ -86,7 +86,7 @@ bool    cmd_timer_disable(vty_t* vty, variant_stack_t* params)
 bool    cmd_timer_set_timeout(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 512);
 
     timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
     timer->timeout = variant_get_int(stack_peek_at(params, 1));
@@ -128,7 +128,7 @@ bool    cmd_timer_set_timeout(vty_t* vty, variant_stack_t* params)
 bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 256);
 
     timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
     timer->timeout = variant_get_int(stack_peek_at(params, 1));
@@ -169,7 +169,7 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
 bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 256);
 
     const char* event_type_string = variant_get_string(stack_peek_at(params, 2));
     timer_event_type_t event_type;
@@ -205,7 +205,7 @@ bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
 bool    cmd_timer_del_interval(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 3, scene_name);
+    cli_assemble_line(params, 3, scene_name, 256);
     
     const char* event_type_string = variant_get_string(stack_peek_at(params, 2));
     timer_event_type_t event_type;
