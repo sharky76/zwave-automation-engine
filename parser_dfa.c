@@ -274,6 +274,10 @@ AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
 AlphabetToken   parser_dfa_read_next_token(state_context_t* state_context)
 {
     //state_context->pos++;
+    if(NULL == state_context->expression)
+    {
+        return A_INVALID;
+    }
 
     char ch = state_context->expression[state_context->pos++];
 

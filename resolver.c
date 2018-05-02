@@ -117,7 +117,20 @@ device_record_t*    resolver_get_device_record(const char* name)
         variant_t* record_variant = variant_hash_get(resolver->record_table, key);
         if(NULL != record_variant)
         {
-            return (device_record_t*)variant_get_ptr(record_variant);
+            device_record_t* record = (device_record_t*)variant_get_ptr(record_variant);
+
+            if(NULL != record && record->commandId != 0xff && record->nodeId != 0xff)
+            {
+                // Try to get child as well...
+                const char* parent_name = resolver_name_from_id(record->nodeId, -1, -1);
+    
+                if(NULL != parent_name)
+                {
+                    record->parent = resolver_get_device_record(parent_name);
+                }
+            }
+
+            return record;
         }
     }
 
@@ -134,6 +147,7 @@ void    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, ZWB
         new_record->nodeId = nodeId;
         new_record->instanceId = instanceId;
         new_record->commandId = commandId;
+        new_record->parent = NULL;
 
         const char* existing_name = resolver_name_from_id(nodeId, instanceId, commandId);
         if(NULL != existing_name)

@@ -22,6 +22,7 @@ typedef struct device_record_t
     int  nodeId;
     ZWBYTE  instanceId;
     ZWBYTE  commandId;
+    struct device_record_t* parent;
 } device_record_t;
 
 //#define resolver_for_each(_resolver_, _device_record_)  \

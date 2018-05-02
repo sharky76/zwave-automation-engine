@@ -290,6 +290,54 @@ ZAEPlatform.prototype = {
 					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[38]) || "Disabled";
 					this.createLightbulbAccessory(deviceDescriptor.command_classes[index], serviceType);
 					break;
+				case 241: // Custom Command Class for emulation of Security System
+					var service = new Service.SecuritySystem(this.name);
+					service.getCharacteristic(Characteristic.SecuritySystemCurrentState)
+						.on('get', this.getSensorValue.bind(
+							{
+								dh: "level",
+								valueHolder: "level",
+								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
+								commandClass:deviceDescriptor.command_classes[index].id
+							}));
+
+					service.getCharacteristic(Characteristic.SecuritySystemTargetState)
+							.on('get', this.getSensorValue.bind(
+							{
+								dh: "level",
+								valueHolder: "level",
+								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
+								commandClass:deviceDescriptor.command_classes[index].id
+							}))
+							.on('set', this.setSensorValue.bind(
+							{
+								accessory:this,
+								instance:deviceDescriptor.command_classes[index].instance,
+								commandClass:deviceDescriptor.command_classes[index].id,
+							}));
+
+					this.registerEventListener(Characteristic.SecuritySystemCurrentState, 
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:deviceDescriptor.command_classes[index].instance,
+						command_class:deviceDescriptor.command_classes[index].id,
+						dh:"level",
+					});
+
+					this.registerEventListener(Characteristic.SecuritySystemTargetState, 
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:deviceDescriptor.command_classes[index].instance,
+						command_class:deviceDescriptor.command_classes[index].id,
+						dh:"level",
+					});
+
+					this.serviceList.push(service);
+					break;
 			}
 		}
 

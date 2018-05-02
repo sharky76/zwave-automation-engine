@@ -6,6 +6,7 @@
 		<Project File="services/IFTTT/IFTTT.vpj" />
 		<Project File="libZaeUtil/libZaeUtil.vpj" />
 		<Project File="services/Mail/Mail.vpj" />
+		<Project File="vdev/SecuritySystem/SecuritySystem.vpj" />
 		<Project File="services/SMS/SMS.vpj" />
 		<Project File="vdev/SurveillanceStation/SurveillanceStation.vpj" />
 		<Project File="services/Timer/Timer.vpj" />
