@@ -130,6 +130,7 @@
 			<Dependency Project="services/Weather/Weather.vpj"/>
 			<Dependency Project="vdev/SurveillanceStation/SurveillanceStation.vpj"/>
 			<Dependency Project="vdev/SecuritySystem/SecuritySystem.vpj"/>
+			<Dependency Project="vdev/BlinkCamera/BlinkCamera.vpj"/>
 		</Dependencies>
 	</Config>
 	<Config
@@ -257,6 +258,7 @@
 			<Dependency Project="services/Weather/Weather.vpj"/>
 			<Dependency Project="vdev/SurveillanceStation/SurveillanceStation.vpj"/>
 			<Dependency Project="vdev/SecuritySystem/SecuritySystem.vpj"/>
+			<Dependency Project="vdev/BlinkCamera/BlinkCamera.vpj"/>
 		</Dependencies>
 	</Config>
 	<CustomFolders>

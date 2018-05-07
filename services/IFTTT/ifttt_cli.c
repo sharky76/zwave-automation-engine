@@ -242,34 +242,36 @@ bool    cmd_ifttt_action_command(vty_t* vty, variant_stack_t* params)
             {
                 LOG_ERROR(DT_IFTTT, "Unable to process request data");
             }
-
-            json_object_object_foreach(request_obj, key, value)
+            else
             {
-                enum json_type type = json_object_get_type(value);
-                variant_t* value_variant = NULL;
-                switch(type)
+                json_object_object_foreach(request_obj, key, value)
                 {
-                case json_type_boolean:
-                    value_variant = variant_create_bool(json_object_get_boolean(value));
-                    break;
-                case json_type_double:
-                    value_variant = variant_create_float(json_object_get_double(value));
-                    break;
-                case json_type_int:
-                    value_variant = variant_create_int32(DT_INT32, json_object_get_int(value));
-                    break;
-                case json_type_string:
-                    value_variant = variant_create_string(strdup(json_object_get_string(value)));
-                    break;
+                    enum json_type type = json_object_get_type(value);
+                    variant_t* value_variant = NULL;
+                    switch(type)
+                    {
+                    case json_type_boolean:
+                        value_variant = variant_create_bool(json_object_get_boolean(value));
+                        break;
+                    case json_type_double:
+                        value_variant = variant_create_float(json_object_get_double(value));
+                        break;
+                    case json_type_int:
+                        value_variant = variant_create_int32(DT_INT32, json_object_get_int(value));
+                        break;
+                    case json_type_string:
+                        value_variant = variant_create_string(strdup(json_object_get_string(value)));
+                        break;
+                    }
+    
+                    if(NULL != value_variant)
+                    {
+                        service_args_stack_add("Expression.ProcessTemplate", key, value_variant);
+                    }
                 }
-
-                if(NULL != value_variant)
-                {
-                    service_args_stack_add("Expression.ProcessTemplate", key, value_variant);
-                }
+    
+                json_object_put(request_obj);
             }
-
-            json_object_put(request_obj);
 
             // Now process the command template
             service_method_t* process_template_method = builtin_service_manager_get_method("Expression", "ProcessTemplate");
