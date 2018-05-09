@@ -26,6 +26,12 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
 
     DT_SECURITY_SYSTEM = vdev_id;
     SS_State = DISARMED;
+
+    command_parser_register_symbol("STAY_ARMED", variant_create_byte(DT_INT8, STAY_ARMED));
+    command_parser_register_symbol("AWAY_ARM", variant_create_byte(DT_INT8, AWAY_ARM));
+    command_parser_register_symbol("NIGHT_ARM", variant_create_byte(DT_INT8, NIGHT_ARM));
+    command_parser_register_symbol("DISARMED", variant_create_byte(DT_INT8, DISARMED));
+    command_parser_register_symbol("ALARM_TRIGGERED", variant_create_byte(DT_INT8, ALARM_TRIGGERED));
 }
 
 void    device_start()
@@ -69,7 +75,7 @@ variant_t*  update_security_system_state(va_list args)
     variant_t* new_state_variant = va_arg(args, variant_t*);
     SS_State = variant_get_byte(new_state_variant);
 
-    LOG_INFO(DT_SECURITY_SYSTEM, "Security system state set to %d\n", SS_State);
+    LOG_INFO(DT_SECURITY_SYSTEM, "Security system state set to %d", SS_State);
     char json_buf[256] = {0};
     
     snprintf(json_buf, 255, "{\"data_holder\":\"level\",\"level\":%d}",

@@ -187,7 +187,7 @@ State           parser_dfa_next_state(State source_state, AlphabetToken token)
 
 AlphabetToken   parser_dfa_get_token(const char* str, State source_state)
 {
-    if(isalpha(*str) || *str == '$' || *str == ':' || *str == '"' || *str == '[' || *str == ']' )
+    if(isalpha(*str) || *str == '$' || *str == ':' || *str == '"' || *str == '[' || *str == ']' || *str == '_')
     {
         return A_ALPHA;
     }

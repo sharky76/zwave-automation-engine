@@ -36,6 +36,12 @@ Pop the operator onto the output queue.
 Exit.
 */
 
+typedef struct reserved_word_st
+{
+    char  word[10];
+    int   value;
+} reserved_word_t;
+
 static reserved_word_t  reserved_words[] = {
     {"True", 1},
     {"False", 0},
@@ -43,6 +49,11 @@ static reserved_word_t  reserved_words[] = {
     {"Off", 0},
     {0, 0}
 };
+
+#define DYNAMIC_SYMBOL_TABLE_SIZE   100
+
+static dynamic_symbol_t dynamic_symbol_table[DYNAMIC_SYMBOL_TABLE_SIZE] = {0, 0};
+static int dynamic_symbol_table_index = 0;
 
 bool process_string_token(const char* ch, variant_stack_t* operator_stack, variant_stack_t* operand_queue);
 void process_string_operand(const char* ch, variant_stack_t* operand_queue);
@@ -565,6 +576,21 @@ bool process_string_token(const char* ch, variant_stack_t* operator_stack, varia
 
     if(!isReservedWord)
     {
+        for(int i = 0; i < dynamic_symbol_table_index && !isReservedWord; i++)
+        {
+            dynamic_symbol_t* dynamic_symbol = &dynamic_symbol_table[i];
+
+            if(strcmp(ch, dynamic_symbol->symbol) == 0)
+            {
+                variant_t* operand_token = variant_clone(dynamic_symbol->value);
+                stack_push_back(operand_queue, variant_create_variant(T_OPERAND, operand_token));
+                isReservedWord = true;
+            }
+        }
+    }
+
+    if(!isReservedWord)
+    {
         // Now lets tokenize the string and extract data to build an operant_t structure
         char* function_string = strdup((char*)ch);
         //char* tok = strtok((char*)ch, ".");
@@ -899,4 +925,14 @@ void        command_parser_print_stack(variant_stack_t* compiled_expression)
     }
 
     LOG_DEBUG(Parser, "\r\n");
+}
+
+void    command_parser_register_symbol(const char* symbol, variant_t* value)
+{
+    if(dynamic_symbol_table_index < DYNAMIC_SYMBOL_TABLE_SIZE)
+    {
+        dynamic_symbol_table[dynamic_symbol_table_index].symbol = strdup(symbol);
+        dynamic_symbol_table[dynamic_symbol_table_index].value = value;
+        dynamic_symbol_table_index++;
+    }
 }

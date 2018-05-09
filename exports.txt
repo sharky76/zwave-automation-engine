@@ -4,5 +4,6 @@
 		http_server_register_with_event_loop;
 		http_response_get_post_data;
 		builtin_service_manager_get_method;
+		command_parser_register_symbol;
 	};
 };

@@ -58,7 +58,7 @@ void update_camera_motion_detected_state(bool state)
 {
     camera_motion_detected_event = state;
 
-    LOG_INFO(DT_BLINK_CAMERA, "Blink Camera motion detection set to %d\n", camera_motion_detected_event);
+    LOG_INFO(DT_BLINK_CAMERA, "Blink Camera motion detection set to %d", camera_motion_detected_event);
     char json_buf[256] = {0};
 
     // Generate REST API event

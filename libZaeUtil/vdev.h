@@ -94,6 +94,7 @@ stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, 
 */
 
 #define VDEV_DATA_CHANGE_EVENT  "VirtualDeviceDataChangeEvent"
+void    command_parser_register_symbol(const char* symbol, variant_t* value);
 
 void    vdev_create(vdev_t** vdev, int vdev_id);
 void    vdev_cli_create(cli_node_t* parent_node);

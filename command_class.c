@@ -49,6 +49,7 @@ static command_class_t command_class_table[] = {
                             NULL, 0, NULL},                           
                            &command_class_eval_battery},
     {0x71, "Alarm",        {"Get", 1, "<type>",  
+                            "Event", 1, "<type>",
                             "Set", 2, "<type>, <level>", 
                             NULL, 0, NULL},  
                            &command_class_eval_alarm},
@@ -352,19 +353,15 @@ variant_t*   command_class_eval_alarm(const char* method, device_record_t* recor
     if(strcmp(method, "Get") == 0)
     {
         variant_t* type_var = va_arg(args, variant_t*);
-        //variant_t* event_var = va_arg(args, variant_t*);
-
-        /*zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
-        ctx->record = record;
-        zway_cc_alarm_get(zway, record->nodeId, record->instanceId, variant_get_int(type_var), variant_get_int(event_var), zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
-        // Block here...
-        if(0 != event_wait(DataCallback, COMMAND_DATA_READY_EVENT, 1000))
-        {
-            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
-        }*/
-
         char buf[128] = {0};
         snprintf(buf, 127, "%d.status", variant_get_int(type_var));
+        ret_val = command_class_read_data(record, buf);
+    }
+    else if(strcmp(method, "Event") == 0)
+    {
+        variant_t* type_var = va_arg(args, variant_t*);
+        char buf[128] = {0};
+        snprintf(buf, 127, "%d.event", variant_get_int(type_var));
         ret_val = command_class_read_data(record, buf);
     }
     else if(strcmp(method, "Set") == 0)

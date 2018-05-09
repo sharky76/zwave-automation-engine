@@ -62,13 +62,14 @@ typedef struct service_method_operator_data_t
     
 } service_method_operator_data_t;
 
-typedef struct reserved_word_st
+typedef struct dynamic_symbol_t
 {
-    char  word[10];
-    int   value;
-} reserved_word_t;
+    char*      symbol;
+    variant_t* value;
+} dynamic_symbol_t;
 
 variant_stack_t*    command_parser_compile_expression(const char* expression, bool* isOk);
 variant_t*          command_parser_execute_expression(variant_stack_t* compiled_expression);
 void                command_parser_print_stack(variant_stack_t* compiled_expression);
+void                command_parser_register_symbol(const char* symbol, variant_t* value);
 
