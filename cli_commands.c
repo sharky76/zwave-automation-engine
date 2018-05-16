@@ -177,6 +177,11 @@ int     cli_command_quit(int count, int key)
     siglongjmp(jmpbuf, 1);
 }
 
+void child_cmd_stopped_handler(int sig)
+{
+    pid_t pid = waitpid((pid_t)(-1), 0, 0);
+}
+
 bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 {
     cmd_tree_node_t* cmd_node;
@@ -225,6 +230,13 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
         }
         else
         {
+            // parent
+            struct sigaction sa;
+            sa.sa_handler = &child_cmd_stopped_handler;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+            sigaction(SIGCHLD, &sa, 0);
+
             retVal = cli_command_exec_custom_node(node, vty_pipe, line);
 
             // Insert EOF char

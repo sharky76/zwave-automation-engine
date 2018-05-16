@@ -422,6 +422,7 @@ int main (int argc, char *argv[])
     }
     else
     {
+        printf("Error initializing Zway: %d\n", r);
         LOG_ERROR(General, "Error initializing Zway: %d", r);
     }
 
