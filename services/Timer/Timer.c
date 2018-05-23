@@ -114,18 +114,21 @@ variant_t*  timer_stop(service_method_t* method, va_list args)
 {
     bool retVal = false;
     variant_t* name_variant = va_arg(args, variant_t*);
-    stack_lock(timer_list);
-    stack_for_each(timer_list, timer_variant)
+    if(NULL != variant_get_string(name_variant))
     {
-        timer_info_t* timer = variant_get_ptr(timer_variant);
-        if(strcmp(timer->name, variant_get_string(name_variant)) == 0)
+        stack_lock(timer_list);
+        stack_for_each(timer_list, timer_variant)
         {
-            stack_remove(timer_list, timer_variant);
-            variant_free(timer_variant);
-            retVal = true;
+            timer_info_t* timer = variant_get_ptr(timer_variant);
+            if(strcmp(timer->name, variant_get_string(name_variant)) == 0)
+            {
+                stack_remove(timer_list, timer_variant);
+                variant_free(timer_variant);
+                retVal = true;
+            }
         }
+        stack_unlock(timer_list);
     }
-    stack_unlock(timer_list);
 
     return variant_create_bool(retVal);
 }

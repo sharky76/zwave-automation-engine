@@ -9,6 +9,7 @@ char** config_list = NULL;
 bool    weather_cli_set_location(vty_t* vty, variant_stack_t* params);
 bool    weather_cli_set_metric(vty_t* vty, variant_stack_t* params);
 bool    weather_cli_set_imperial(vty_t* vty, variant_stack_t* params);
+bool    weather_cli_cache_timeout(vty_t* vty, variant_stack_t* params);
 
 cli_node_t* weather_node;
 
@@ -16,6 +17,7 @@ cli_command_t    weather_command_list[] = {
     {"location country-code WORD zip INT",   &weather_cli_set_location,  "Set location. Country code is 2-letter code (us, ca, etc...)"},
     {"units metric", &weather_cli_set_metric, "Set metric units"},
     {"units imperial", &weather_cli_set_imperial, "Set imperial units"},
+    {"cache-timeout INT", &weather_cli_cache_timeout, "Set weather cache timeout in seconds"},
     {NULL, NULL, NULL}
 };
 
@@ -25,6 +27,7 @@ void    weather_cli_init(cli_node_t* parent_node)
     weather_temp_units = strdup("imperial");
     weather_country_code = strdup("us");
     weather_zip = 0;
+    weather_cache_timeout_sec = 3600;
 }
 
 char**  weather_cli_get_config(vty_t* vty)
@@ -71,3 +74,7 @@ bool    weather_cli_set_imperial(vty_t* vty, variant_stack_t* params)
     weather_temp_units = strdup("imperial");
 }
 
+bool    weather_cli_cache_timeout(vty_t* vty, variant_stack_t* params)
+{
+    weather_cache_timeout_sec = variant_get_int(stack_peek_at(params, 1));
+}

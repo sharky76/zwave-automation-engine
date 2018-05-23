@@ -7,6 +7,8 @@
 char*  weather_country_code;
 int    weather_zip;
 char*  weather_temp_units;
+int    weather_cache_timeout_sec;
+
 int    DT_WEATHER;
 
 void   weather_event_handler(const char* sender, event_t* event);

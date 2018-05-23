@@ -54,7 +54,7 @@ void    weather_cache_refresh()
 {
     time_t query_time = time(NULL);
 
-    if(query_time - weather_cache.cache_age < 600)
+    if(query_time - weather_cache.cache_age < weather_cache_timeout_sec)
     {
         LOG_DEBUG(DT_WEATHER, "Weather cache is current");
         return;

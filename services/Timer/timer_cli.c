@@ -21,8 +21,8 @@ cli_command_t    timer_command_list[] = {
     {"no enable",    cmd_timer_disable, "Disable timer service"},
     {"timeout INT scene|command LINE", cmd_timer_set_timeout, "Start timer"},
     {"interval INT scene|command LINE", cmd_timer_set_interval, "Start periodic timer"},
-    {"no timeout scene|command LINE", cmd_timer_del_timeout, "Stop timer"},
-    {"no interval scene|command LINE", cmd_timer_del_interval, "Stop periodic timer"},
+    {"no timeout INT scene|command LINE", cmd_timer_del_timeout, "Stop timer"},
+    {"no interval INT scene|command LINE", cmd_timer_del_interval, "Stop periodic timer"},
     {NULL,           NULL,               NULL}
 };
 
@@ -169,9 +169,10 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
 bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 3, scene_name, 256);
+    cli_assemble_line(params, 4, scene_name, 256);
 
-    const char* event_type_string = variant_get_string(stack_peek_at(params, 2));
+    int timeout = variant_get_int(stack_peek_at(params, 2));
+    const char* event_type_string = variant_get_string(stack_peek_at(params, 3));
     timer_event_type_t event_type;
 
     if(strcmp(event_type_string, "scene") == 0)
@@ -188,7 +189,8 @@ bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
         timer_info_t* timer = (timer_info_t*)variant_get_ptr(timer_variant);
         if(timer->event_type == event_type && 
            strcmp(timer->name, scene_name) == 0 && 
-           timer->singleshot == true)
+           timer->singleshot == true && 
+           timer->timeout == timeout)
         {
             stack_remove(timer_list_static, timer_variant);
             variant_free(timer_variant);
@@ -205,9 +207,10 @@ bool    cmd_timer_del_timeout(vty_t* vty, variant_stack_t* params)
 bool    cmd_timer_del_interval(vty_t* vty, variant_stack_t* params)
 {
     char scene_name[256] = {0};
-    cli_assemble_line(params, 3, scene_name, 256);
+    cli_assemble_line(params, 4, scene_name, 256);
     
-    const char* event_type_string = variant_get_string(stack_peek_at(params, 2));
+    int timeout = variant_get_int(stack_peek_at(params, 2));
+    const char* event_type_string = variant_get_string(stack_peek_at(params, 3));
     timer_event_type_t event_type;
 
     if(strcmp(event_type_string, "scene") == 0)
@@ -224,7 +227,8 @@ bool    cmd_timer_del_interval(vty_t* vty, variant_stack_t* params)
         timer_info_t* timer = (timer_info_t*)variant_get_ptr(timer_variant);
         if(timer->event_type == event_type && 
            strcmp(timer->name, scene_name) == 0 && 
-           timer->singleshot == false)
+           timer->singleshot == false && 
+           timer->timeout == timeout)
         {
             stack_remove(timer_list_static, timer_variant);
             variant_free(timer_variant);
