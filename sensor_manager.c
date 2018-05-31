@@ -7,7 +7,11 @@
 void delete_sensor_descriptor(void* arg)
 {
     sensor_descriptor_t* sensor_desc = (sensor_descriptor_t*)arg;
-    free(sensor_desc->name);
+
+    for(int i = 0; i < 256; i++)
+    {
+        free(sensor_desc->name[i]);
+    }
     variant_hash_free(sensor_desc->sensor_roles);
     variant_hash_free(sensor_desc->alarm_roles);
     variant_hash_free(sensor_desc->supported_notification_set);
@@ -23,7 +27,8 @@ sensor_descriptor_t*    sensor_descriptor_new(int node_id)
     sensor_desc->node_id = node_id;
     sensor_desc->sensor_roles = variant_hash_init();
     sensor_desc->alarm_roles = variant_hash_init();
-    sensor_desc->name = NULL;
+    sensor_desc->multi_instance = false;
+    memset(sensor_desc->name, 0, sizeof(char*)*256);
     sensor_desc->supported_notification_set = variant_hash_init();
 
     return sensor_desc;
@@ -88,20 +93,30 @@ void    sensor_manager_set_alarm_role(int node_id, int alarm_id, const char* rol
 
 void    sensor_manager_set_name(int node_id, const char* name)
 {
+    sensor_manager_set_instance_name(node_id, 0, name);
+}
+
+void    sensor_manager_set_instance_name(int node_id, int instance_id, const char* name)
+{
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
 
     if(NULL == sensor_desc_variant)
     {
         sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
-        sensor_desc->name = strdup(name);
+        sensor_desc->name[instance_id] = strdup(name);
 
         variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
     }
     else
     {
         sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
-        free(sensor_desc->name);
-        sensor_desc->name = strdup(name);
+        free(sensor_desc->name[instance_id]);
+        sensor_desc->name[instance_id] = strdup(name);
+
+        if(instance_id > 0)
+        {
+            sensor_desc->multi_instance = true;
+        }
     }
 }
 
@@ -206,9 +221,18 @@ struct json_object*    sensor_manager_serialize(int node_id)
 
     if(NULL != sensor_desc)
     {
-        if(NULL != sensor_desc->name)
-        {
-            json_object_object_add(result, "name", json_object_new_string(sensor_desc->name));
+        if(NULL != sensor_desc->name[0])
+        {   
+            struct json_object* names = json_object_new_array();
+            for(int i = 0; i < 256; i++)
+            {
+                if(NULL != sensor_desc->name[i])
+                {
+                    json_object_array_add(names, json_object_new_string(sensor_desc->name[i]));
+                }
+            }
+
+            json_object_object_add(result, "name", names);
         }
 
         if(sensor_desc->sensor_roles->count > 0)

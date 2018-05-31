@@ -23,11 +23,11 @@ OUTFILE=$(OUTDIR)/BlinkCamera.so
 CFG_INC=-I../../libZaeUtil 
 CFG_LIB=
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/BlinkCamera.o 
+COMMON_OBJ=$(OUTDIR)/BlinkCamera.o $(OUTDIR)/BlinkCamera_config.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/BlinkCamera.o 
+ALL_OBJ=$(OUTDIR)/BlinkCamera.o $(OUTDIR)/BlinkCamera_config.o 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c   -g -fPIC -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  "-D_GNU_SOURCE" -g -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
 LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -shared -fPIC -L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
@@ -65,11 +65,11 @@ OUTFILE=$(OUTDIR)/BlinkCamera.so
 CFG_INC=-I../../libZaeUtil 
 CFG_LIB=
 CFG_OBJ=
-COMMON_OBJ=$(OUTDIR)/BlinkCamera.o 
+COMMON_OBJ=$(OUTDIR)/BlinkCamera.o $(OUTDIR)/BlinkCamera_config.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
-ALL_OBJ=$(OUTDIR)/BlinkCamera.o 
+ALL_OBJ=$(OUTDIR)/BlinkCamera.o $(OUTDIR)/BlinkCamera_config.o 
 
-COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c   -fPIC -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
+COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  "-D_GNU_SOURCE" -fPIC -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
 LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -shared -fPIC -L/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/lib -lcurl -ljson-c -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules

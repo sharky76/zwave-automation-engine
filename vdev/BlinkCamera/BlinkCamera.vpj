@@ -12,7 +12,7 @@
 		Version="1"
 		OutputFile="%bdBlinkCamera.so"
 		CompilerConfigName="Latest Version"
-		Defines="">
+		Defines='"/D_GNU_SOURCE"'>
 		<Menu>
 			<Target
 				Name="Compile"
@@ -23,7 +23,9 @@
 				OutputExts="*.o"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup %defd -g -fPIC -o "%bd%n%oe" %i %f'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup %defd -g -fPIC %~other -o "%bd%n%oe" %i %f'
+					OtherOptions="-std=c99"/>
 			</Target>
 			<Target
 				Name="Link"
@@ -110,7 +112,7 @@
 		Version="1"
 		OutputFile="%bdBlinkCamera.so"
 		CompilerConfigName="Latest Version"
-		Defines="">
+		Defines='"/D_GNU_SOURCE"'>
 		<Menu>
 			<Target
 				Name="Compile"
@@ -121,7 +123,9 @@
 				OutputExts="*.o"
 				SaveOption="SaveCurrent"
 				RunFromDir="%rw">
-				<Exec CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup %defd -fPIC -o "%bd%n%oe" %i %f'/>
+				<Exec
+					CmdLine='/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c %xup %defd -fPIC %~other -o "%bd%n%oe" %i %f'
+					OtherOptions="-std=c99"/>
 			</Target>
 			<Target
 				Name="Link"
@@ -206,10 +210,13 @@
 			Name="Source Files"
 			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d">
 			<F N="BlinkCamera.c"/>
+			<F N="BlinkCamera_config.c"/>
 		</Folder>
 		<Folder
 			Name="Header Files"
-			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if"/>
+			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
+			<F N="BlinkCamera_config.h"/>
+		</Folder>
 		<Folder
 			Name="Resource Files"
 			Filters="*.ico;*.cur;*.dlg"/>

@@ -27,14 +27,27 @@ typedef struct vdev_event_data_t
     void*    data;
 } vdev_event_data_t;
 
+/*
 typedef struct vdev_command_t
 {
-    int   command_id;
+    bool  is_command_class;
+
     char* name;
     int   nargs;
     char* help;
-    char* data_holder;
     variant_t*   (*command_impl)(va_list);
+} vdev_command_t;*/
+
+typedef struct vdev_command_t
+{
+    bool  is_command_class;
+
+    char* name;
+    int   nargs;
+    char* help;
+    int   command_id;
+    char* data_holder;
+    variant_t*   (*command_impl)(device_record_t*, va_list);
 } vdev_command_t;
 
 typedef struct vdev_t
@@ -60,17 +73,19 @@ typedef struct vdev_t
 {   \
 vdev_command_t* cmd = (vdev_command_t*)calloc(1, sizeof(vdev_command_t));  \
 cmd->name = strdup(_name);  \
-cmd->command_id = 0;      \
+cmd->command_id = 0; \
+cmd->data_holder = NULL; \
+cmd->is_command_class = false;      \
 cmd->nargs = _nargs;  \
 cmd->help = strdup(_help);    \
 cmd->command_impl = _callback;    \
-cmd->data_holder = NULL;        \
 stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, NULL)); \
 }
 
 #define VDEV_ADD_COMMAND_CLASS(_name, _id, _dh, _nargs, _callback, _help)  \
 {   \
 vdev_command_t* cmd = (vdev_command_t*)calloc(1, sizeof(vdev_command_t));  \
+cmd->is_command_class = true; \
 cmd->name = strdup(_name);  \
 cmd->command_id = _id;      \
 cmd->nargs = _nargs;  \

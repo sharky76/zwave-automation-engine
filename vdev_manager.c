@@ -231,7 +231,8 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
 
         if(strcmp(cmd->name, method) == 0 && (vdev_record->commandId == INVALID_INSTANCE || cmd->command_id == vdev_record->commandId))
         {
-            return cmd->command_impl(args);
+            //return cmd->command_impl(args);
+            return cmd->command_impl(vdev_record, args);
         }
     }
     

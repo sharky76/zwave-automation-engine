@@ -93,8 +93,11 @@ ZAEPlatform.prototype = {
 		this.platform = platform;
 		// install event handler for each command class
 		this.nodeId = deviceDescriptor.node_id;
-		this.name = (deviceDescriptor.descriptor && deviceDescriptor.descriptor.name) || deviceDescriptor.name;
-		this.uuid_base = "UUID" + this.nodeId;
+
+		this.instanceId = deviceDescriptor.instance_id || 0;
+		this.name = (deviceDescriptor.descriptor && deviceDescriptor.descriptor.name && deviceDescriptor.descriptor.name[this.instanceId]) || deviceDescriptor.name;
+		
+		this.uuid_base = "UUID" + this.nodeId + "-" + deviceDescriptor.instance_id;
 
 		this.commands = deviceDescriptor.command_classes;
 		this.config = config;

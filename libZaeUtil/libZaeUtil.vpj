@@ -225,6 +225,7 @@
 			<F N="event_log.h"/>
 			<F N="lcp.h"/>
 			<F N="logger.h"/>
+			<F N="resolver.h"/>
 			<F N="service.h"/>
 			<F N="service_args.h"/>
 			<F N="socket.h"/>
@@ -254,6 +255,7 @@
 			<F N="event_log.c"/>
 			<F N="lcp.c"/>
 			<F N="logger.c"/>
+			<F N="resolver.c"/>
 			<F N="service.c"/>
 			<F N="service_args.c"/>
 			<F N="socket.c"/>

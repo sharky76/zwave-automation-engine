@@ -24,16 +24,16 @@ bool SS_device_started;
 
 static int timer_tick_counter;
 static int active_event_tick_counter;
-variant_t*  get_motion_events(va_list args);
-variant_t*  get_all_motion_events(va_list args);
-variant_t*  get_camera_list(va_list args);
-variant_t*  get_camera_name_by_id(va_list args);
-variant_t*  get_snapshot_path(va_list args);
-variant_t*  get_event_list(va_list args);
-variant_t*  get_event_snapshot(va_list args);
-variant_t*  get_event_snapshot_range(va_list args);
-variant_t*  get_camera_snapshot(va_list args);
-variant_t*  get_model_info(va_list args);
+variant_t*  get_motion_events(device_record_t* record,va_list args);
+variant_t*  get_all_motion_events(device_record_t* record, va_list args);
+variant_t*  get_camera_list(device_record_t* record,va_list args);
+variant_t*  get_camera_name_by_id(device_record_t* record,va_list args);
+variant_t*  get_snapshot_path(device_record_t* record,va_list args);
+variant_t*  get_event_list(device_record_t* record,va_list args);
+variant_t*  get_event_snapshot(device_record_t* record,va_list args);
+variant_t*  get_event_snapshot_range(device_record_t* record,va_list args);
+variant_t*  get_camera_snapshot(device_record_t* record,va_list args);
+variant_t*  get_model_info(device_record_t* record, va_list args);
 
 void        device_start(); 
 void        timer_tick_handler(event_t* pevent, void* context);
@@ -104,7 +104,7 @@ SS_event_keeper_t* get_event_keeper(int cam_id)
     return keeper;
 }
 
-variant_t*  get_motion_events(va_list args)
+variant_t*  get_motion_events(device_record_t* record,va_list args)
 {
     variant_t* camera_id_var = va_arg(args, variant_t*);
     int cam_id = variant_get_int(camera_id_var);
@@ -125,7 +125,7 @@ void    aggregate_motion_events(hash_node_data_t* node_data, void* arg)
     *event_count += ev->event_count;
 }
 
-variant_t*  get_all_motion_events(va_list args)
+variant_t*  get_all_motion_events(device_record_t* record, va_list args)
 {
     int total_event_count = 0;
     variant_hash_for_each(SS_event_keeper_table, aggregate_motion_events, (void*)&total_event_count);
@@ -134,7 +134,7 @@ variant_t*  get_all_motion_events(va_list args)
 }
 
 
-variant_t*  get_event_list(va_list args)
+variant_t*  get_event_list(device_record_t* record,va_list args)
 {
     variant_t* camera_id_var = va_arg(args, variant_t*);
     int cam_id = variant_get_int(camera_id_var);
@@ -158,7 +158,7 @@ variant_t*  get_event_list(va_list args)
     //SS_api_get_events_info(cam_id);
 }
 
-variant_t*  get_event_snapshot(va_list args)
+variant_t*  get_event_snapshot(device_record_t* record, va_list args)
 {
    // printf("Event snapshot start\n");
 
@@ -199,7 +199,7 @@ variant_t*  get_event_snapshot(va_list args)
     return variant_create_bool(false);
 }
 
-variant_t*  get_event_snapshot_range(va_list args)
+variant_t*  get_event_snapshot_range(device_record_t* record, va_list args)
 {
     variant_t* camera_id_var = va_arg(args, variant_t*);
     int cam_id = variant_get_int(camera_id_var);
@@ -212,7 +212,7 @@ variant_t*  get_event_snapshot_range(va_list args)
 
 }
 
-variant_t* get_snapshot_path(va_list args)
+variant_t* get_snapshot_path(device_record_t* record, va_list args)
 {
     variant_t* camera_id_var = va_arg(args, variant_t*);
     int cam_id = variant_get_int(camera_id_var);
@@ -233,7 +233,7 @@ variant_t* get_snapshot_path(va_list args)
     }
 }
 
-variant_t*  get_camera_name_by_id(va_list args)
+variant_t*  get_camera_name_by_id(device_record_t* record, va_list args)
 {
     variant_t* camera_id_var = va_arg(args, variant_t*);
     int cam_id = variant_get_int(camera_id_var);
@@ -272,7 +272,7 @@ void process_camera_info_table(hash_node_data_t* node_data, void* arg)
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "%s", cam_name_buf);
 }
 
-variant_t*  get_camera_list(va_list args)
+variant_t*  get_camera_list(device_record_t* record, va_list args)
 {
     //SS_api_get_sid();
     SS_api_get_camera_list();
@@ -403,7 +403,7 @@ void        timer_tick_handler(event_t* pevent, void* context)
     }
 }
 
-variant_t*  get_camera_snapshot(va_list args)
+variant_t*  get_camera_snapshot(device_record_t* record, va_list args)
 {
     char* snapshot;
     variant_t* camera_id_var = va_arg(args, variant_t*);
@@ -413,7 +413,7 @@ variant_t*  get_camera_snapshot(va_list args)
     return variant_create_string(snapshot);
 }
 
-variant_t*  get_model_info(va_list args)
+variant_t*  get_model_info(device_record_t* record, va_list args)
 {
     char* model_info = "{\"vendor\":\"Synology\"}";
     return variant_create_string(strdup(model_info));

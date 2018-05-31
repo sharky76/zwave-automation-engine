@@ -35,7 +35,7 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
 	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
 	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -54,7 +54,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
 	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
 	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -93,6 +93,8 @@ deps:
 	@(cd services/Timer/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd services/Weather/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -113,6 +115,8 @@ cleanall: clean
 	@(cd services/Timer/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd services/Weather/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif
 
 #
@@ -136,7 +140,7 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
 	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
 	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -155,7 +159,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
 	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
 	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/resolver.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -194,6 +198,8 @@ deps:
 	@(cd services/Timer/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd services/Weather/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -214,4 +220,6 @@ cleanall: clean
 	@(cd services/Timer/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd services/Weather/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif

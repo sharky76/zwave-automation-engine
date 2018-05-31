@@ -96,7 +96,7 @@ void    show_resolver_helper(device_record_t* record, void* arg)
 
     if(record->devtype == ZWAVE)
     {
-        if(record->instanceId != 255)
+        if(record->instanceId != -1)
         {
             vty_write(vty, "resolver %s%s%s node-id %d instance %d command-class %d%s", (device_name_has_space)? "\"" : "", 
                                                                                         record->deviceName, 
@@ -111,7 +111,7 @@ void    show_resolver_helper(device_record_t* record, void* arg)
     }
     else
     {
-        if(record->instanceId != 255)
+        if(record->instanceId != -1)
         {
             vty_write(vty, "resolver %s vdev-id %d instance %d command-class %d%s", record->deviceName, record->nodeId, record->instanceId, record->commandId, VTY_NEWLINE(vty));
         }

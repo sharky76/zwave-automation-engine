@@ -401,8 +401,6 @@
 		<F N="parser_dfa.h"/>
 		<F N="picohttpparser.c"/>
 		<F N="picohttpparser.h"/>
-		<F N="resolver.c"/>
-		<F N="resolver.h"/>
 		<F N="resolver.json"/>
 		<F N="scene.c"/>
 		<F N="scene.h"/>

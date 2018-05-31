@@ -10,10 +10,10 @@ int  DT_SECURITY_SYSTEM;
 SecuritySystemState_t    SS_State;
 
 void        device_start(); 
-variant_t*  get_model_info(va_list args);
-variant_t*  get_security_system_state(va_list args);
-variant_t*  set_security_system_state(va_list args);
-variant_t*  update_security_system_state(va_list args);
+variant_t*  get_model_info(device_record_t* record, va_list args);
+variant_t*  get_security_system_state(device_record_t* record, va_list args);
+variant_t*  set_security_system_state(device_record_t* record, va_list args);
+variant_t*  update_security_system_state(device_record_t* record, va_list args);
 
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
@@ -41,20 +41,20 @@ void    device_start()
     LOG_INFO(DT_SECURITY_SYSTEM, "Security System device started");
 }
 
-variant_t*  get_model_info(va_list args)
+variant_t*  get_model_info(device_record_t* record, va_list args)
 {
     char* model_info = "{\"vendor\":\"Alex\"}";
     return variant_create_string(strdup(model_info));
 }
 
-variant_t*  get_security_system_state(va_list args)
+variant_t*  get_security_system_state(device_record_t* record, va_list args)
 {
     return variant_create_byte(DT_INT8, SS_State);
 }
 
-variant_t*  set_security_system_state(va_list args)
+variant_t*  set_security_system_state(device_record_t* record, va_list args)
 {
-    update_security_system_state(args);
+    update_security_system_state(record, args);
 
     // Notify system about security state change
     vdev_post_event(DT_SECURITY_SYSTEM, COMMAND_CLASS_SECURITY_SYSTEM, 0, VDEV_DATA_CHANGE_EVENT, (void*)SS_State);
@@ -70,7 +70,7 @@ variant_t*  set_security_system_state(va_list args)
  * @param event 
  * @param context 
  */
-variant_t*  update_security_system_state(va_list args)
+variant_t*  update_security_system_state(device_record_t* record, va_list args)
 {
     variant_t* new_state_variant = va_arg(args, variant_t*);
     SS_State = variant_get_byte(new_state_variant);

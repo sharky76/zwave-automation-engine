@@ -1,5 +1,5 @@
 #include "Resolver.h"
-#include "../resolver.h"
+#include <resolver.h>
 #include "service_args.h"
 #include "logger.h"
 #include "stack.h"
@@ -10,6 +10,7 @@ variant_t*  name_from_id_impl(struct service_method_t* method, va_list args);
 variant_t*  get_list_impl(struct service_method_t* method, va_list args);
 variant_t*  get_node_list_impl(struct service_method_t* method, va_list args);
 variant_t*  get_node_list_for_command_id_impl(struct service_method_t* method, va_list args);
+variant_t*  get_instance_list_impl(struct service_method_t* method, va_list args);
 
 builtin_service_t*  resolver_service_create(hash_table_t* service_table)
 {
@@ -18,6 +19,7 @@ builtin_service_t*  resolver_service_create(hash_table_t* service_table)
     builtin_service_add_method(service, "GetListOfCommandIds", "Return list of devices resolved names for command id (arg: command class) ", 1, get_list_impl);
     builtin_service_add_method(service, "GetListOfNodes", "Return list of devices's node id", 0, get_node_list_impl);
     builtin_service_add_method(service, "GetListOfNodesForCommandId", "Return list of devices's node ids having command id (arg: cmd id) ", 1, get_node_list_for_command_id_impl);
+    builtin_service_add_method(service, "GetListOfInstances", "Return list of device instances (arg: node ID, command ID)", 2, get_instance_list_impl);
 
     return service;
 }
@@ -70,7 +72,7 @@ variant_t*  get_list_impl(struct service_method_t* method, va_list args)
 void device_node_id_visitor(device_record_t* record, void* arg)
 {
     cmd_class_data_t* data = (cmd_class_data_t*)arg;
-    if(record->commandId == 0xff)
+    if(record->commandId == -1)
     {
         stack_push_back(data->cmd_class_list, variant_create_int32(DT_INT32, record->nodeId));
     }
@@ -112,3 +114,38 @@ variant_t*  get_node_list_for_command_id_impl(struct service_method_t* method, v
 
    return variant_create_list(cmd_class_list);
 }
+
+typedef struct instance_data_t
+{
+    int node_id;
+    int cmd_class;
+    variant_stack_t* cmd_class_list;
+} instance_data_t;
+
+
+void device_instance_visitor(device_record_t* record, void* arg)
+{
+    instance_data_t* data = (instance_data_t*)arg;
+    if(record->commandId == data->cmd_class && record->nodeId == data->node_id)
+    {
+        stack_push_back(data->cmd_class_list, variant_create_ptr(DT_PTR, record, variant_delete_none));
+    }
+}
+
+variant_t*  get_instance_list_impl(struct service_method_t* method, va_list args)
+{
+    variant_t* node_id_variant = va_arg(args, variant_t*);
+    variant_t* cmd_class_variant = va_arg(args, variant_t*);
+    variant_stack_t* cmd_class_list = stack_create();
+
+    instance_data_t data = {
+        .cmd_class_list = cmd_class_list,
+        .cmd_class = variant_get_int(cmd_class_variant),
+        .node_id = variant_get_int(node_id_variant)
+    };
+
+    resolver_for_each(device_instance_visitor, (void*)&data);
+
+   return variant_create_list(cmd_class_list);
+}
+
