@@ -28,6 +28,7 @@
 #include "vty_io.h"
 #include "cli_vdev.h"
 #include "cli_rest.h"
+#include "cli_homebridge.h"
 #include "hash.h"
 #include "user_manager.h"
 
@@ -140,6 +141,8 @@ void    cli_init()
     cli_logger_init(root_node);
     cli_auth_init(root_node);
     cli_rest_init(root_node);
+    cli_homebridge_init(root_node);
+
     //current_node = root_node;
 }
 

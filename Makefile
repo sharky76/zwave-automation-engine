@@ -27,15 +27,15 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
 	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
-	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
-	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_homebridge.o \
+	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o \
+	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+	$(OUTDIR)/cli_vdev.o $(OUTDIR)/command_class.o \
+	$(OUTDIR)/command_parser.o $(OUTDIR)/config.o \
+	$(OUTDIR)/data_callbacks.o $(OUTDIR)/device_callbacks.o \
+	$(OUTDIR)/homebridge_manager.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -46,15 +46,15 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
 	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
-	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
-	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_homebridge.o \
+	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o \
+	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+	$(OUTDIR)/cli_vdev.o $(OUTDIR)/command_class.o \
+	$(OUTDIR)/command_parser.o $(OUTDIR)/config.o \
+	$(OUTDIR)/data_callbacks.o $(OUTDIR)/device_callbacks.o \
+	$(OUTDIR)/homebridge_manager.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -132,15 +132,15 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
 	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
-	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
-	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_homebridge.o \
+	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o \
+	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+	$(OUTDIR)/cli_vdev.o $(OUTDIR)/command_class.o \
+	$(OUTDIR)/command_parser.o $(OUTDIR)/config.o \
+	$(OUTDIR)/data_callbacks.o $(OUTDIR)/device_callbacks.o \
+	$(OUTDIR)/homebridge_manager.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
@@ -151,15 +151,15 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/Expression.o $(OUTDIR)/List.o $(OUTDIR)/Resolver.o \
 	$(OUTDIR)/SensorEvent.o $(OUTDIR)/builtin_service.o \
 	$(OUTDIR)/builtin_service_manager.o $(OUTDIR)/cli_auth.o \
-	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_logger.o \
-	$(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o $(OUTDIR)/cli_scene.o \
-	$(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o $(OUTDIR)/cli_vdev.o \
-	$(OUTDIR)/command_class.o $(OUTDIR)/command_parser.o \
-	$(OUTDIR)/config.o $(OUTDIR)/data_callbacks.o \
-	$(OUTDIR)/device_callbacks.o $(OUTDIR)/homebridge_manager.o \
-	$(OUTDIR)/http_server.o $(OUTDIR)/logging_modules.o \
-	$(OUTDIR)/operator.o $(OUTDIR)/parser_dfa.o \
-	$(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
+	$(OUTDIR)/cli_commands.o $(OUTDIR)/cli_homebridge.o \
+	$(OUTDIR)/cli_logger.o $(OUTDIR)/cli_resolver.o $(OUTDIR)/cli_rest.o \
+	$(OUTDIR)/cli_scene.o $(OUTDIR)/cli_sensor.o $(OUTDIR)/cli_service.o \
+	$(OUTDIR)/cli_vdev.o $(OUTDIR)/command_class.o \
+	$(OUTDIR)/command_parser.o $(OUTDIR)/config.o \
+	$(OUTDIR)/data_callbacks.o $(OUTDIR)/device_callbacks.o \
+	$(OUTDIR)/homebridge_manager.o $(OUTDIR)/http_server.o \
+	$(OUTDIR)/logging_modules.o $(OUTDIR)/operator.o \
+	$(OUTDIR)/parser_dfa.o $(OUTDIR)/picohttpparser.o $(OUTDIR)/scene.o \
 	$(OUTDIR)/scene_action.o $(OUTDIR)/scene_manager.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \

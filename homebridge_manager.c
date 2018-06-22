@@ -26,7 +26,11 @@ int homebridge_manager_init()
     {
         LOG_ADVANCED(HomebridgeManager, "Initializing Homebridge manager...");
         
-        homebridge_fd = homebridge_start();
+        if(-1 == homebridge_fd)
+        {
+            homebridge_fd = homebridge_start();
+            event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
+        }
         return homebridge_fd;
     }
     else
@@ -122,6 +126,12 @@ void homebridge_manager_stop()
 {
     event_unregister_fd(homebridge_fd);
     kill(homebridge_pid, SIGINT);
+    homebridge_fd = -1;
+}
+
+bool homebridge_manager_is_running()
+{
+    return homebridge_fd != -1;
 }
 
 void homebridge_on_event(int homebridge_fd, void* context)

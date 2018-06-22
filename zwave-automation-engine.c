@@ -323,7 +323,7 @@ int main (int argc, char *argv[])
             event_register_fd(http_socket, &cli_rest_handle_connect_event, NULL);
 
             int homebridge_fd = homebridge_manager_init();
-            event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
+            //event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
 
             // Create STD vty
             vty_t* vty_std = NULL;

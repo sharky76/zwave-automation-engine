@@ -361,6 +361,8 @@
 		<F N="cli_auth.h"/>
 		<F N="cli_commands.c"/>
 		<F N="cli_commands.h"/>
+		<F N="cli_homebridge.c"/>
+		<F N="cli_homebridge.h"/>
 		<F N="cli_logger.c"/>
 		<F N="cli_logger.h"/>
 		<F N="cli_resolver.c"/>
