@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <vty.h>
 
 char** config_list = NULL;
 
@@ -32,7 +33,7 @@ void    weather_cli_init(cli_node_t* parent_node)
 
 char**  weather_cli_get_config(vty_t* vty)
 {
-    if(NULL != config_list)
+    /*if(NULL != config_list)
     {
         char* cfg;
         int i = 0;
@@ -53,6 +54,13 @@ char**  weather_cli_get_config(vty_t* vty)
     snprintf(buf, 31, "units %s", weather_temp_units);
     config_list[1] = strdup(buf);
     return config_list;
+    */
+
+    vty_write(vty, " location country-code %s zip %d%s", weather_country_code, weather_zip, VTY_NEWLINE(vty));
+    vty_write(vty, " units %s%s", weather_temp_units, VTY_NEWLINE(vty));
+    vty_write(vty, " cache-timeout %d%s", weather_cache_timeout_sec, VTY_NEWLINE(vty));
+
+    return NULL;
 }
 
 bool    weather_cli_set_location(vty_t* vty, variant_stack_t* params)
