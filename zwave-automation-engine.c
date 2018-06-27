@@ -322,6 +322,9 @@ int main (int argc, char *argv[])
             int http_socket = http_server_get_socket(8088);
             event_register_fd(http_socket, &cli_rest_handle_connect_event, NULL);
 
+            int http_cmd_socket = http_server_get_socket(8089);
+            http_server_register_with_event_loop(http_cmd_socket, &cli_commands_handle_http_data_event, NULL);
+
             int homebridge_fd = homebridge_manager_init();
             //event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
 

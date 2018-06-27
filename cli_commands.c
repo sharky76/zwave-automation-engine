@@ -347,6 +347,23 @@ void    cli_commands_handle_data_event(int cli_socket, void* context)
     }
 }
 
+void    cli_commands_handle_http_data_event(int socket, void* context)
+{
+    vty_t* vty_ptr = (vty_t*)context;
+    vty_ptr->current_node = root_node;
+    char* str = vty_read(vty_ptr);
+    
+    if(NULL != str)
+    {
+        // Skip the first 4 chars "GET "
+        cli_command_exec(vty_ptr, str+4);
+    }
+
+    event_unregister_fd(socket);
+    vty_free(vty_ptr);
+}
+
+
 void    controller_inclusion_wait_handler(variant_t* event_data, void* context)
 {
     vty_t* vty = (vty_t*)context;

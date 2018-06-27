@@ -39,4 +39,6 @@ void    cmd_enter_root_node(vty_t* vty);
 
 void    cli_commands_handle_connect_event(int cli_socket, void* context);
 void    cli_commands_handle_data_event(int cli_socket, void* context);
+void    cli_commands_handle_http_data_event(int socket, void* context);
+
 
