@@ -37,6 +37,7 @@ typedef struct SS_event_keeper_t
     int     old_event_count;
     bool    event_active;
     variant_stack_t*    events_info_stack;
+    int     active_event_tick_counter;
 } SS_event_keeper_t;
 
 extern hash_table_t* SS_event_keeper_table;

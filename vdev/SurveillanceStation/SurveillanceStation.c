@@ -1,4 +1,5 @@
 #include <vdev.h>
+#include "resolver.h"
 #include "SurveillanceStation_cli.h"
 #include "SS_config.h"
 #include "SS_api.h"
@@ -127,10 +128,20 @@ void    aggregate_motion_events(hash_node_data_t* node_data, void* arg)
 
 variant_t*  get_all_motion_events(device_record_t* record, va_list args)
 {
-    int total_event_count = 0;
-    variant_hash_for_each(SS_event_keeper_table, aggregate_motion_events, (void*)&total_event_count);
+    SS_event_keeper_t* keeper = get_event_keeper(record->instanceId);
 
-    return variant_create_int32(DT_INT32, total_event_count);
+    //int total_event_count = 0;
+    //variant_hash_for_each(SS_event_keeper_table, aggregate_motion_events, (void*)&total_event_count);
+
+    //return variant_create_int32(DT_INT32, total_event_count);
+    if(NULL != keeper)
+    {
+        return variant_create_int32(DT_INT32, keeper->event_count);
+    }
+    else
+    {
+        return variant_create_int32(DT_INT32, 0);
+    }
 }
 
 
@@ -340,7 +351,7 @@ void SS_emit_data_change_event(SS_event_keeper_t* ev)
 
     event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
     new_entry->node_id = DT_SURVEILLANCE_STATION;
-    new_entry->instance_id = 0;
+    new_entry->instance_id = ev->camera_id;
     new_entry->command_id = COMMAND_CLASS_MOTION_EVENTS;
     new_entry->device_type = VDEV;
     new_entry->event_data = strdup(json_buf);
@@ -354,10 +365,10 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
     if(ev->event_count > ev->old_event_count)
     {
         ev->event_active = true;
-        active_event_tick_counter = 0;
+        ev->active_event_tick_counter = 0;
         SS_api_get_events_info(ev);
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, 0, VDEV_DATA_CHANGE_EVENT, ev);
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
         SS_emit_data_change_event(ev);
     }
 
@@ -368,12 +379,19 @@ void    reset_active_events(hash_node_data_t* node_data, void* arg)
 {
     SS_event_keeper_t* ev = (SS_event_keeper_t*)variant_get_ptr(node_data->data);
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
-    if(ev->event_active)
+    if(++ev->active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
     {
-        ev->event_active = false;
-        ev->event_count = ev->old_event_count = 0;
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, 0, VDEV_DATA_CHANGE_EVENT, ev);
-        SS_emit_data_change_event(ev);
+        if(ev->event_active)
+        {
+            LOG_DEBUG(DT_SURVEILLANCE_STATION, "Reset active events for camera %s", ev->camera_name);
+            ev->event_active = false;
+            ev->event_count = ev->old_event_count = 0;
+            ev->active_event_tick_counter = 0;
+            vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+            SS_emit_data_change_event(ev);
+        }
+
+        ev->active_event_tick_counter = 0;
     }
 
     ev->old_event_count = ev->event_count;
@@ -395,12 +413,7 @@ void        timer_tick_handler(event_t* pevent, void* context)
         variant_hash_for_each(SS_event_keeper_table, process_motion_event_table, NULL);
     }
 
-    if(++active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
-    {
-        LOG_DEBUG(DT_SURVEILLANCE_STATION, "Reset active events");
-        active_event_tick_counter = 0;
-        variant_hash_for_each(SS_event_keeper_table, reset_active_events, NULL);
-    }
+    variant_hash_for_each(SS_event_keeper_table, reset_active_events, NULL);
 }
 
 variant_t*  get_camera_snapshot(device_record_t* record, va_list args)

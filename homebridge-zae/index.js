@@ -880,7 +880,7 @@ ZAEPlatform.prototype = {
 				} else {
 					var json = JSON.parse(responseBody);
 
-					var binaryState = json.device_data.level;
+					var binaryState = json.device_data.level == true || json.device_data.level > 0;
 
 					this.accessory.log("Sensor " + this.accessory.nodeId + " CC " + this.commandClass + " binary state is currently %s", binaryState);
 					callback(null, binaryState);

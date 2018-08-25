@@ -91,7 +91,8 @@ void update_camera_motion_detected_state(int instance, bool state)
     if(NULL != entry)
     {
         entry->camera_motion_detected_event = state;
-    
+        entry->active_event_tick_counter = 0;
+
         LOG_INFO(DT_BLINK_CAMERA, "Blink Camera %s motion detection set to %d", entry->name, entry->camera_motion_detected_event);
         char json_buf[256] = {0};
     
@@ -142,7 +143,6 @@ void timer_tick_handler(event_t* pevent, void* context)
         if(++entry->active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
         {
             LOG_DEBUG(DT_BLINK_CAMERA, "Reset active events for %s", entry->name);
-            entry->active_event_tick_counter = 0;
             update_camera_motion_detected_state(entry->instance, false);
         }
     }
