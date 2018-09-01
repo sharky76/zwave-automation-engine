@@ -122,7 +122,10 @@ variant_t*  set_camera_motion_detected(device_record_t* record, va_list args)
 
     if(NULL != entry)
     {
-        update_camera_motion_detected_state(entry->instance, variant_get_bool(new_state_variant));
+        if(true == variant_get_bool(new_state_variant))
+        {
+            update_camera_motion_detected_state(entry->instance, variant_get_bool(new_state_variant));
+        }
         return variant_create_bool(true);
     }
     else
@@ -140,7 +143,7 @@ void timer_tick_handler(event_t* pevent, void* context)
     {
         blink_camera_entry_t* entry = VARIANT_GET_PTR(blink_camera_entry_t, camera_entry_variant);
 
-        if(++entry->active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
+        if(++(entry->active_event_tick_counter) > EVENT_ACTIVE_TIMEOUT_SEC)
         {
             LOG_DEBUG(DT_BLINK_CAMERA, "Reset active events for %s", entry->name);
             update_camera_motion_detected_state(entry->instance, false);
