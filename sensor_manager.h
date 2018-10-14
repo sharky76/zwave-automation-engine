@@ -16,6 +16,7 @@ void    sensor_manager_set_role(int node_id, int command_id, const char* role);
 void    sensor_manager_set_alarm_role(int node_id, int alarm_id, const char* role);
 void    sensor_manager_set_name(int node_id, const char* name);
 void    sensor_manager_set_instance_name(int node_id, int instance_id, const char* name);
+void    sensor_manager_remove_instance_name(int node_id, int instance_id, const char* name);
 void    sensor_manager_set_notification(int node_id, const char* notification);
 void    sensor_manager_add_descriptor(int node_id);
 void    sensor_manager_remove_descriptor(int node_id);

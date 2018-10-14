@@ -120,6 +120,14 @@ void    sensor_manager_set_instance_name(int node_id, int instance_id, const cha
     }
 }
 
+void    sensor_manager_remove_instance_name(int node_id, int instance_id, const char* name)
+{
+    variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
+    sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
+    free(sensor_desc->name[instance_id]);
+    sensor_desc->name[instance_id] = NULL;
+}
+
 void    sensor_manager_set_notification(int node_id, const char* notification)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);

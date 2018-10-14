@@ -246,6 +246,7 @@ void        event_unregister_fd(int fd)
     }
     else
     {
+        printf("Cannot unregister, moving to pending list (size = %d)\n", fd_event_pending_unregistration_list->count);
         stack_lock(fd_event_pending_unregistration_list);
         stack_push_back(fd_event_pending_unregistration_list, variant_create_int32(DT_INT32, fd));
         stack_unlock(fd_event_pending_unregistration_list);

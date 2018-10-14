@@ -93,14 +93,6 @@ bool    config_load(const char* file)
     }
     global_config.api_debug_level = json_object_get_int(api_debug_object);
 
-    struct json_object* homebridge_object;
-    json_object_object_get_ex(config_object, "homebridge", &homebridge_object);
-    if(NULL == homebridge_object)
-    {
-        return false;
-    }
-    global_config.homebridge_enable = json_object_get_boolean(homebridge_object);
-
     struct json_object* homebridge_plugin_path_object;
     json_object_object_get_ex(config_object, "homebridge_plugin", &homebridge_plugin_path_object);
     if(NULL != homebridge_plugin_path_object)

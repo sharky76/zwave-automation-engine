@@ -294,6 +294,7 @@ int main (int argc, char *argv[])
         cli_load_config();
         
         vdev_manager_start_devices();
+
         zway_device_add_callback(zway, DeviceAdded, device_added_callback, NULL);
         zway_device_add_callback(zway, CommandAdded, command_added_callback, NULL);
         zway_device_add_callback(zway, DeviceRemoved, command_removed_callback, NULL);
@@ -314,7 +315,6 @@ int main (int argc, char *argv[])
             LOG_INFO(General, "Engine ready");
            
             signal_init();
-            
 
             int cli_sock = http_server_get_socket(global_config.client_port);
             event_register_fd(cli_sock, &cli_commands_handle_connect_event, NULL);
@@ -325,7 +325,7 @@ int main (int argc, char *argv[])
             int http_cmd_socket = http_server_get_socket(8089);
             http_server_register_with_event_loop(http_cmd_socket, &cli_commands_handle_http_data_event, NULL);
 
-            int homebridge_fd = homebridge_manager_init();
+            homebridge_manager_init();
             //event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
 
             // Create STD vty

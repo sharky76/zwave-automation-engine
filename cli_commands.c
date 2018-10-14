@@ -769,6 +769,8 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params)
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show virtual-device");
     vty_write(vty, "!%s", VTY_NEWLINE(vty));
+    cli_command_exec(vty, "show homebridge");
+    vty_write(vty, "!%s", VTY_NEWLINE(vty));
     cli_command_exec(vty, "show scene");
 }
 

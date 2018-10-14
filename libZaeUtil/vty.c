@@ -37,6 +37,7 @@ vty_t*  vty_create(vty_type type, vty_io_data_t* data)
     vty->buffer = calloc(BUFSIZE, sizeof(char));
     vty->completions = stack_create();
     vty->in_use = false;
+    vty->is_interactive = true;
     return vty;
 }
 

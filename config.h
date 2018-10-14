@@ -14,7 +14,6 @@ typedef struct config_t
     char*   config_location;
     int     client_port;
     int     api_debug_level;
-    bool    homebridge_enable;
     char*   homebridge_plugin_path;
 } config_t;
 

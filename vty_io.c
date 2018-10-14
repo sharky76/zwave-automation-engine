@@ -1,6 +1,6 @@
 #include "vty_io.h"
-#include <readline/readline.h>
-#include <readline/history.h>
+//#include <readline/readline.h>
+//#include <readline/history.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,6 +43,7 @@ void    vty_io_config(vty_t* vty)
         //rl_outstream = vty->data->desc.file;
         vty->write_cb = file_write_cb;
         vty->read_cb = file_read_cb;
+        vty->is_interactive = false;
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_STD:

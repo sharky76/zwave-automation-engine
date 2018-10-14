@@ -19,10 +19,16 @@ void homebridge_stopped_handler(int sig);
 
 pid_t   homebridge_pid;
 int     homebridge_fd = -1;
+static bool can_start_homebridge = false;
+
+void homebridge_manager_set_start_state(bool isStart)
+{
+    can_start_homebridge = isStart;
+}
 
 int homebridge_manager_init()
 {
-    if(global_config.homebridge_enable)
+    if(can_start_homebridge)
     {
         LOG_ADVANCED(HomebridgeManager, "Initializing Homebridge manager...");
         
@@ -31,14 +37,8 @@ int homebridge_manager_init()
             homebridge_fd = homebridge_start();
             event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
         }
-        return homebridge_fd;
     }
-    else
-    {
-        LOG_ADVANCED(HomebridgeManager, "Homebridge support disabled");
-    }
-
-    return -1;
+    return homebridge_fd;
 }
 
 int homebridge_start()
@@ -74,8 +74,6 @@ int homebridge_start()
     else
     {
         char* args[] = { NULL, NULL, NULL, NULL };
-        char plugin_arg[256] = {0};
-        snprintf(plugin_arg, 255, "-P %s", global_config.homebridge_plugin_path);
         args[0] = "homebridge";
         args[1] = "-P";
         args[2] = global_config.homebridge_plugin_path;

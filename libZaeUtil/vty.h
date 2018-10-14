@@ -67,6 +67,7 @@ typedef struct vty_t
     bool    in_use;
     int16_t term_width;
     int16_t term_height;
+    bool    is_interactive;
     void*   priv;
     struct vty_t*  stored_vty;
 } vty_t;
