@@ -118,12 +118,12 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
             char* content_len_buf;
             if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
             {
-                int content_len = atoi(content_len_buf);
-                if(content_len > 0)
+                http_priv->content_length = atoi(content_len_buf);
+                if(http_priv->content_length > 0)
                 {
                     char* request = request_get_data(http_priv->request->buffer);
 
-                    if(request == NULL || strlen(request) < content_len)
+                    if(request == NULL || strlen(request) < http_priv->content_length)
                     {
                         // Read some more data...
                         continue;
@@ -135,7 +135,7 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         }
         else if(pret == -1)
         {
-            printf("Parse errir\n");
+            LOG_ERROR(HTTPServer, "Parse errir\n");
             http_server_error_response(FORBIDDEN, client_socket);
             return NULL;
         }
@@ -156,21 +156,11 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
     if(strncmp(http_priv->request->method, "POST", http_priv->request->method_len) == 0)
     {
         char* content = NULL;
-        char* content_len_buf;
-        if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
+        if(http_priv->content_length > 0)
         {
-            int content_len = atoi(content_len_buf);
-    
-            if(content_len > 0)
-            {
-                content = calloc(1, content_len+1);
-                //http_priv->post_data = calloc(1, content_len+1);
-                strncpy(content, request_get_data(http_priv->request->buffer), content_len);
-    
-                http_priv->post_data = content;
-                http_priv->post_data_size = content_len;
-            }
-            free(content_len_buf);
+            content = calloc(1, http_priv->content_length+1);
+            strncpy(content, request_get_data(http_priv->request->buffer), http_priv->content_length);
+            http_priv->post_data = content;
         }
     }
 

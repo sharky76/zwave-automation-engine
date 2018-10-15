@@ -56,6 +56,7 @@ typedef struct http_vty_priv_t
     int   resp_code;
     bool  can_cache;
     int   cache_age;
+    int   content_length;
 } http_vty_priv_t;
 
 int   http_server_get_socket(int port);
