@@ -119,6 +119,7 @@ device_record_t*    resolver_get_device_record(const char* name)
         {
             device_record_t* record = (device_record_t*)variant_get_ptr(record_variant);
 
+            LOG_DEBUG(Resolver, "Found record for name = %s: node_id = %d, command_id = %d", name, record->nodeId, record->commandId);
             if(NULL != record && record->commandId != -1 && record->nodeId != -1)
             {
                 // Try to get child as well...

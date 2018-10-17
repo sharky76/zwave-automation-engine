@@ -66,11 +66,14 @@ void logger_register_target(vty_t* vty)
     logger_vty_t* new_vty = malloc(sizeof(logger_vty_t));
     new_vty->vty = vty;
     new_vty->is_online = false;
+    stack_lock(logger_handle->registered_targets);
     stack_push_back(logger_handle->registered_targets, variant_create_ptr(DT_PTR, new_vty, NULL));
+    stack_unlock(logger_handle->registered_targets);
 }
 
 void logger_unregister_target(vty_t* vty)
 {
+    stack_lock(logger_handle->registered_targets);
     stack_for_each(logger_handle->registered_targets, log_target_variant)
     {
         logger_vty_t* target_vty = VARIANT_GET_PTR(logger_vty_t, log_target_variant);
@@ -81,6 +84,7 @@ void logger_unregister_target(vty_t* vty)
             break;
         }
     }
+    stack_unlock(logger_handle->registered_targets);
 }
 
 void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel level, const char* format, va_list args)
@@ -134,6 +138,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
         logger_add_buffer(new_entry);
         //handle->do_log(handle, buf);
 
+        stack_lock(logger_handle->registered_targets);
         stack_for_each(handle->registered_targets, vty_variant)
         {
             logger_vty_t* logger_vty = VARIANT_GET_PTR(logger_vty_t, vty_variant);
@@ -143,6 +148,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
                 vty_write(logger_vty->vty, "%s", buf);
             }
         }
+        stack_unlock(logger_handle->registered_targets);
     }
 }
 

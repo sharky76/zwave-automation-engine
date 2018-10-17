@@ -150,6 +150,7 @@ variant_t*  process_template_impl(struct service_method_t* method, va_list args)
     else
     {
         LOG_ERROR(BuiltinService, "Template stack is NULL");
+        return variant_clone(template_var);
     }
 
     // Remove last space...

@@ -232,52 +232,55 @@ bool    cmd_ifttt_action_command(vty_t* vty, variant_stack_t* params)
             LOG_ADVANCED(DT_IFTTT, "IFTTT command action matched: %s", action->handler_name);
             const char* json_data = http_response_get_post_data(vty);
             LOG_DEBUG(DT_IFTTT, "Action: %s handler_type: %s, handler_name: %s, post data: %s", action->url, action->handler_type, action->handler_name, json_data);
-            
-            // Prepare command template arguments...
-            service_args_stack_destroy("Expression.ProcessTemplate");
-            service_args_stack_create("Expression.ProcessTemplate");
-            struct json_object* request_obj = json_tokener_parse(json_data);
-            
-            if(NULL == request_obj)
+
+            if (NULL != json_data)
             {
-                LOG_ERROR(DT_IFTTT, "Unable to process request data");
-            }
-            else
-            {
-                json_object_object_foreach(request_obj, key, value)
+                // Prepare command template arguments...
+                service_args_stack_destroy("Expression.ProcessTemplate");
+                service_args_stack_create("Expression.ProcessTemplate");
+                struct json_object *request_obj = json_tokener_parse(json_data);
+
+                if (NULL == request_obj)
                 {
-                    enum json_type type = json_object_get_type(value);
-                    variant_t* value_variant = NULL;
-                    switch(type)
-                    {
-                    case json_type_boolean:
-                        value_variant = variant_create_bool(json_object_get_boolean(value));
-                        break;
-                    case json_type_double:
-                        value_variant = variant_create_float(json_object_get_double(value));
-                        break;
-                    case json_type_int:
-                        value_variant = variant_create_int32(DT_INT32, json_object_get_int(value));
-                        break;
-                    case json_type_string:
-                        value_variant = variant_create_string(strdup(json_object_get_string(value)));
-                        break;
-                    }
-    
-                    if(NULL != value_variant)
-                    {
-                        service_args_stack_add("Expression.ProcessTemplate", key, value_variant);
-                    }
+                    LOG_ERROR(DT_IFTTT, "Unable to process request data");
                 }
-    
-                json_object_put(request_obj);
+                else
+                {
+                    json_object_object_foreach(request_obj, key, value)
+                    {
+                        enum json_type type = json_object_get_type(value);
+                        variant_t *value_variant = NULL;
+                        switch (type)
+                        {
+                        case json_type_boolean:
+                            value_variant = variant_create_bool(json_object_get_boolean(value));
+                            break;
+                        case json_type_double:
+                            value_variant = variant_create_float(json_object_get_double(value));
+                            break;
+                        case json_type_int:
+                            value_variant = variant_create_int32(DT_INT32, json_object_get_int(value));
+                            break;
+                        case json_type_string:
+                            value_variant = variant_create_string(strdup(json_object_get_string(value)));
+                            break;
+                        }
+
+                        if (NULL != value_variant)
+                        {
+                            service_args_stack_add("Expression.ProcessTemplate", key, value_variant);
+                        }
+                    }
+
+                    json_object_put(request_obj);
+                }
             }
 
             // Now process the command template
             service_method_t* process_template_method = builtin_service_manager_get_method("Expression", "ProcessTemplate");
             variant_t* template_var = variant_create_string(action->handler_name);
             variant_t* processed_expression = service_eval_method(process_template_method, template_var);
-            free(template_var);
+            variant_free(template_var);
             LOG_DEBUG(DT_IFTTT, "Processed expression: %s", variant_get_string(processed_expression));
 
             // Now call command...
