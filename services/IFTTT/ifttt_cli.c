@@ -278,7 +278,7 @@ bool    cmd_ifttt_action_command(vty_t* vty, variant_stack_t* params)
 
             // Now process the command template
             service_method_t* process_template_method = builtin_service_manager_get_method("Expression", "ProcessTemplate");
-            variant_t* template_var = variant_create_string(action->handler_name);
+            variant_t* template_var = variant_create_string(strdup(action->handler_name));
             variant_t* processed_expression = service_eval_method(process_template_method, template_var);
             variant_free(template_var);
             LOG_DEBUG(DT_IFTTT, "Processed expression: %s", variant_get_string(processed_expression));
