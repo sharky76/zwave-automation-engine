@@ -128,6 +128,7 @@ void    aggregate_motion_events(hash_node_data_t* node_data, void* arg)
 
 variant_t*  get_all_motion_events(device_record_t* record, va_list args)
 {
+    LOG_DEBUG(DT_SURVEILLANCE_STATION, "Quierying camera ID: %d", record->instanceId);
     SS_event_keeper_t* keeper = get_event_keeper(record->instanceId);
 
     //int total_event_count = 0;
@@ -136,10 +137,13 @@ variant_t*  get_all_motion_events(device_record_t* record, va_list args)
     //return variant_create_int32(DT_INT32, total_event_count);
     if(NULL != keeper)
     {
+        LOG_DEBUG(DT_SURVEILLANCE_STATION, "Return %d motion events for %s", keeper->event_count, keeper->camera_name);
         return variant_create_int32(DT_INT32, keeper->event_count);
     }
     else
     {
+        LOG_ERROR(DT_SURVEILLANCE_STATION, "Camera ID: %d not found", record->instanceId);
+
         return variant_create_int32(DT_INT32, 0);
     }
 }
@@ -304,6 +308,12 @@ variant_t*  get_camera_list(device_record_t* record, va_list args)
     return variant_create_list(cam_list);
 }
 
+void update_resolver_entries(hash_node_data_t* node_data, void* arg)
+{
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(node_data->data);
+    resolver_add_entry(VDEV, cam_info->name, DT_SURVEILLANCE_STATION, cam_info->id, COMMAND_CLASS_MOTION_EVENTS);
+}
+
 void    device_start()
 {
     LOG_INFO(DT_SURVEILLANCE_STATION, "Starting Surveillance Station device");
@@ -312,6 +322,9 @@ void    device_start()
     SS_api_get_info();
     SS_api_get_camera_list();
     //SS_api_logout();
+
+    // Update Resolver table with all found cameras...
+    variant_hash_for_each(SS_camera_info_table, update_resolver_entries, NULL);
 
     LOG_INFO(DT_SURVEILLANCE_STATION, "Surveillance Station device started");
     SS_device_started = true;
@@ -378,12 +391,12 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
 void    reset_active_events(hash_node_data_t* node_data, void* arg)
 {
     SS_event_keeper_t* ev = (SS_event_keeper_t*)variant_get_ptr(node_data->data);
-    LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
+    //LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
     if(++ev->active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
     {
         if(ev->event_active)
         {
-            LOG_DEBUG(DT_SURVEILLANCE_STATION, "Reset active events for camera %s", ev->camera_name);
+            LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Reset active events for camera %s (was %d)", ev->camera_name, ev->event_count);
             ev->event_active = false;
             ev->event_count = ev->old_event_count = 0;
             ev->active_event_tick_counter = 0;

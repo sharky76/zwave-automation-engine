@@ -17,13 +17,14 @@ extern bool    cmd_enter_node_by_name(vty_t* vty, const char* node_name);
 
 bool cmd_enter_scene_node(vty_t* vty, variant_stack_t* params);
 bool cmd_del_scene(vty_t* vty, variant_stack_t* params);
-bool cmd_list_scenes(vty_t* vty, variant_stack_t* params);
+bool cmd_show_scene_config(vty_t* vty, variant_stack_t* params);
 bool cmd_show_scene(vty_t* vty, variant_stack_t* params);
 bool cmd_set_scene_source(vty_t* vty, variant_stack_t* params);
 bool cmd_del_scene_source(vty_t* vty, variant_stack_t* params);
 bool cmd_set_scene_condition(vty_t* vty, variant_stack_t* params);
 bool cmd_del_scene_condition(vty_t* vty, variant_stack_t* params);
 bool cmd_exit_scene_node(vty_t* vty, variant_stack_t* params);
+bool cmd_list_scenes(vty_t* vty, variant_stack_t* params);
 
 bool cmd_config_scene_action_script(vty_t* vty, variant_stack_t* params);
 bool cmd_config_scene_action_scene(vty_t* vty, variant_stack_t* params);
@@ -48,6 +49,7 @@ bool cmd_scene_show_condition(vty_t* vty, variant_stack_t* params);
 bool cmd_scene_enable(vty_t* vty, variant_stack_t* params);
 bool cmd_scene_disable(vty_t* vty, variant_stack_t* params);
 
+void    show_scene_name_helper(scene_t* scene, void* arg);
 void    show_scene_helper(scene_t* scene, void* arg);
 void    show_scene_action_helper(action_t* action, void* arg);
 void    show_scene_action_env_helper(env_t* env, void* arg);
@@ -58,7 +60,8 @@ USING_LOGGER(Scene);
 cli_command_t   scene_root_list[] = {
     {"scene LINE",           cmd_enter_scene_node,          "Configure scene"},
     {"no scene LINE",        cmd_del_scene,                 "Delete scene"},
-    {"show scene",           cmd_list_scenes,               "List loaded scenes"},
+    {"show scene",           cmd_show_scene_config,               "Show scenes configuration"},
+    {"list scene",           cmd_list_scenes,               "List scenes"},
     //{"show scene LINE",      cmd_show_scene,                "Show scene configuration"},
     {NULL,                          NULL,                   NULL}
 };
@@ -156,7 +159,7 @@ bool cmd_del_scene(vty_t* vty, variant_stack_t* params)
     }
 }
 
-bool cmd_list_scenes(vty_t* vty, variant_stack_t* params)
+bool cmd_show_scene_config(vty_t* vty, variant_stack_t* params)
 {
     scene_manager_for_each(show_scene_helper, vty);
 }
@@ -171,6 +174,11 @@ bool cmd_show_scene(vty_t* vty, variant_stack_t* params)
     {
         show_scene_helper(scene, vty);
     }
+}
+
+bool cmd_list_scenes(vty_t* vty, variant_stack_t* params)
+{
+    scene_manager_for_each(show_scene_name_helper, vty);
 }
 
 bool cmd_set_scene_source(vty_t* vty, variant_stack_t* params)
@@ -420,6 +428,13 @@ bool cmd_scene_disable(vty_t* vty, variant_stack_t* params)
 {
     scene_t* scene = scene_manager_get_scene(scene_node->context);
     scene->is_enabled = false;
+}
+
+void    show_scene_name_helper(scene_t* scene, void* arg)
+{
+    vty_t* vty = (vty_t*)arg;
+
+    vty_write(vty, "%s%s", scene->name, VTY_NEWLINE(vty));
 }
 
 void    show_scene_helper(scene_t* scene, void* arg)
