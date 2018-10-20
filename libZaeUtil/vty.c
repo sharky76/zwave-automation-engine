@@ -137,7 +137,28 @@ bool    vty_write(vty_t* vty, const char* format, ...)
     char buf[BUFSIZE+1] = {0};
     int len = vsnprintf(buf, BUFSIZE, format, args);
 
-    return vty->write_cb(vty, buf, len);
+    int size = len;
+    if(len >= BUFSIZE)
+    {
+        size = BUFSIZE - 1;
+    }
+
+    bool retVal = vty->write_cb(vty, buf, size);
+
+    while(len >= BUFSIZE && retVal) 
+    {
+        memset(buf, 0, BUFSIZE);
+        len = vsnprintf(buf, BUFSIZE, format + size, args);
+
+        size = len;
+        if(len >= BUFSIZE)
+        {
+            size = BUFSIZE - 1;
+        }
+
+        retVal |= vty->write_cb(vty, buf, size);
+    }
+    return retVal;
 }
 
 void    vty_error(vty_t* vty, const char* format, ...)
