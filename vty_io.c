@@ -14,6 +14,8 @@
 
 bool    file_write_cb(vty_t* vty, const char* buf, size_t len);
 int     file_read_cb(vty_t* vty, char** str);
+void    file_close_cb(vty_io_data_t* vty_data);
+
 bool    std_write_cb(vty_t* vty, const char* buf, size_t len);
 int     std_read_cb(vty_t* vty, char** str);
 void    std_erase_cb(vty_t* vty);
@@ -25,6 +27,7 @@ int     http_read_cb(vty_t* vty, char** str);
 bool    http_write_cb(vty_t* vty, const char* buf, size_t len);
 bool    http_flush_cb(vty_t* vty);
 void    http_free_priv_cb(vty_t* vty);
+void    socket_close_cb(vty_io_data_t* vty_data);
 
 vty_t*  vty_io_create(vty_type type, vty_io_data_t* data)
 {
@@ -44,6 +47,8 @@ void    vty_io_config(vty_t* vty)
         vty->write_cb = file_write_cb;
         vty->read_cb = file_read_cb;
         vty->is_interactive = false;
+        vty->data->close_cb = file_close_cb;
+
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_STD:
@@ -54,7 +59,8 @@ void    vty_io_config(vty_t* vty)
         vty->erase_line_cb = std_erase_line_cb;
         vty->cursor_left_cb = std_cursor_left_cb;
         vty->cursor_right_cb = std_cursor_right_cb;
-
+        vty->data->close_cb = NULL;
+        
         struct winsize w;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
@@ -70,6 +76,7 @@ void    vty_io_config(vty_t* vty)
         http_vty_priv_t* http_priv = calloc(1, sizeof(http_vty_priv_t));
         http_priv->resp_code = HTTP_RESP_OK;
         vty->priv = http_priv;
+        vty->data->close_cb = socket_close_cb;
 
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
@@ -81,6 +88,7 @@ void    vty_io_config(vty_t* vty)
         vty->erase_line_cb = socket_erase_line_cb;
         vty->cursor_left_cb = socket_cursor_left_cb;
         vty->cursor_right_cb = socket_cursor_right_cb;
+        vty->data->close_cb = socket_close_cb;
 
         //char iac_sga_buf[3] = {255, 251, 3};
         
@@ -111,62 +119,24 @@ bool    file_write_cb(vty_t* vty, const char* buf, size_t len)
 
 int   file_read_cb(vty_t* vty, char** str)
 {
-    /*if(vty->multi_line)
+    char ch = 0;
+            
+    *str = malloc(sizeof(char));
+    *str[0] = fgetc(vty->data->desc.file);
+
+    if(**str == (char)EOF)
     {
-        char ch = 0;
-        memset(vty->buffer, 0, vty->buf_size);
-        vty->buf_size = 0;
-        while(true)
-        {
-            // Read multiple lines of input into buffer until \n.\n is found
-            ch = fgetc(vty->data->desc.file);
-            if(ch == vty->multiline_stop_char)
-            {
-                break;
-            }
-            if(vty->buf_size + 1 < BUFSIZE)
-            {
-                vty->buffer[vty->buf_size++] = ch;
-            }
-        }
-        return vty->buffer;
+        return -1;
     }
-    else*/
+    else
     {
-        /*char* buffer = calloc(2048, sizeof(char));
-        char* res = fgets(buffer, 2048, vty->data->desc.file);
-    
-        if(NULL == res)
-        {
-            free(buffer);
-        }
-    
-        return res;*/
-        char ch = 0;
-        
-        /*while((ch = fgetc(vty->data->desc.file)) != '\n')
-        {
-            // Read multiple lines of input into buffer until \n.\n is found
-            if(vty->buf_size + 1 < BUFSIZE)
-            {
-                vty->buffer[vty->buf_size++] = ch;
-            }
-        }
-
-        return vty->buffer;*/
-
-        *str = malloc(sizeof(char));
-        *str[0] = fgetc(vty->data->desc.file);
-
-        if(**str == (char)EOF)
-        {
-            return -1;
-        }
-        else
-        {
-            return 1;
-        }
+        return 1;
     }
+}
+
+void    file_close_cb(vty_io_data_t* vty_data)
+{
+    fclose(vty_data->desc.file);
 }
 
 bool    std_write_cb(vty_t* vty, const char* buf, size_t len)
@@ -267,4 +237,9 @@ void    http_free_priv_cb(vty_t* vty)
     free(http_priv->post_data);
     free(http_priv->headers);
     free(http_priv);
+}
+
+void    socket_close_cb(vty_io_data_t* vty_data)
+{
+    close(vty_data->desc.socket);
 }

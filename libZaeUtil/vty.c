@@ -78,14 +78,9 @@ void    vty_free(vty_t* vty)
         vty->flush_cb(vty);
     }
 
-    if(vty->type == VTY_FILE)
+    if(vty->data->close_cb)
     {
-        fclose(vty->data->desc.file);
-    }
-
-    if(vty->type == VTY_SOCKET || vty->type == VTY_HTTP)
-    {
-        close(vty->data->desc.socket);
+        vty->data->close_cb(vty->data);
     }
 
     if(NULL != vty->free_priv_cb)

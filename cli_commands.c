@@ -185,6 +185,12 @@ void child_cmd_stopped_handler(int sig)
     pid_t pid = waitpid((pid_t)(-1), 0, 0);
 }
 
+void iopair_close_cb(vty_io_data_t* vty_data)
+{
+    fclose(vty_data->desc.io_pair[IN]);
+    fclose(vty_data->desc.io_pair[OUT]);
+}
+
 bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 {
     cmd_tree_node_t* cmd_node;
@@ -216,7 +222,8 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
         
         vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
         vty_data->desc.io_pair[IN] = fdopen(pipe_fd[IN], "r");
-        vty_data->desc.io_pair[OUT] = fdopen(pipe_fd[OUT], "w");;
+        vty_data->desc.io_pair[OUT] = fdopen(pipe_fd[OUT], "w");
+        vty_data->close_cb = iopair_close_cb;
 
         vty_t* vty_pipe = vty_io_create(VTY_STD, vty_data);
         vty_pipe->term_width = vty->term_width;
@@ -234,11 +241,11 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
         else
         {
             // parent
-            struct sigaction sa;
+            /*struct sigaction sa;
             sa.sa_handler = &child_cmd_stopped_handler;
             sigemptyset(&sa.sa_mask);
             sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-            sigaction(SIGCHLD, &sa, 0);
+            sigaction(SIGCHLD, &sa, 0);*/
 
             retVal = cli_command_exec_custom_node(node, vty_pipe, line);
 
@@ -248,7 +255,7 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 
             int status = 0;
             // Wait for pipe to process all input
-            pid_t pid = waitpid(pid, &status, 0);
+            pid_t pid = waitpid((pid_t)(-1), &status, 0);
 
             // Recover
             cli_set_vty(vty);

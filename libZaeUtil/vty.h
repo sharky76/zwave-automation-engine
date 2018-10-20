@@ -24,6 +24,8 @@ typedef struct vty_io_data_t
         FILE*   file;
         iopair  io_pair;
     } desc;
+
+    void    (*close_cb)(struct vty_io_data_t*);
 } vty_io_data_t;
 
 typedef struct cli_node_t cli_node_t;
