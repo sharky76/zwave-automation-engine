@@ -546,7 +546,7 @@ bool    cmd_set_banner(vty_t* vty, variant_stack_t* params)
 bool    cmd_pager(vty_t* vty, variant_stack_t* params)
 {
     int rows = 0;
-    char* ch = NULL;
+    char* ch = vty->input;
     int n = 0;
     bool is_quit = false;
 
@@ -554,17 +554,17 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
     {
         do
         {
-            if(NULL != ch)
+            if(0 != *ch)
             {
-                free(ch);
+                memset(ch, 0, 1);
             }
 
-            n = vty->read_cb(vty, &ch);
+            n = vty->read_cb(vty, ch);
             while(ch[0] != 0xa && ch[0] != 0xd && ch[0] != (char)EOF)
             {
                 vty_write(vty->stored_vty, "%c", *ch);
-                free(ch);
-                n = vty->read_cb(vty, &ch);
+                memset(ch, 0, n);
+                n = vty->read_cb(vty, ch);
             }
             
             vty_write(vty->stored_vty, "%s", VTY_NEWLINE(vty->stored_vty));
@@ -577,11 +577,12 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
             vty_write(vty->stored_vty, "-- MORE --");
             
             char* c = 0;
-            vty->stored_vty->read_cb(vty->stored_vty, &c);
+            int n = vty->stored_vty->read_cb(vty->stored_vty, c);
             while(c[0] != 0xa && c[0] != 0xd && c[0] != ' ' && c[0] != 'q' && c[0] != 'Q')
             {
-                free(c);
-                vty->stored_vty->read_cb(vty->stored_vty, &c);
+                //free(c);
+                memset(ch, 0, n);
+                n = vty->stored_vty->read_cb(vty->stored_vty, c);
             }
 
             if(c[0] == 'q' || c[0] == 'Q')
@@ -594,7 +595,7 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
         }
 
     } while(ch[0] != (char)EOF && n > 0 && !is_quit);
-    free(ch);
+    //free(ch);
 }
 
 bool    cmd_line_filter(vty_t* vty, variant_stack_t* params)
@@ -604,22 +605,22 @@ bool    cmd_line_filter(vty_t* vty, variant_stack_t* params)
     cli_assemble_line(params, 1, expression, 511);
 
     char buf[512] = {0};
-    char* ch = NULL;
+    char* ch = vty->input;
     int n = 0;
 
     do
     {
-        if(NULL != ch)
+        if(0 != *ch)
         {
-            free(ch);
+            *ch = 0;
         }
 
-        n = vty->read_cb(vty, &ch);
+        n = vty->read_cb(vty, ch);
         while(ch[0] != 0xa && ch[0] != 0xd && ch[0] != (char)EOF)
         {
             strcat(buf, ch);
-            free(ch);
-            n = vty->read_cb(vty, &ch);
+            memset(ch, 0, n);
+            n = vty->read_cb(vty, ch);
         }
         
         if(strstr(buf, expression) != NULL)
@@ -630,7 +631,7 @@ bool    cmd_line_filter(vty_t* vty, variant_stack_t* params)
         memset(buf, 0, 512);
      }
      while(ch[0] != (char)EOF && n > 0);
-     free(ch);
+     //free(ch);
 }
 
 bool    cmd_show_banner(vty_t* vty, variant_stack_t* params)

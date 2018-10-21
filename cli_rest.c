@@ -362,8 +362,8 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
     vdev_manager_for_each(vdev_enumerate, sensor_array);
 
     vty_write(vty, json_object_to_json_string(json_resp));
+    json_object_put(json_resp);
     
-    //json_object_put(json_resp);
     return 0;
 }
 
@@ -908,24 +908,33 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
                             }
                         }
 
+                        variant_t* ret = NULL;
                         switch(arg_count)
                         {
                         case 1:
-                            command_class_exec(command_class, command, device_record, arg_list[0]);
+                            ret = command_class_exec(command_class, command, device_record, arg_list[0]);
                             break;
                         case 2:
-                            command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1]);
+                            ret = command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1]);
                             break;
                         case 3:
-                            command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2]);
+                            ret = command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2]);
                             break;
                         case 4:
-                            command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2], arg_list[3]);
+                            ret = command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2], arg_list[3]);
                             break;
                         default:
                             break;
                         }
+
+                        for(int i = 0; i < sizeof(arg_list)/sizeof(arg_list[0]); i++)
+                        {
+                            variant_free(arg_list[i]);
+                        }
+                        variant_free(ret);
                     }
+
+                    json_object_put(response_obj);
                 }
             }
     

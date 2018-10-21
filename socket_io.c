@@ -58,24 +58,24 @@ bool    socket_write_cb(vty_t* vty, const char* buf, size_t len)
     return send(vty->data->desc.socket, buf, len, 0) != -1;
 }
 
-int     socket_read_cb(vty_t* vty, char** str)
+int     socket_read_cb(vty_t* vty, char* str)
 {
     int socket = vty->data->desc.socket;
-    *str = calloc(1, sizeof(char));
-    int n = recv(socket, *str, 1, 0);
-    if(vty->iac_started || *str[0] == IAC)
+    //*str = calloc(1, sizeof(char));
+    int n = recv(socket, str, 1, 0);
+    if(vty->iac_started || *str == IAC)
     {
         //printf("NAWS received");
         vty->iac_started = true;
         
-        switch(*str[0])
+        switch(*str)
         {
         case SB:
             telnet_subnegotiation_start(vty);
             break;
         case SE:
             vty->iac_started = false;
-            n = recv(socket, *str, 1, 0);
+            n = recv(socket, str, 1, 0);
             break;
         default:
             break;

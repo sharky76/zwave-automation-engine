@@ -119,6 +119,7 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
             if(http_request_find_header_value(http_priv, "Content-Length", &content_len_buf))
             {
                 http_priv->content_length = atoi(content_len_buf);
+                free(content_len_buf);
                 if(http_priv->content_length > 0)
                 {
                     char* request = request_get_data(http_priv->request->buffer);

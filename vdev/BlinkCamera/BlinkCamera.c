@@ -166,8 +166,8 @@ variant_t*  set_camera_armed(device_record_t* record, va_list args)
         ifttt_event = variant_create_string(strdup("BlinkCameraDisarm"));
     }
 
-    service_call_method("IFTTT", "Trigger", ifttt_event);
+    variant_t* ret = service_call_method("IFTTT", "Trigger", ifttt_event);
     variant_free(ifttt_event);
 
-    return variant_create_bool(true);
+    return ret;
 }

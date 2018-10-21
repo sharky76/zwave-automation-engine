@@ -22,6 +22,7 @@
 #define KEY_RETURN      0xd
 #define KEY_CTRL_Z      0x1a
 #define KEY_CTRL_C      0x3
+#define KEY_CTRL_D	    0x4
 
 vty_t*  vty_create(vty_type type, vty_io_data_t* data)
 {
@@ -35,6 +36,7 @@ vty_t*  vty_create(vty_type type, vty_io_data_t* data)
     vty->history_size = 0;
     vty->history_index = HISTORY_START;
     vty->buffer = calloc(BUFSIZE, sizeof(char));
+    vty->input = calloc(BUFSIZE, sizeof(char));
     vty->completions = stack_create();
     vty->in_use = false;
     vty->is_interactive = true;
@@ -91,6 +93,7 @@ void    vty_free(vty_t* vty)
     free(vty->data);
     free(vty->prompt);
     free(vty->buffer);
+    free(vty->input);
     stack_free(vty->history);
     stack_free(vty->completions);
     free(vty);
@@ -178,12 +181,15 @@ char*   vty_read(vty_t* vty)
         vty_clear_buffer(vty);
     }
 
-    char* ch = NULL;
+    //char* ch = NULL; //TODO: Make it char ch[1];
+    char* ch = vty->input;
+
     vty_set_command_received(vty, false);
 
     //while(true)
     {
-        int n = vty->read_cb(vty, &ch);
+         
+        int n = vty->read_cb(vty, ch);
 
         if(n > 1)
         {
@@ -193,13 +199,12 @@ char*   vty_read(vty_t* vty)
         {
             vty_set_error(vty, true);
             vty_clear_buffer(vty);
+            return vty->buffer;
             //break;
         }
-        else if(vty->type == VTY_FILE && ch[0] == (char)EOF)
+        else if(vty->iac_started)
         {
-            vty_set_error(vty, true);
-            vty_clear_buffer(vty);
-            //break;
+            /* do nothing */
         }
         else if(vty->multi_line)
         {
@@ -229,31 +234,17 @@ char*   vty_read(vty_t* vty)
             vty_set_command_received(vty, true);
             //break;
         }
-        /*else if(ch[0] == IAC)
-        {
-            //printf("IAC start\n");
-            vty->iac_started = true;
-            vty->iac_count = 1;
-        }*/
-        else if(vty->iac_started)
-        {
-            /*if(vty->iac_count < 3)
-            {
-                //printf("IAC cont\n");
-
-                vty->iac_count++;
-            }
-            else
-            {
-                //printf("IAC end\n");
-
-                vty->iac_started = false;
-            }*/
-        }
         else if(ch[0] == KEY_CTRL_Z)
         {
             vty_clear_buffer(vty);
             vty_append_string(vty, "end");
+            vty_set_command_received(vty, true);
+            //break;
+        }
+        else if(ch[0] == KEY_CTRL_D)
+        {
+            vty_clear_buffer(vty);
+            vty_append_string(vty, "exit");
             vty_set_command_received(vty, true);
             //break;
         }
@@ -414,7 +405,8 @@ char*   vty_read(vty_t* vty)
             vty_append_string(vty, ch);
         }
 
-        free(ch);
+        memset(ch, 0, n);
+        //free(ch);
     }
 
     //free(ch);

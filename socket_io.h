@@ -1,7 +1,7 @@
 #include "vty.h"
 
 bool    socket_write_cb(vty_t* vty, const char* buf, size_t len);
-int     socket_read_cb(vty_t* vty, char** str);
+int     socket_read_cb(vty_t* vty, char* str);
 bool    socket_flush_cb(vty_t* vty);
 void    socket_erase_cb(vty_t* vty);
 void    socket_erase_line_cb(vty_t* vty);

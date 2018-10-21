@@ -680,7 +680,7 @@ variant_t*   command_class_eval_switch_multilevel(const char* method, device_rec
     {
         variant_t* param_value = va_arg(args, variant_t*);
         //variant_t* param_duration = va_arg(args, variant_t*);
-        ZWError err = zway_cc_switch_multilevel_set(zway, record->nodeId, record->instanceId, variant_get_int(param_value), 0xff, NULL, NULL, NULL);
+        ZWError err = NoError; // zway_cc_switch_multilevel_set(zway, record->nodeId, record->instanceId, variant_get_int(param_value), 0xff, NULL, NULL, NULL);
         ret_val = variant_create_bool(err == NoError);
     }
     return ret_val;

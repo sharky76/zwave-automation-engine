@@ -55,10 +55,11 @@ void    event_log_add_event(event_log_entry_t* event_entry)
 
     event_entry->event_id = monotonic_event_id++;
     event_entry->timestamp = time(NULL);
-    stack_push_front(event_log_handle.event_log_list, variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &delete_event_log_entry));
+    variant_t* entry_variant = variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &delete_event_log_entry);
+    stack_push_front(event_log_handle.event_log_list, entry_variant);
 
     // Post event when new log entry is added
-    event_t* event = event_create(EventLog, EVENT_LOG_ADDED_EVENT, variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, variant_delete_none));
+    event_t* event = event_create(EventLog, EVENT_LOG_ADDED_EVENT, variant_clone(entry_variant));
     event_post(event);
 }
 

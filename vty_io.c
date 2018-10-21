@@ -13,17 +13,17 @@
 #include <sys/ioctl.h>
 
 bool    file_write_cb(vty_t* vty, const char* buf, size_t len);
-int     file_read_cb(vty_t* vty, char** str);
+int     file_read_cb(vty_t* vty, char* str);
 void    file_close_cb(vty_io_data_t* vty_data);
 
 bool    std_write_cb(vty_t* vty, const char* buf, size_t len);
-int     std_read_cb(vty_t* vty, char** str);
+int     std_read_cb(vty_t* vty, char* str);
 void    std_erase_cb(vty_t* vty);
 void    std_erase_line_cb(vty_t* vty);
 void    std_cursor_left_cb(vty_t* vty);
 void    std_cursor_right_cb(vty_t* vty);
 
-int     http_read_cb(vty_t* vty, char** str);
+int     http_read_cb(vty_t* vty, char* str);
 bool    http_write_cb(vty_t* vty, const char* buf, size_t len);
 bool    http_flush_cb(vty_t* vty);
 void    http_free_priv_cb(vty_t* vty);
@@ -60,7 +60,7 @@ void    vty_io_config(vty_t* vty)
         vty->cursor_left_cb = std_cursor_left_cb;
         vty->cursor_right_cb = std_cursor_right_cb;
         vty->data->close_cb = NULL;
-        
+
         struct winsize w;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
@@ -117,14 +117,14 @@ bool    file_write_cb(vty_t* vty, const char* buf, size_t len)
     return fwrite(buf, len, 1, vty->data->desc.file) == 1;
 }
 
-int   file_read_cb(vty_t* vty, char** str)
+int   file_read_cb(vty_t* vty, char* str)
 {
     char ch = 0;
             
-    *str = malloc(sizeof(char));
-    *str[0] = fgetc(vty->data->desc.file);
+    //*str = malloc(sizeof(char));
+    *str = fgetc(vty->data->desc.file);
 
-    if(**str == (char)EOF)
+    if(*str == (char)EOF)
     {
         return -1;
     }
@@ -151,11 +151,11 @@ bool    std_write_cb(vty_t* vty, const char* buf, size_t len)
     return retVal;
 }
 
-int   std_read_cb(vty_t* vty, char** str)
+int   std_read_cb(vty_t* vty, char* str)
 {
-    *str = calloc(1, sizeof(char));
+    //*str = calloc(1, sizeof(char));
 
-    return read(fileno(vty->data->desc.io_pair[IN]), *str, 1);
+    return read(fileno(vty->data->desc.io_pair[IN]), str, 1);
 }
 
 void std_erase_cb(vty_t* vty)
@@ -178,16 +178,18 @@ void    std_cursor_right_cb(vty_t* vty)
     vty_write(vty, "\33[1C");
 }
 
-int   http_read_cb(vty_t* vty, char** str)
+int   http_read_cb(vty_t* vty, char* str)
 {
     int socket = vty->data->desc.socket;
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
     char* resp = http_server_read_request(socket, http_priv);
-
+    
     if(NULL != resp)
     {
-        *str = resp;
-        return strlen(resp);
+        int resp_len = strlen(resp);
+        memcpy(str, resp, (resp_len < BUFSIZE-1)? resp_len : BUFSIZE-1);
+        free(resp);
+        return resp_len;
     }
     else
     {

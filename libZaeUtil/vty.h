@@ -37,7 +37,7 @@ typedef struct vty_t
 {
     vty_type type;
     bool    (*write_cb)(struct vty_t*, const char*, size_t size);
-    int     (*read_cb)(struct vty_t*, char** str);
+    int     (*read_cb)(struct vty_t*, char* str);
     bool    (*flush_cb)(struct vty_t*);
     void    (*erase_char_cb)(struct vty_t*); // erase last char
     void    (*erase_line_cb)(struct vty_t*);
@@ -51,6 +51,7 @@ typedef struct vty_t
     bool    multi_line;
     char    multiline_stop_char;
     char*   buffer;
+    char*   input;
     int     cursor_pos;
     char*   banner;
     int     buf_size;
