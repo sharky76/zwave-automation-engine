@@ -31,6 +31,7 @@ typedef struct device_record_t
 
 void                    resolver_init();
 void                    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, int instanceId, int commandId);
+void                    resolver_add_entry_default(DeviceType devtype, int nodeId, int instanceId, int commandId);
 void                    resolver_add_device_entry(DeviceType devtype, const char* name, int nodeId);
 void                    resolver_remove_entry(const char* name);
 bool                    resolver_has_name(const char* name);

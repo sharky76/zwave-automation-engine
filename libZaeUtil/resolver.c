@@ -170,6 +170,13 @@ void    resolver_add_entry(DeviceType devtype, const char* name, int nodeId, int
     }
 }
 
+void resolver_add_entry_default(DeviceType devtype, int nodeId, int instanceId, int commandId)
+{
+    char buf[13] = {0};
+    snprintf(buf, 12, "%d.%d.%d", nodeId, instanceId, commandId);
+    resolver_add_entry(devtype, buf, nodeId, instanceId, commandId);
+}
+
 void resolver_add_device_entry(DeviceType devtype, const char* name, int nodeId)
 {
     resolver_add_entry(devtype,name,nodeId,-1, -1);

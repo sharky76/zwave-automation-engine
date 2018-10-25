@@ -101,9 +101,65 @@ void    cmd_tree_node_delete(void* arg)
     free(node);
 }
 
-variant_stack_t*    create_cmd_vec(const char* cmdline)
+variant_stack_t*    create_cmd_vec_with_separator(const char* cmdline, char sep)
 {
     variant_stack_t* cmd_vec = stack_create();
+    int index = 0;
+    int cmd_index = 0;
+    char ch;
+    char cmd_part[1024] = {0};
+
+    if(*cmdline == 0)
+    {
+        return cmd_vec;
+    }
+
+    bool in_quotes = false;
+
+    while(ch = cmdline[index++])
+    {
+        if(ch == '\"')
+        {
+            in_quotes = !in_quotes;
+        }
+        else if(ch == sep && !in_quotes)
+        {
+            if(cmd_index > 0)
+            {
+                cmd_part[cmd_index] = 0;
+                stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
+                cmd_index = 0;
+            }
+        }
+        else if(ch == '!') // The exclamation point is an alias for "end" command
+        {
+            cmd_part[cmd_index] = 0;
+            stack_push_back(cmd_vec, variant_create_string(strdup("end")));
+            cmd_index = 0;
+        }
+        else if(ch != '\n')
+        {
+            cmd_part[cmd_index++] = ch;
+            if(cmd_index >= 1024)
+            {
+                printf("Command part too long! gonna craaaaaash!\n");
+            }
+        }
+    }
+
+    if(cmdline[index-1] != sep)
+    {
+        cmd_part[cmd_index] = 0;
+        stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
+    }
+
+    return cmd_vec;
+}
+
+variant_stack_t*    create_cmd_vec(const char* cmdline)
+{
+    return create_cmd_vec_with_separator(cmdline, ' ');
+    /*variant_stack_t* cmd_vec = stack_create();
     int index = 0;
     int cmd_index = 0;
     char ch;
@@ -153,7 +209,7 @@ variant_stack_t*    create_cmd_vec(const char* cmdline)
         stack_push_back(cmd_vec, variant_create_string(strdup(cmd_part)));
     }
 
-    return cmd_vec;
+    return cmd_vec;*/
 }
 
 cmd_tree_node_t*    cmd_find_node(variant_stack_t* root, const char* cmd_part)

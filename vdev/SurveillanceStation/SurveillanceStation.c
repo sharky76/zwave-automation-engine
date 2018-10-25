@@ -35,6 +35,8 @@ variant_t*  get_event_snapshot(device_record_t* record,va_list args);
 variant_t*  get_event_snapshot_range(device_record_t* record,va_list args);
 variant_t*  get_camera_snapshot(device_record_t* record,va_list args);
 variant_t*  get_model_info(device_record_t* record, va_list args);
+variant_t*  get_stm_url_path(device_record_t* record, va_list args);
+variant_t*  get_stm_config(device_record_t* record, va_list args);
 
 void        device_start(); 
 void        timer_tick_handler(event_t* pevent, void* context);
@@ -47,6 +49,7 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     // Mimic the ZWAVE SENSOR_BINARY data holder path (1.level)
     VDEV_ADD_COMMAND_CLASS("Get", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
     VDEV_ADD_COMMAND_CLASS("GetModelInfo", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
+    VDEV_ADD_COMMAND_CLASS("GetCameraConfig", COMMAND_CLASS_CAMERA, NULL, 0, get_stm_config, "Get Camera stream config");
 
     VDEV_ADD_COMMAND("GetEvents", 1, get_motion_events, "Get Motion event count (arg: id)")
     VDEV_ADD_COMMAND("GetCameraName", 1, get_camera_name_by_id, "Get Camera name (arg: id)")
@@ -56,6 +59,7 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_COMMAND("GetEventList", 1, get_event_list, "Get most recent list of event IDs (arg: id)")
     VDEV_ADD_COMMAND("GetEventSnapshot", 2, get_event_snapshot, "Get recent event snapshot (arg: camid, eventid: -1 = Last event ID)")
     VDEV_ADD_COMMAND("GetEventSnapshotRange", 3, get_event_snapshot_range, "Get list of event snapshots in range (arg: camid, startTime, endTime)")
+    VDEV_ADD_COMMAND("GetStmUrlPath", 1, get_stm_url_path, "Get camera video stream URL (arg: cam_id)")
 
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
     
@@ -289,7 +293,7 @@ void process_camera_info_table(hash_node_data_t* node_data, void* arg)
 
 variant_t*  get_camera_list(device_record_t* record, va_list args)
 {
-    //SS_api_get_sid();
+    SS_api_get_sid();
     SS_api_get_camera_list();
     //SS_api_logout();
 
@@ -312,6 +316,7 @@ void update_resolver_entries(hash_node_data_t* node_data, void* arg)
 {
     SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(node_data->data);
     resolver_add_entry(VDEV, cam_info->name, DT_SURVEILLANCE_STATION, cam_info->id, COMMAND_CLASS_MOTION_EVENTS);
+    resolver_add_entry_default(VDEV, DT_SURVEILLANCE_STATION, cam_info->id, COMMAND_CLASS_CAMERA);
 }
 
 void    device_start()
@@ -445,3 +450,50 @@ variant_t*  get_model_info(device_record_t* record, va_list args)
     return variant_create_string(strdup(model_info));
 }
 
+variant_t*  get_stm_url_path(device_record_t* record, va_list args)
+{
+    variant_t* camera_id_var = va_arg(args, variant_t*);
+    int cam_id = variant_get_int(camera_id_var);
+
+    variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, cam_id);
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
+
+    if(cam_info != NULL && NULL != cam_info->stm_url_path)
+    {
+        return variant_create_string(strdup(cam_info->stm_url_path));
+    }
+
+    return variant_create_bool(false);
+}
+
+variant_t*  get_stm_config(device_record_t* record, va_list args)
+{
+    variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, record->instanceId);
+    
+    if(NULL != cam_info_var)
+    {
+        SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
+
+        char* stm_info = "{ \"cameras\": [{"\
+        "\"name\": \"%s\","\
+        "\"videoConfig\": {"\
+        "\"source\": \"-re -i %s\","\
+        "\"maxStreams\": %d,"\
+        "\"maxWidth\": %d,"\
+        "\"maxHeight\": %d,"\
+        "\"maxFPS\": %d,"\
+        "}}]}";
+
+        char buf[1024] = {0};
+        snprintf(buf, 1023, stm_info, cam_info->name, 
+                                      cam_info->stm_url_path, 
+                                      cam_info->num_streams, 
+                                      cam_info->max_width, 
+                                      cam_info->max_height, 
+                                      cam_info->max_fps);
+                                      
+        return variant_create_string(strdup(buf));
+    }
+
+    return variant_create_bool(false);
+}

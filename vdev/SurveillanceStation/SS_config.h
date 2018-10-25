@@ -47,6 +47,11 @@ typedef struct SS_camera_info_t
     int     id;
     char*   name;
     char*   snapshot_path;
+    char*   stm_url_path;
+    int     num_streams;
+    int     max_fps;
+    int     max_width;
+    int     max_height;
 } SS_camera_info_t;
 
 extern hash_table_t* SS_camera_info_table;
@@ -57,4 +62,5 @@ extern bool    SS_device_started;
 #define EVENT_ACTIVE_TIMEOUT_SEC 180
 #define COMMAND_CLASS_MOTION_EVENTS 48
 #define COMMAND_CLASS_MODEL_INFO 114
+#define COMMAND_CLASS_CAMERA 0xF2     // Special command class for this virtual device
 

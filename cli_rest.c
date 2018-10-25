@@ -1003,24 +1003,30 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
             
                                         // To call VDEV method we need root device record
                                         device_record = device_record->parent; 
-    
+                                        variant_t* ret = NULL;
                                         switch(arg_count)
                                         {
                                         case 1:
-                                            command_class_exec(command_class, command, device_record, arg_list[0]);
+                                            ret = command_class_exec(command_class, command, device_record, arg_list[0]);
                                             break;
                                         case 2:
-                                            command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1]);
+                                            ret = command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1]);
                                             break;
                                         case 3:
-                                            command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2]);
+                                            ret = command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2]);
                                             break;
                                         case 4:
-                                            command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2], arg_list[3]);
+                                            ret = command_class_exec(command_class, command, device_record, arg_list[0], arg_list[1], arg_list[2], arg_list[3]);
                                             break;
                                         default:
                                             break;
                                         }
+
+                                        for(int i = 0; i < sizeof(arg_list)/sizeof(arg_list[0]); i++)
+                                        {
+                                            variant_free(arg_list[i]);
+                                        }
+                                        variant_free(ret);
                                     }
                                 }
                             }

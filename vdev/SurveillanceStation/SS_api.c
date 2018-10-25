@@ -9,6 +9,7 @@
 #include "base64.h"
 #include <math.h>
 
+void  SS_api_get_stm_path();
 
 // API Query: http://192.168.1.77:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
 // Reply: 
@@ -588,6 +589,44 @@ void process_camera_list_response(const json_object* obj, void* arg)
                             snapshot_path = json_object_get_string(snapthot_path_obj);
                         }
 
+                        struct json_object* stm_info_array;
+                        int num_streams = 0;
+                        int max_fps = 0;
+                        int max_width = 0;
+                        int max_height = 0;
+                        if(TRUE == json_object_object_get_ex(camera_entry, "stm_info", &stm_info_array))
+                        {
+                            num_streams = json_object_array_length(stm_info_array);
+                            for (int i = 0; i < num_streams; i++)
+                            {
+                                struct json_object* stm_entry = json_object_array_get_idx(stm_info_array, i);
+                                
+                                struct json_object* fps_obj;
+                                json_object_object_get_ex(stm_entry, "fps", &fps_obj);
+                                int fps = json_object_get_int(fps_obj);
+                                if(max_fps < fps) max_fps = fps;
+
+                                struct json_object* resolution_obj;
+                                json_object_object_get_ex(stm_entry, "resolution", &resolution_obj);
+                                const char* resolution = json_object_get_string(resolution_obj);
+
+                                // Now split the WxH into 2 ints
+                                variant_stack_t* width_height = create_cmd_vec_with_separator(resolution, 'x');
+                                if(width_height->count == 2)
+                                {
+                                    variant_t* width_var = stack_pop_front(width_height);
+                                    variant_t* height_var = stack_pop_front(width_height);
+                                    stack_free(width_height);
+                                    int width = atoi(variant_get_string(width_var));
+                                    int height = atoi(variant_get_string(height_var));
+                                    variant_free(width_var);
+                                    variant_free(height_var);
+                                    if(max_width < width) max_width = width;
+                                    if(max_height < height) max_height = height;
+                                }
+                            }
+                        }
+
                         struct json_object* camera_name_object;
                         if(TRUE == json_object_object_get_ex(camera_entry, "name", &camera_name_object))
                         {
@@ -599,8 +638,15 @@ void process_camera_list_response(const json_object* obj, void* arg)
                                 cam_info->id = cam_id;
                                 cam_info->name = strdup(json_object_get_string(camera_name_object));
                                 cam_info->snapshot_path = strdup(snapshot_path);
+                                cam_info->max_fps = max_fps;
+                                cam_info->max_width = max_width;
+                                cam_info->max_height = max_height;
+                                cam_info->num_streams = num_streams;
                                 LOG_DEBUG(DT_SURVEILLANCE_STATION, "Found camera %d: %s", cam_info->id, cam_info->name);
                                 variant_hash_insert(SS_camera_info_table, cam_id, variant_create_ptr(DT_PTR, cam_info, NULL));
+                                
+                                // Get STM URL for each cam ID
+                                SS_api_get_stm_path(cam_id);
                             }
                             else
                             {
@@ -625,9 +671,55 @@ void process_camera_list_response(const json_object* obj, void* arg)
     }
 }
 
+// Http://192.168.1.1:5000/webapi/entry.cgi?api=SYNO.SurveillanceStation.Camera&method=GetStmUrlPath&version=8&cameraIds=”14,15”
+void process_camera_stm_response(const json_object* obj, void* arg);
+void  SS_api_get_stm_path(int cam_id)
+{
+    LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera Stream URL path");
+    char camera_list_req_buf[512] = {0};
+    snprintf(camera_list_req_buf, 511, "%s/webapi/%s?version=8&api=SYNO.SurveillanceStation.Camera&cameraIds=%d&method=GetStmUrlPath&_sid=%s", SS_base_url, SS_camera_path, cam_id, SS_auth_sid);
+    curl_util_get_json(camera_list_req_buf, process_camera_stm_response, (void*)cam_id);
+}
+
+void process_camera_stm_response(const json_object* obj, void* arg)
+{
+    int cam_id = (int)arg;
+    struct json_object* success_response;
+    json_object_object_get_ex(obj, "success", &success_response);
+    if(NULL != success_response)
+    {
+        if(TRUE == json_object_get_boolean(success_response))
+        {
+            struct json_object* data_object;
+            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            {
+                struct json_object* camera_array;
+                if(TRUE == json_object_object_get_ex(data_object, "pathInfos", &camera_array))
+                {
+                    // Only one entry at a time...
+                    struct json_object* camera_entry = json_object_array_get_idx(camera_array, 0);
+                    const char* stm_path;
+                    struct json_object* camera_stm_path_object;
+                    if(TRUE == json_object_object_get_ex(camera_entry, "unicastPath", &camera_stm_path_object))
+                    {
+                        stm_path = json_object_get_string(camera_stm_path_object);
+
+                        variant_t* cam_entry_variant = variant_hash_get(SS_camera_info_table, cam_id);
+                        if(NULL != cam_entry_variant)
+                        {
+                            SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_entry_variant);
+                            free(cam_info->stm_url_path);
+                            cam_info->stm_url_path = strdup(stm_path);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // http://192.168.1.1:5000/webapi/entry.cgi?camStm=1&version="8"&cameraId=18&api="SYNO.SurveillanceStation.Camera"&preview=true&method="GetSnapshot"
 void process_camera_snapshot_response(const char* data, int len, void* arg);
-
 void SS_api_get_camera_snapshot(int cam_id, char** snapshot)
 {
     LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera Snapshot");

@@ -74,7 +74,8 @@ void    cli_install_custom_node(variant_stack_t* custom_cli_node_list, cli_node_
 void    cli_append_to_node(cli_node_t* node, cli_command_t command_list[]);
 void    cli_assemble_line(variant_stack_t* params, int start, char* out_line, int length);
 variant_stack_t*    create_cmd_vec(const char* cmdline);
-variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size);
+variant_stack_t*    create_cmd_vec_with_separator(const char* cmdline, char sep);
+//variant_stack_t*    create_cmd_vec_n(const char* cmdline, size_t size);
 bool    cli_enter_node(vty_t* vty, const char* node_name);
 bool    cli_exit_node(vty_t* vty, variant_stack_t* params);
 void    cli_command_describe_norl(vty_t* vty);
