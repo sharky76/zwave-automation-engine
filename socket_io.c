@@ -8,6 +8,7 @@
 #include <arpa/telnet.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 DECLARE_LOGGER(SocketIO)
 
@@ -113,3 +114,7 @@ void    socket_cursor_right_cb(vty_t* vty)
     vty_write(vty, "\33[1C");
 }
 
+void    socket_close_cb(vty_io_data_t* vty_data)
+{
+    close(vty_data->desc.socket);
+}

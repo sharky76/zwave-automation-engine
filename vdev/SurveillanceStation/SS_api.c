@@ -9,7 +9,8 @@
 #include "base64.h"
 #include <math.h>
 
-void  SS_api_get_stm_path();
+void  SS_api_get_stm_path(int);
+void  SS_api_get_camera_info(int);
 
 // API Query: http://192.168.1.77:5000/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth,SYNO.SurveillanceStation.Event,SYNO.SurveillanceStation.Camera,SYNO.SurveillanceStation.Info
 // Reply: 
@@ -626,7 +627,6 @@ void process_camera_list_response(const json_object* obj, void* arg)
                                 }
                             }
                         }
-
                         struct json_object* camera_name_object;
                         if(TRUE == json_object_object_get_ex(camera_entry, "name", &camera_name_object))
                         {
@@ -647,6 +647,7 @@ void process_camera_list_response(const json_object* obj, void* arg)
                                 
                                 // Get STM URL for each cam ID
                                 SS_api_get_stm_path(cam_id);
+                                SS_api_get_camera_info(cam_id);
                             }
                             else
                             {
@@ -710,6 +711,78 @@ void process_camera_stm_response(const json_object* obj, void* arg)
                             SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_entry_variant);
                             free(cam_info->stm_url_path);
                             cam_info->stm_url_path = strdup(stm_path);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+//http://192.168.1.1:5000/webapi/entry.cgi?
+//version="8"&cameraIds="89"&blIncludeDeletedCam=true&deviceOutCap=true&streamInfo=true&method
+//="GetInfo"&api="SYNO.SurveillanceStation.Camera"&ptz=true&basic=true&privCamType=3&camAppInfo=t
+//rue&optimize=true&fisheye=true&eventDetection=true
+void process_camera_info_response(const json_object* obj, void* arg);
+void  SS_api_get_camera_info(int cam_id)
+{
+    LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Get Camera Info");
+    char camera_info_req_buf[512] = {0};
+    snprintf(camera_info_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Camera&version=8&cameraIds=%d&basic=true&camAppInfo=true&method=GetInfo&_sid=%s", SS_base_url, SS_camera_path, cam_id, SS_auth_sid);
+    LOG_DEBUG(DT_SURVEILLANCE_STATION, "Get Camera Info URL: %s", camera_info_req_buf);
+
+printf("URL: %s\n", camera_info_req_buf);
+
+    curl_util_get_json(camera_info_req_buf, process_camera_info_response, (void*)cam_id);
+}
+
+void process_camera_info_response(const json_object* obj, void* arg)
+{
+    int cam_id = (int)arg;
+    struct json_object* success_response;
+    json_object_object_get_ex(obj, "success", &success_response);
+    if(NULL != success_response)
+    {
+        if(TRUE == json_object_get_boolean(success_response))
+        {
+            struct json_object* data_object;
+            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            {
+                struct json_object* camera_array;
+                if(TRUE == json_object_object_get_ex(data_object, "cameras", &camera_array))
+                {
+                    variant_t* cam_entry_variant = variant_hash_get(SS_camera_info_table, cam_id);
+                    if(NULL != cam_entry_variant)
+                    {
+                        SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_entry_variant);
+
+                        struct json_object* camera_entry = json_object_array_get_idx(camera_array, 0);
+                        struct json_object* host_object;
+                        if(TRUE == json_object_object_get_ex(camera_entry, "host", &host_object))
+                        {
+                            cam_info->host = strdup(json_object_get_string(host_object));
+                        }
+
+                        struct json_object* port_object;
+                        if(TRUE == json_object_object_get_ex(camera_entry, "port", &port_object))
+                        {
+                            cam_info->port = json_object_get_int(port_object);
+                        }
+
+                        struct json_object* detail_info;
+                        if(TRUE == json_object_object_get_ex(camera_entry, "detailInfo", &detail_info))
+                        {
+                            struct json_object* username_object;
+                            if(TRUE == json_object_object_get_ex(detail_info, "camUserName", &username_object))
+                            {
+                                cam_info->username = strdup(json_object_get_string(username_object));
+                            }
+
+                            struct json_object* password_object;
+                            if(TRUE == json_object_object_get_ex(detail_info, "camPassWord", &password_object))
+                            {
+                                cam_info->password = strdup(json_object_get_string(password_object));
+                            }
                         }
                     }
                 }

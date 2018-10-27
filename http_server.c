@@ -136,13 +136,48 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         }
         else if(pret == -1)
         {
-            LOG_ERROR(HTTPServer, "Parse errir\n");
+            LOG_ERROR(HTTPServer, "Parse error");
             http_server_error_response(FORBIDDEN, client_socket);
             return NULL;
         }
     };
 
     LOG_DEBUG(HTTPServer, "Request %s", http_priv->request->buffer);
+
+    if(user_manager_get_count() > 0)
+    {
+        char* auth_start;
+        if(!http_request_find_header_value(http_priv, "Authorization", &auth_start))
+        {
+            LOG_ERROR(HTTPServer, "Access denied");
+            http_server_error_response(DENIED, client_socket);
+            free(auth_start);
+            return NULL;
+        }
+        else
+        {
+            char user_pass[256] = {0};
+            sscanf(auth_start, "Basic %s", user_pass);
+    
+            char user_pass_decoded[256] = {0};
+            Base64decode(user_pass_decoded, user_pass);
+    
+            char* user_tok = strtok(user_pass_decoded, ":");
+            char* pass_tok = strtok(NULL, ":");
+            if(!user_manager_authenticate(user_tok, pass_tok))
+            {
+                LOG_ERROR(HTTPServer, "Access denied, invalid username/password");
+                http_server_error_response(DENIED, client_socket);
+                free(auth_start);
+                return NULL;
+            }
+            else
+            {
+                LOG_INFO(HTTPServer, "Authentication success for %s", user_tok);
+                free(auth_start);
+            }
+        }
+    }
 
     if(strncmp(http_priv->request->method, "OPTIONS", http_priv->request->method_len) == 0)
     {
@@ -164,38 +199,6 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
             http_priv->post_data = content;
         }
     }
-
-    /*if(user_manager_get_count() > 0)
-    {
-        char* auth_start = strstr(buffer, "Authorization: Basic");
-        if(NULL == auth_start)
-        {
-            LOG_ERROR(HTTPServer, "Access denied");
-            http_server_error_response(DENIED, client_socket);
-            return NULL;
-        }
-        else
-        {
-            char user_pass[256] = {0};
-            sscanf(auth_start, "Authorization: Basic %s", user_pass);
-    
-            char user_pass_decoded[256] = {0};
-            Base64decode(user_pass_decoded, user_pass);
-    
-            char* user_tok = strtok(user_pass_decoded, ":");
-            char* pass_tok = strtok(NULL, ":");
-            if(!user_manager_authenticate(user_tok, pass_tok))
-            {
-                LOG_ERROR(HTTPServer, "Access denied");
-                http_server_error_response(DENIED, client_socket);
-                return NULL;
-            }
-            else
-            {
-                LOG_INFO(HTTPServer, "Authentication success for %s\n", user_tok);
-            }
-        }
-    }*/
 
     // Browsers really like to get favicon.ico - tell them to fuck off
     if(strstr(http_priv->request->method, "favicon.ico") != 0)

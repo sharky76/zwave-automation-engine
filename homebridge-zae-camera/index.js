@@ -94,7 +94,7 @@ ffmpegPlatform.prototype = {
 
           this.log("[1]Video config: " + videoConfig.source);
           // -rtsp_transport tcp
-          videoConfig.source = "-loglevel verbose -c:v h264_mmal " + videoConfig.source;
+          videoConfig.source = "-rtsp_transport tcp -c:v h264_mmal " + videoConfig.source;
 
           cameraConfig["name"] = cameraName;
           cameraConfig["videoConfig"] = videoConfig;

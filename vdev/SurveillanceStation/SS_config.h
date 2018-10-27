@@ -52,6 +52,10 @@ typedef struct SS_camera_info_t
     int     max_fps;
     int     max_width;
     int     max_height;
+    char*   host;
+    int     port;
+    char*   username;
+    char*   password;
 } SS_camera_info_t;
 
 extern hash_table_t* SS_camera_info_table;

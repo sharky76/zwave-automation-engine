@@ -141,10 +141,6 @@ FFMPEG.prototype.handleCloseConnection = function(connectionID) {
   });
 }
 
-FFMPEG.prototype.killSnapshot = function(instance) {
-  instance.kill('SIGTERM');
-}
-
 FFMPEG.prototype.handleSnapshotRequest = function(request, callback) {
   let resolution = request.width + 'x' + request.height;
   var imageSource = this.ffmpegImageSource !== undefined ? this.ffmpegImageSource : this.ffmpegSource;
@@ -166,8 +162,6 @@ FFMPEG.prototype.handleSnapshotRequest = function(request, callback) {
       { this.drive.storePicture(this.name,imageBuffer); }
     callback(undefined, imageBuffer);
   }.bind(this));
-
-  setTimeout(this.killSnapshot, 2000, ffmpeg);
 }
 
 FFMPEG.prototype.prepareStream = function(request, callback) {
@@ -307,7 +301,7 @@ FFMPEG.prototype.handleStreamRequest = function(request) {
           ' -r ' + fps +
           ' -f rawvideo' +
           ' ' + additionalCommandline +
-          /*' -vf scale=' + width + ':' + height +*/
+          ' -vf scale=' + width + ':' + height +
           ' -b:v ' + vbitrate + 'k' +
           ' -bufsize ' + vbitrate+ 'k' +
           ' -maxrate '+ vbitrate + 'k' +

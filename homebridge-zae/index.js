@@ -27,7 +27,10 @@ function ZAEPlatform(log, config, api) {
 	// Load config path to read event URL
 	zae_host = config.zae_host;
 	zae_port = config.zae_port;
-	var eventUrl = 'http://' + zae_host + ':' + zae_port + '/rest/v1/sse';
+	
+	var eventUrl = (config.username)? 
+					'http://' + config.username + ':' + config.password + '@' + zae_host + ':' + zae_port + '/rest/v1/sse' :
+					'http://' + zae_host + ':' + zae_port + '/rest/v1/sse';
 
 	console.log("EventURL:", eventUrl);
 	this.eventSource = new EventSource(eventUrl);
@@ -50,8 +53,8 @@ ZAEPlatform.prototype = {
 			method: method,
 			rejectUnauthorized: false,
 			auth: {
-				user: username,
-				pass: password,
+				user: this.config["username"],
+				pass: this.config["password"],
 				sendImmediately: sendimmediately
 			}
 		},

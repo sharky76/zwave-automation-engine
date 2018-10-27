@@ -72,6 +72,7 @@ bool    cmd_set_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_pager(vty_t* vty, variant_stack_t* params);
 bool    cmd_line_filter(vty_t* vty, variant_stack_t* params);
 void    show_command_class_helper(command_class_t* command_class, void* arg);
+bool    cmd_shutdown(vty_t* vty, variant_stack_t* params);
 
 cli_command_t root_command_list[] = {
     {"controller inclusion start", cmd_controller_inclusion_mode, "Start inclusion mode"},
@@ -101,7 +102,8 @@ cli_command_t root_command_list[] = {
     {"more",                 cmd_pager,                 "Pager"},
     {"grep LINE",            cmd_line_filter,           "Line filter"},
     {"end",                  cmd_exit_node,             "End configuration session"},
-    {"exit",                 cmd_quit,                  "Exit the application"},
+    {"exit",                 cmd_quit,                  "Exit the session"},
+    {"quit",                 cmd_shutdown,              "Exit the application"},
     {NULL,                   NULL,                          NULL}
 };
 
@@ -848,6 +850,12 @@ bool    cmd_quit(vty_t* vty, variant_stack_t* params)
     //cli_command_quit(0, 0);
     vty_shutdown(vty);
 }
+
+bool    cmd_shutdown(vty_t* vty, variant_stack_t* params)
+{
+    kill(getpid(), SIGHUP);
+}
+
 
 bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params)
 {

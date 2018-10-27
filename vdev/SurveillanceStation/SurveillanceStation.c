@@ -293,7 +293,12 @@ void process_camera_info_table(hash_node_data_t* node_data, void* arg)
 
 variant_t*  get_camera_list(device_record_t* record, va_list args)
 {
-    SS_api_get_sid();
+    if(SS_camera_info_table->count == 0)
+    {
+        SS_api_query();
+        SS_api_get_sid();
+    }
+
     SS_api_get_camera_list();
     //SS_api_logout();
 
@@ -477,7 +482,7 @@ variant_t*  get_stm_config(device_record_t* record, va_list args)
         char* stm_info = "{ \"cameras\": [{"\
         "\"name\": \"%s\","\
         "\"videoConfig\": {"\
-        "\"source\": \"-re -i %s\","\
+        "\"source\": \"-re -i rtsp://%s \","\
         "\"maxStreams\": %d,"\
         "\"maxWidth\": %d,"\
         "\"maxHeight\": %d,"\
@@ -486,7 +491,7 @@ variant_t*  get_stm_config(device_record_t* record, va_list args)
 
         char buf[1024] = {0};
         snprintf(buf, 1023, stm_info, cam_info->name, 
-                                      cam_info->stm_url_path, 
+                                      cam_info->stm_url_path,
                                       cam_info->num_streams, 
                                       cam_info->max_width, 
                                       cam_info->max_height, 

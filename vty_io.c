@@ -240,8 +240,3 @@ void    http_free_priv_cb(vty_t* vty)
     free(http_priv->headers);
     free(http_priv);
 }
-
-void    socket_close_cb(vty_io_data_t* vty_data)
-{
-    close(vty_data->desc.socket);
-}
