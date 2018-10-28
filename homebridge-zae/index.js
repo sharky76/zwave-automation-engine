@@ -117,7 +117,8 @@ ZAEPlatform.prototype = {
 		this.NotificationForService = {
 			MotionDetected: Characteristic.MotionDetected,
 			LeakDetected: Characteristic.LeakDetected,
-			Tampered: Characteristic.StatusTampered
+			Tampered: Characteristic.StatusTampered,
+			SmokeDetected: Characteristic.SmokeDetected
 		};
 
 		for(var index in deviceDescriptor.command_classes) {
@@ -658,6 +659,49 @@ ZAEPlatform.prototype = {
 											return true;
 										} else {
 											return false;
+										}
+									}
+								});
+						}
+					break;
+					case 'SmokeDetected':
+						var existingService = this.serviceList.find(function(element) {
+							return typeof element === Service.SmokeSensor;
+						});
+
+						if(typeof existingService === 'undefined') {
+							var service = new Service.SmokeSensor(this.name);
+							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
+							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
+								{
+									dh: "V1event",
+									valueHolder: "level",
+									accessory:this,
+									instance:commandClass.instance,
+									commandClass: 113,
+									convert:function(value) { 
+										if(value == 255) {
+											return Characteristic.SmokeDetected.SMOKE_DETECTED;
+										} else {
+											return Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+										}
+									}
+								}));
+							this.serviceList.push(service);
+
+							this.registerEventListener(this.NotificationForService[notification], 
+								{
+									service:service,
+									node_id:this.nodeId,
+									instance:commandClass.instance,
+									command_class: 113,
+									dh:"V1event",
+									valueHolder: "level",
+									convert:function(value) { 
+										if(value == 255) {
+											return Characteristic.SmokeDetected.SMOKE_DETECTED;
+										} else {
+											return Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
 										}
 									}
 								});
