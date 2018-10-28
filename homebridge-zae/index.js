@@ -121,6 +121,11 @@ ZAEPlatform.prototype = {
 			SmokeDetected: Characteristic.SmokeDetected
 		};
 
+		this.CharacteristicForAlarmType = {
+			Smoke: Characteristic.SmokeDetected,
+			CO: Characteristic.CarbonMonoxideDetected,
+		};
+
 		for(var index in deviceDescriptor.command_classes) {
 			switch(deviceDescriptor.command_classes[index].id) {
 				case 48: // Binary Sensor
@@ -275,8 +280,9 @@ ZAEPlatform.prototype = {
 					break;
 				case 113:
 					var notificationList = deviceDescriptor.descriptor.notifications;
+					var sensorAlarmList = deviceDescriptor.descriptor.alarmRoles;
 					if(typeof notificationList !== 'undefined' && notificationList.length > 0) {
-						this.createNotificationAccessory(deviceDescriptor.command_classes[index], notificationList);
+						this.createNotificationAccessory(deviceDescriptor.command_classes[index], notificationList, sensorAlarmList);
 					}
 					break;
 				case 156:
@@ -398,8 +404,15 @@ ZAEPlatform.prototype = {
 				if(command_id == this.command_class && json.node_id == this.node_id && dh == this.dh && instance == this.instance)  {
 					//console.log("Event accepted");
 					var sensorValue = json.data[this.valueHolder || "level"];
+
+					var alarmTypeValue = '';
+					if(typeof this.alarmType !== 'undefined')
+					{
+						alarmTypeValue = json.data[this.alarmType];
+					}
+
 					if(typeof this.convert === 'function') {
-						sensorValue = this.convert(sensorValue);
+						sensorValue = this.convert(sensorValue, alarmTypeValue);
 					}
 
 					if(typeof this.force_value !== 'undefined') {
@@ -614,7 +627,7 @@ ZAEPlatform.prototype = {
 				this.serviceList.push(service);
 			}
 		},
-		createNotificationAccessory : function(commandClass, notificationList) {
+		createNotificationAccessory : function(commandClass, notificationList, sensorAlarmList) {
 			// Alert notification supported. Lets see what services and characteristics
 			// we can create for this device
 			for(var  index in notificationList) {
@@ -665,11 +678,103 @@ ZAEPlatform.prototype = {
 						}
 					break;
 					case 'SmokeDetected':
-						var existingService = this.serviceList.find(function(element) {
-							return typeof element === Service.SmokeSensor;
-						});
+						// This might be more than just Smoke detector... 
+						// Lets check tho sensor alarm list
+						if(typeof sensorAlarmList !== 'undefined')
+						{
+							for(var  index in sensorAlarmList) {
+								var sensorAlarm = sensorAlarmList[index];
+								this.log("Index: " + index + " alarm: " + sensorAlarm);
+								switch(sensorAlarm) {
+									case 'Smoke':
+										var service = new Service.SmokeSensor(this.name);
+										service.subtype = "node"+this.nodeId+"instance"+commandClass.instance+"index"+index;
+										service.getCharacteristic(this.CharacteristicForAlarmType[sensorAlarm]).on('get', this.getAlarmV1Value.bind(
+											{
+												dh: "V1event",
+												valueHolder: "level",
+												alarmType: "alarmType",
+												expectedAlarmType: index,
+												accessory:this,
+												instance:commandClass.instance,
+												commandClass: 113,
+												convert:function(value, alarmTypeValue) { 
+													//this.accessory.log("Level is " + value + " and alarmType is " + alarmTypeValue + " and expected type is " + this.expectedAlarmType);
 
-						if(typeof existingService === 'undefined') {
+													if(value == 255 && alarmTypeValue == this.expectedAlarmType) {
+														return Characteristic.SmokeDetected.SMOKE_DETECTED;
+													} else {
+														return Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+													}
+												}
+											}));
+										this.serviceList.push(service);
+				
+										this.registerEventListener(this.CharacteristicForAlarmType[sensorAlarm], 
+											{
+												service:service,
+												node_id:this.nodeId,
+												instance:commandClass.instance,
+												command_class: 113,
+												dh:"V1event",
+												valueHolder: "level",
+												alarmType: "alarmType",
+												expectedAlarmType: index,
+												convert:function(value, alarmTypeValue) { 
+													if(value == 255 && this.expectedAlarmType == alarmTypeValue) {
+														return Characteristic.SmokeDetected.SMOKE_DETECTED;
+													} else {
+														return Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
+													}
+												}
+											});
+									break;
+									case 'CO':
+										var service = new Service.CarbonMonoxideSensor(this.name);
+										service.subtype = "node"+this.nodeId+"instance"+commandClass.instance+"index"+index;
+										service.getCharacteristic(this.CharacteristicForAlarmType[sensorAlarm]).on('get', this.getAlarmV1Value.bind(
+											{
+												dh: "V1event",
+												valueHolder: "level",
+												alarmType: "alarmType",
+												expectedAlarmType: index,
+												accessory:this,
+												instance:commandClass.instance,
+												commandClass: 113,
+												convert:function(value, alarmTypeValue) { 
+													//this.accessory.log("Level is " + value + " and alarmType is " + alarmTypeValue + " and expected type is " + this.expectedAlarmType);
+
+													if(value == 255 && alarmTypeValue == this.expectedAlarmType) {
+														return Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+													} else {
+														return Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+													}
+												}
+											}));
+										this.serviceList.push(service);
+				
+										this.registerEventListener(this.CharacteristicForAlarmType[sensorAlarm], 
+											{
+												service:service,
+												node_id:this.nodeId,
+												instance:commandClass.instance,
+												command_class: 113,
+												dh:"V1event",
+												valueHolder: "level",
+												alarmType: "alarmType",
+												expectedAlarmType: index,
+												convert:function(value, alarmTypeValue) { 
+													if(value == 255 && alarmTypeValue == this.expectedAlarmType) {
+														return Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+													} else {
+														return Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+													}
+												}
+											});
+									break;
+								}
+							}
+						} else {
 							var service = new Service.SmokeSensor(this.name);
 							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
 							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
@@ -965,6 +1070,31 @@ ZAEPlatform.prototype = {
 					var sensorValue = (this.valueHolder)? json.device_data[this.valueHolder] : json.device_data.val;
 					if(typeof this.convert === 'function') {
 						sensorValue = this.convert(sensorValue);
+					}
+
+					this.accessory.log("Sensor " + this.accessory.nodeId + " CC " + this.commandClass + " value is %s", sensorValue);
+					callback(null, sensorValue);
+				}
+			}.bind(this));
+		},
+		getAlarmV1Value: function(callback) {
+			//this.dh = 1;
+			//console.log(JSON.stringify(this, null, 4));
+			var url = 'http://' + this.accessory.config.zae_host + ':' + this.accessory.config.zae_port + '/rest/v1/devices/'
+				+ this.accessory.nodeId + '/' + this.instance + '/' + this.commandClass + '/' + this.dh;
+			this.accessory.log("Getting Sensor value: " + url);
+			
+			this.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {
+				if (error) {
+					this.accessory.log('HTTP get power function failed: %s', error.message);
+					callback(error);
+				} else {
+					var json = JSON.parse(responseBody);
+
+					var sensorValue = (this.valueHolder)? json.device_data[this.valueHolder] : json.device_data.val;
+					var alarmTypeValue = (this.alarmType)? json.device_data[this.alarmType] : '';
+					if(typeof this.convert === 'function') {
+						sensorValue = this.convert(sensorValue, alarmTypeValue);
 					}
 
 					this.accessory.log("Sensor " + this.accessory.nodeId + " CC " + this.commandClass + " value is %s", sensorValue);
