@@ -151,7 +151,6 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
         {
             LOG_ERROR(HTTPServer, "Access denied");
             http_server_error_response(DENIED, client_socket);
-            free(auth_start);
             return NULL;
         }
         else
@@ -161,20 +160,19 @@ char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv)
     
             char user_pass_decoded[256] = {0};
             Base64decode(user_pass_decoded, user_pass);
-    
+            free(auth_start);
+
             char* user_tok = strtok(user_pass_decoded, ":");
             char* pass_tok = strtok(NULL, ":");
             if(!user_manager_authenticate(user_tok, pass_tok))
             {
                 LOG_ERROR(HTTPServer, "Access denied, invalid username/password");
                 http_server_error_response(DENIED, client_socket);
-                free(auth_start);
                 return NULL;
             }
             else
             {
                 LOG_INFO(HTTPServer, "Authentication success for %s", user_tok);
-                free(auth_start);
             }
         }
     }
