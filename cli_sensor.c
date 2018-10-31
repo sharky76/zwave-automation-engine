@@ -44,9 +44,6 @@ cli_command_t   sensor_root_list[] = {
     {"sensor interview node-id INT",            cmd_sensor_force_interview, "Force interview for a sensor"},
     {"sensor interview node-id INT instance INT command-class INT", cmd_sensor_command_interview, "Run a command interview"},
     {"sensor set-descriptor node-id INT WORD",              cmd_sensor_set_descriptor, "Set ZDDX descriptor file for sensor"},
-    //{"sensor role node-id INT MotionSensor|ContactSensor|LeakSensor|OccupancySensor", cmd_sensor_set_role, "Set optional sensor role"},
-    //{"sensor notification node-id INT MotionDetected|Tampered", }
-    //{"no sensor role node-id INT", cmd_sensor_remove_role, "Remove optional sensor role"},
     {"show sensor descriptor", cmd_sensor_show_descriptor, "Show sensor descriptor"},
     {"sensor descriptor node-id INT", cmd_enter_sensor_descriptor_node, "Confgure sensor descriptor"},
     {"no sensor descriptor node-id INT", cmd_sensor_remove_descriptor, "Remove sensor descriptor"},
@@ -58,7 +55,7 @@ cli_command_t sensor_descriptor_command_list[] = {
     {"name LINE",                                                  cmd_sensor_descriptor_set_name, "Set sensor name"},
     {"instance INT name LINE",                                     cmd_sensor_descriptor_set_instance_name, "Set name for a sensor instance"},
     {"no instance INT name LINE",                                     cmd_sensor_descriptor_remove_instance_name, "Remove name for a sensor instance"},
-    {"notification MotionDetected|LeakDetected|SirenActive|SmokeDetected",       cmd_sensor_descriptor_set_notification, "Set sensor notification"},
+    //{"notification MotionDetected|LeakDetected|SirenActive|SmokeDetected",       cmd_sensor_descriptor_set_notification, "Set sensor notification"},
     {"sensor-alarm INT role Tampered|LeakDetected|Smoke|CO|CO2|Heat",  cmd_sensor_descriptor_set_sensor_alarm, "Set sensor alarm notification"},
     {NULL,                   NULL,                          NULL}
 };

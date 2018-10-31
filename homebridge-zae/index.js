@@ -112,14 +112,15 @@ ZAEPlatform.prototype = {
 			ContactSensor: Characteristic.ContactSensorState,
 			MotionSensor: Characteristic.MotionDetected,
 			LeakSensor:Characteristic.LeakDetected,
+			SmokeSensor: Characteristic.SmokeDetected
 		};
 
-		this.NotificationForService = {
+		/*this.NotificationForService = {
 			MotionDetected: Characteristic.MotionDetected,
 			LeakDetected: Characteristic.LeakDetected,
 			Tampered: Characteristic.StatusTampered,
 			SmokeDetected: Characteristic.SmokeDetected
-		};
+		};*/
 
 		this.CharacteristicForAlarmType = {
 			Smoke: Characteristic.SmokeDetected,
@@ -279,11 +280,12 @@ ZAEPlatform.prototype = {
 					this.serviceList.push(service);
 					break;
 				case 113:
-					var notificationList = deviceDescriptor.descriptor.notifications;
+					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[113]) || '';
+					//var notificationList = deviceDescriptor.descriptor.notifications;
 					var sensorAlarmList = deviceDescriptor.descriptor.alarmRoles;
-					if(typeof notificationList !== 'undefined' && notificationList.length > 0) {
-						this.createNotificationAccessory(deviceDescriptor.command_classes[index], notificationList, sensorAlarmList);
-					}
+					//if(typeof notificationList !== 'undefined' && notificationList.length > 0) {
+						this.createNotificationAccessory(deviceDescriptor.command_classes[index], serviceType, sensorAlarmList);
+					//}
 					break;
 				case 156:
 					var sensorAlarmList = deviceDescriptor.descriptor.alarmRoles;
@@ -627,57 +629,50 @@ ZAEPlatform.prototype = {
 				this.serviceList.push(service);
 			}
 		},
-		createNotificationAccessory : function(commandClass, notificationList, sensorAlarmList) {
+		createNotificationAccessory : function(commandClass, serviceType, sensorAlarmList) {
 			// Alert notification supported. Lets see what services and characteristics
 			// we can create for this device
-			for(var  index in notificationList) {
-				var notification = notificationList[index];
-				this.log("Creating notification for " + notification);
-				switch(notification) {
-					case 'MotionDetected':
-						var existingService = this.serviceList.find(function(element) {
-							return typeof element === Service.MotionSensor;
-						});
-
-						if(typeof existingService === 'undefined') {
-							var service = new Service.MotionSensor(this.name);
-							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
-							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
-								{
-									dh: 7,
-									valueHolder: "event",
-									accessory:this,
-									instance:commandClass.instance,
-									commandClass: 113,
-									convert:function(value) { 
-										if(value == 8) {
-											return true;
-										} else {
-											return false;
-										}
+			if(serviceType != 'Disabled') {
+				this.log("Creating notification for " + serviceType);
+				switch(serviceType) {
+					case 'MotionSensor':
+						var service = new Service.MotionSensor(this.name);
+						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
+						service.getCharacteristic(this.CharacteristicForService[serviceType]).on('get', this.getSensorValue.bind(
+							{
+								dh: 7,
+								valueHolder: "event",
+								accessory:this,
+								instance:commandClass.instance,
+								commandClass: 113,
+								convert:function(value) { 
+									if(value == 8) {
+										return true;
+									} else {
+										return false;
 									}
-								}));
-							this.serviceList.push(service);
+								}
+							}));
+						this.serviceList.push(service);
 
-							this.registerEventListener(this.NotificationForService[notification], 
-								{
-									service:service,
-									node_id:this.nodeId,
-									instance:commandClass.instance,
-									command_class: 113,
-									dh:7,
-									valueHolder: "event",
-									convert:function(value) { 
-										if(value == 8) {
-											return true;
-										} else {
-											return false;
-										}
+						this.registerEventListener(this.CharacteristicForService[serviceType], 
+							{
+								service:service,
+								node_id:this.nodeId,
+								instance:commandClass.instance,
+								command_class: 113,
+								dh:7,
+								valueHolder: "event",
+								convert:function(value) { 
+									if(value == 8) {
+										return true;
+									} else {
+										return false;
 									}
-								});
-						}
+								}
+							});
 					break;
-					case 'SmokeDetected':
+					case 'SmokeSensor':
 						// This might be more than just Smoke detector... 
 						// Lets check tho sensor alarm list
 						if(typeof sensorAlarmList !== 'undefined')
@@ -777,7 +772,7 @@ ZAEPlatform.prototype = {
 						} else {
 							var service = new Service.SmokeSensor(this.name);
 							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
-							service.getCharacteristic(this.NotificationForService[notification]).on('get', this.getSensorValue.bind(
+							service.getCharacteristic(this.CharacteristicForService[serviceType]).on('get', this.getSensorValue.bind(
 								{
 									dh: "V1event",
 									valueHolder: "level",
@@ -794,7 +789,7 @@ ZAEPlatform.prototype = {
 								}));
 							this.serviceList.push(service);
 
-							this.registerEventListener(this.NotificationForService[notification], 
+							this.registerEventListener(this.CharacteristicForService[serviceType], 
 								{
 									service:service,
 									node_id:this.nodeId,
@@ -812,7 +807,7 @@ ZAEPlatform.prototype = {
 								});
 						}
 					break;
-					case 'Water':
+					/*case 'Water':
 						var existingService = this.serviceList.find(function(element) {
 							return typeof element === Service.LeakSensor;
 						});
@@ -855,6 +850,7 @@ ZAEPlatform.prototype = {
 								});
 						}
 					break;
+					*/
 				}
 			}
 		},
@@ -888,7 +884,7 @@ ZAEPlatform.prototype = {
 						case 'LeakDetected':
 							var service = new Service.LeakSensor(this.name);
 							service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
-							service.getCharacteristic(this.NotificationForService[sensorAlarm]).on('get', this.getSensorValue.bind(
+							service.getCharacteristic(Characteristic[sensorAlarm]).on('get', this.getSensorValue.bind(
 								{
 									dh: 5,
 									valueHolder: "sensorState",
@@ -905,7 +901,7 @@ ZAEPlatform.prototype = {
 								}));
 							this.serviceList.push(service);
 
-							this.registerEventListener(this.NotificationForService[sensorAlarm], 
+							this.registerEventListener(Characteristic[sensorAlarm], 
 								{
 									service:service,
 									node_id:this.nodeId,
