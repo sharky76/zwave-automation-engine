@@ -28,6 +28,7 @@ variant_t*   command_class_eval_association(const char* method, device_record_t*
 variant_t*   command_class_eval_alarm_sensor(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_barrier(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_switch_multilevel(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_door_lock(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -104,6 +105,10 @@ static command_class_t command_class_table[] = {
                                 "Set", 1, "<% level>, <duration (default: 0xff, instant: 0, seconds: 0x01 - 0x7f, minutes: 0x80-0xfe",
                                 NULL, 0, NULL},
                                 &command_class_eval_switch_multilevel},
+    {0x62, "DoorLock", {"Get", 0, "",
+                        "Set", 1, "Lock mode",
+                        NULL, 0, NULL},
+                        &command_class_eval_door_lock},
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -685,6 +690,25 @@ variant_t*   command_class_eval_switch_multilevel(const char* method, device_rec
     }
     return ret_val;
 }
+
+variant_t*   command_class_eval_door_lock(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+    
+    if(strcmp(method, "Get") == 0)
+    {
+        ret_val = command_class_read_data(record, "mode");
+    }
+    else if(strcmp(method, "Set") == 0)
+    {
+        variant_t* param_value = va_arg(args, variant_t*);
+        //variant_t* param_duration = va_arg(args, variant_t*);
+        ZWError err = zway_cc_door_lock_set(zway, record->nodeId, record->instanceId, variant_get_int(param_value), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+    return ret_val;
+}
+
 
 variant_t*  command_class_exec(command_class_t* cmd_class, const char* cmd_name, device_record_t* record, ...)
 {

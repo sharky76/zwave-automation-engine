@@ -304,6 +304,9 @@ ZAEPlatform.prototype = {
 					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[38]) || "Disabled";
 					this.createLightbulbAccessory(deviceDescriptor.command_classes[index], serviceType);
 					break;
+				case 98:
+					this.createDoorLockAccessory(deviceDescriptor.command_classes[index]);
+					break;
 				case 241: // Custom Command Class for emulation of Security System
 					var service = new Service.SecuritySystem(this.name);
 					service.getCharacteristic(Characteristic.SecuritySystemCurrentState)
@@ -609,25 +612,70 @@ ZAEPlatform.prototype = {
 							}
 						}
 					});
-				/*this.registerEventListener(Characteristic.TargetDoorState,
-					{
-						service:service,
-						node_id:this.nodeId,
-						instance:commandClass.instance,
-						command_class:commandClass.id,
-						dh:"state",
-						valueHolder:"state",
-						convert:function(value) {
-							if(value == 255) {
-								return Characteristic.TargetDoorState.OPEN;
-							} else if(value == 0) {
-								return Characteristic.TargetDoorState.CLOSED;
-							} 
-						}
-					});*/
-
 				this.serviceList.push(service);
 			}
+		},
+		createDoorLockAccessory : function(commandClass) {
+			var service = new Service.LockMechanism(this.name);
+			service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
+
+			service.getCharacteristic(Characteristic.LockCurrentState).on('get', this.getSensorValue.bind(
+				{
+					dh: "mode",
+					valueHolder: "mode",
+					accessory:this,
+					instance:commandClass.instance,
+					commandClass: commandClass.id,
+					convert:function(value) { 
+						if(value == 255) {
+							return Characteristic.LockCurrentState.SECURED;
+						} else if(value == 0) {
+							return Characteristic.LockCurrentState.UNSECURED;
+						} else {
+							return Characteristic.LockCurrentState.UNKNOWN;
+						}
+					}
+				}));
+				
+			service.getCharacteristic(Characteristic.LockTargetState)
+							.on('get', (callback) => {
+								var targetLockState = service.getCharacteristic(Characteristic.LockCurrentState).value;
+								callback(null, targetLockState);
+							})
+							.on('set', this.setSensorValue.bind(
+							{
+								accessory:this,
+								instance:commandClass.instance,
+								commandClass:commandClass.id,
+								convert: function(value) {
+									//console.log("Value: " + value);
+									if(value == Characteristic.LockCurrentState.SECURED) {
+										return 255;
+									} else if(value == Characteristic.LockCurrentState.UNSECURED){ 
+										return 0;
+									}
+								}
+							}));
+
+			this.registerEventListener(Characteristic.LockCurrentState,
+				{
+					service:service,
+					node_id:this.nodeId,
+					instance:commandClass.instance,
+					command_class:commandClass.id,
+					dh:"mode",
+					valueHolder:"mode",
+					convert:function(value) {
+						if(value == 255) {
+							return Characteristic.LockCurrentState.SECURED;
+						} else if(value == 0) {
+							return Characteristic.LockCurrentState.UNSECURED;
+						} else {
+							return Characteristic.LockCurrentState.UNKNOWN;
+						}
+					}
+				});
+			this.serviceList.push(service);
 		},
 		createNotificationAccessory : function(commandClass, serviceType, sensorAlarmList) {
 			// Alert notification supported. Lets see what services and characteristics
