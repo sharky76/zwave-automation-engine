@@ -39,7 +39,7 @@ void delete_event_log_entry(void* arg)
 void    event_log_init()
 {
     event_log_handle.event_log_list = stack_create();
-    event_log_handle.limit = 100;
+    event_log_handle.limit = 10000;
     variant_register_converter_string(DT_EVENT_LOG_ENTRY, event_log_entry_to_string);
 
     LOG_INFO(EventLog, "Event log initialized");

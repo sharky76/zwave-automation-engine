@@ -15,12 +15,6 @@ typedef struct event_t
     variant_t*  data;
 } event_t;
 
-typedef struct event_type_data_t
-{
-    int id;
-    char* event_name;
-} event_type_data_t;
-
 typedef struct event_handler_t
 {
     int id;
