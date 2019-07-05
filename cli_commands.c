@@ -300,7 +300,7 @@ void    cli_command_exec_default(char* line)
     cli_command_exec(default_vty, line);
 }
 
-void    cli_commands_handle_connect_event(int cli_socket, void* context)
+void    cli_commands_handle_connect_event_old(int cli_socket, void* context)
 {
     int session_sock = accept(cli_socket, NULL, NULL);
                         
@@ -323,10 +323,36 @@ void    cli_commands_handle_connect_event(int cli_socket, void* context)
 
     vty_display_prompt(vty_sock);
 
-    event_register_fd(session_sock, &cli_commands_handle_data_event, (void*)vty_sock);
+    event_register_fd(session_sock, &cli_commands_handle_data_event_old, (void*)vty_sock);
 }
 
-void    cli_commands_handle_data_event(int cli_socket, void* context)
+void    cli_commands_handle_connect_event(event_pump_t* pump, int fd, void* context)
+{
+    int session_sock = accept(fd, NULL, NULL);
+                        
+    vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
+    vty_data->desc.socket = session_sock;
+    vty_t* vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
+
+    event_dispatcher_register_handler(pump, session_sock, &cli_commands_handle_data_read_event, &vty_nonblock_write_event, (void*)vty_sock);
+
+    //stack_push_back(client_socket_list, variant_create_ptr(DT_PTR, vty_sock, variant_delete_none));
+    logger_register_target(vty_sock);
+    LOG_ADVANCED(CLI, "Remote client connected");
+
+    cli_set_vty(vty_sock);
+
+    vty_display_banner(vty_sock);
+        
+    if(user_manager_get_count() > 0)
+    {
+        cmd_enter_auth_node(vty_sock);
+    }
+
+    vty_display_prompt(vty_sock);
+}
+
+void    cli_commands_handle_data_event_old(int cli_socket, void* context)
 {
     vty_t* vty_ptr = (vty_t*)context;
 
@@ -356,7 +382,37 @@ void    cli_commands_handle_data_event(int cli_socket, void* context)
     }
 }
 
-void    cli_commands_handle_http_data_event(int socket, void* context)
+void    cli_commands_handle_data_read_event(event_pump_t* pump, int fd, void* context)
+{
+    vty_t* vty_ptr = (vty_t*)context;
+
+    char* str = vty_read(vty_ptr);
+    
+    if(vty_is_command_received(vty_ptr))
+    {
+        vty_new_line(vty_ptr);
+        cli_command_exec(vty_ptr, str);
+        vty_display_prompt(vty_ptr);
+        vty_flush(vty_ptr);
+    }
+    else if(vty_is_error(vty_ptr))
+    {
+        LOG_ERROR(CLI, "Socket error");
+        logger_unregister_target(vty_ptr);
+        event_dispatcher_unregister_handler(pump, fd);
+        vty_free(vty_ptr);
+    }
+
+    if(vty_is_shutdown(vty_ptr))
+    {
+        LOG_ADVANCED(CLI, "Remote client disconnected");
+        logger_unregister_target(vty_ptr);
+        event_dispatcher_unregister_handler(pump, fd);
+        vty_free(vty_ptr);
+    }
+}
+
+void    cli_commands_handle_http_data_event(event_pump_t* pump, int fd, void* context)
 {
     vty_t* vty_ptr = (vty_t*)context;
     vty_ptr->current_node = root_node;
@@ -368,7 +424,7 @@ void    cli_commands_handle_http_data_event(int socket, void* context)
         cli_command_exec(vty_ptr, str+4);
     }
 
-    event_unregister_fd(socket);
+    event_dispatcher_unregister_handler(pump, fd);
     vty_free(vty_ptr);
 }
 

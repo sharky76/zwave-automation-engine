@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "stack.h"
+#include "event_dispatcher.h"
+#include <poll.h>
 
 typedef enum vty_type_e
 {
@@ -115,4 +117,4 @@ void    vty_write_multiline(vty_t* vty, char* buffer);
 int     vty_convert_multiline(vty_t* vty, char* buffer, char** output);
 void    vty_set_in_use(vty_t* vty, bool in_use);
 void    vty_store_vty(vty_t* vty, vty_t* stored_vty);
-
+void    vty_nonblock_write_event(event_pump_t* pump, int fd, void* context);

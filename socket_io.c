@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <errno.h>
 
 DECLARE_LOGGER(SocketIO)
 
@@ -54,9 +55,24 @@ void telnet_subnegotiation_start(vty_t* vty)
 
 bool    socket_write_cb(vty_t* vty, const char* buf, size_t len)
 {
-    //printf("Sending: %s\n", buf);
-    //fflush(stdin);
-    return send(vty->data->desc.socket, buf, len, 0) != -1;
+    socket_vty_priv_t* priv = (socket_vty_priv_t*)vty->priv;
+    
+    if(priv->buf_len - priv->written < len)
+    {
+        priv->write_buf = realloc(priv->write_buf, priv->buf_len + len);
+        priv->buf_len += len;
+    }
+
+    memcpy(priv->write_buf + priv->written, buf, len);
+    priv->written += len;
+
+    if(send(vty->data->desc.socket, priv->write_buf, priv->written, 0) == -1)
+    {
+        return (errno == EAGAIN || errno == EWOULDBLOCK);
+    }
+    
+    priv->written = 0;
+    return true;
 }
 
 int     socket_read_cb(vty_t* vty, char* str)
@@ -117,4 +133,12 @@ void    socket_cursor_right_cb(vty_t* vty)
 void    socket_close_cb(vty_io_data_t* vty_data)
 {
     close(vty_data->desc.socket);
+}
+
+void    socket_free_priv_cb(vty_t* vty)
+{
+    socket_vty_priv_t* priv = (socket_vty_priv_t*)vty->priv;
+
+    free(priv->write_buf);
+    free(priv);
 }

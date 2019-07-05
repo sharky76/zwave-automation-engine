@@ -13,8 +13,6 @@
 
 service_method_t* builtin_service_manager_get_method(const char* service_class, const char* method_name);
 
-int  DT_BLINK_CAMERA;
-
 void        device_start(); 
 variant_t*  get_model_info(device_record_t* record, va_list args);
 variant_t*  get_all_motion_events(device_record_t* record, va_list args);
@@ -22,6 +20,7 @@ variant_t*  set_camera_motion_detected(device_record_t* record, va_list args);
 variant_t*  set_camera_armed(device_record_t* record, va_list args);
 
 void        timer_tick_handler(event_t* pevent, void* context);
+void        on_motion_timeout(event_pump_t* pump, int handler_id, void* context);
 
 void    vdev_create(vdev_t** vdev, int vdev_id)
 {
@@ -35,8 +34,6 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
 
     DT_BLINK_CAMERA = vdev_id;
     blink_camera_list = stack_create();
-
-    event_register_handler(DT_BLINK_CAMERA, TIMER_TICK_EVENT, timer_tick_handler, NULL);
 }
 
 void        device_start()
@@ -57,7 +54,8 @@ void        device_start()
     stack_for_each(record_list, record_variant)
     {
         device_record_t* device_record = VARIANT_GET_PTR(device_record_t, record_variant);
-        blink_camera_add(device_record);
+        blink_camera_entry_t* entry = blink_camera_add(device_record);
+        event_dispatcher_register_handler(event_dispatcher_get_pump("TIMER_PUMP"), entry->timer_id, EVENT_ACTIVE_TIMEOUT_SEC*1000, true, on_motion_timeout, (void*)entry);
     }
 
     variant_free(blink_camera_list_variant);
@@ -124,6 +122,8 @@ variant_t*  set_camera_motion_detected(device_record_t* record, va_list args)
     {
         if(true == variant_get_bool(new_state_variant))
         {
+            event_pump_t* timer_pump = event_dispatcher_get_pump("TIMER_PUMP");
+            timer_pump->start(timer_pump, entry->timer_id);
             update_camera_motion_detected_state(entry->instance, variant_get_bool(new_state_variant));
         }
         return variant_create_bool(true);
@@ -135,20 +135,11 @@ variant_t*  set_camera_motion_detected(device_record_t* record, va_list args)
     }
 }
 
-void timer_tick_handler(event_t* pevent, void* context)
+void on_motion_timeout(event_pump_t* pump, int handler_id, void* context)
 {
-    service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
-
-    stack_for_each(blink_camera_list, camera_entry_variant)
-    {
-        blink_camera_entry_t* entry = VARIANT_GET_PTR(blink_camera_entry_t, camera_entry_variant);
-
-        if(++(entry->active_event_tick_counter) > EVENT_ACTIVE_TIMEOUT_SEC)
-        {
-            LOG_DEBUG(DT_BLINK_CAMERA, "Reset active events for %s", entry->name);
-            update_camera_motion_detected_state(entry->instance, false);
-        }
-    }
+    blink_camera_entry_t* entry = (blink_camera_entry_t*)context;
+    LOG_DEBUG(DT_BLINK_CAMERA, "Reset active events for %s", entry->name);
+    update_camera_motion_detected_state(entry->instance, false);
 }
 
 variant_t*  set_camera_armed(device_record_t* record, va_list args)

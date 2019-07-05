@@ -126,6 +126,8 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
 
     sensor_descriptor_t* vdev_desc = sensor_manager_get_descriptor(vdev->vdev_id);
 
+    if(NULL == vdev_desc) return;
+
     //variant_stack_t* instances = resolver_get_instances(vdev->vdev_id);
 
     //stack_for_each(instances, instance_variant)
@@ -1186,19 +1188,7 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
     return true;
 }
 
-void cli_rest_handle_connect_event(int fd, void* context)
-{
-    int session_sock = accept(fd, NULL, NULL);
-    vty_io_data_t* vty_data = malloc(sizeof(vty_io_data_t));
-    vty_data->desc.socket = session_sock;
-
-    vty_t* vty_sock = vty_io_create(VTY_HTTP, vty_data);
-    vty_set_echo(vty_sock, false);
-
-    event_register_fd(session_sock, &cli_rest_handle_data_event, (void*)vty_sock);
-}
-
-void    cli_rest_handle_data_event(int socket, void* context)
+void    cli_rest_handle_data_read_event(event_pump_t* pump, int fd, void* context)
 {
     vty_t* vty_sock = (vty_t*)context;
     char* str = vty_read(vty_sock);
@@ -1208,6 +1198,6 @@ void    cli_rest_handle_data_event(int socket, void* context)
         cli_command_exec_custom_node(rest_root_node, vty_sock, str);
     }
 
-    event_unregister_fd(socket);
+    event_dispatcher_unregister_handler(pump, fd);
     vty_free(vty_sock);
 }

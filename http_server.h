@@ -59,8 +59,9 @@ typedef struct http_vty_priv_t
     int   content_length;
 } http_vty_priv_t;
 
-int   http_server_get_socket(int port);
-void  http_server_register_with_event_loop(int socket, void (*http_event_handler)(int,void*), void* arg);
+void   http_server_create(int port, void (*on_read)(event_pump_t*,int, void*));
+void http_request_handle_connect_event(event_pump_t* pump, int fd, void* context);
+void*  http_server_create_context(void (*http_event_read_handler)(event_pump_t* pump,int, void*));
 char* http_server_read_request(int client_socket, http_vty_priv_t* http_priv);
 bool  http_server_write_response(int client_socket, http_vty_priv_t* http_priv);
 void  http_set_response(http_vty_priv_t* http_priv, int http_resp);

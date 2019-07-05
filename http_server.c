@@ -36,26 +36,22 @@ int         header_find_value(const char* name, struct phr_header* headers, int 
 
 typedef struct http_event_context_t
 {
-    void (*private_event_handler)(int,void*);
-    void* context;
+    void (*private_event_handler)(event_pump_t* pump,int, void*);
 } http_event_context_t;
 
-void  http_request_handle_event(int fd, void* context);
-
-int  http_server_get_socket(int port)
+void   http_server_create(int port, void (*on_read)(event_pump_t*,int, void*))
 {
-    return socket_create_server(port);
+    socket_create_server(port, &http_request_handle_connect_event, http_server_create_context(on_read));
 }
 
-void  http_server_register_with_event_loop(int socket, void (*http_event_handler)(int,void*), void* arg)
+void*  http_server_create_context(void (*http_event_read_handler)(event_pump_t* pump,int, void*))
 {
     http_event_context_t* new_context = malloc(sizeof(http_event_context_t)); 
-    new_context->private_event_handler = http_event_handler;
-    new_context->context = arg;
-    event_register_fd(socket, &http_request_handle_event, (void*)new_context);
+    new_context->private_event_handler = http_event_read_handler;
+    return (void*)new_context;
 }
 
-void http_request_handle_event(int fd, void* context)
+void http_request_handle_connect_event(event_pump_t* pump, int fd, void* context)
 {
     http_event_context_t* context_data = (http_event_context_t*)context;
     int session_sock = accept(fd, NULL, NULL);
@@ -65,7 +61,7 @@ void http_request_handle_event(int fd, void* context)
     vty_t* vty_sock = vty_io_create(VTY_HTTP, vty_data);
     vty_set_echo(vty_sock, false);
 
-    event_register_fd(session_sock, context_data->private_event_handler, (void*)vty_sock);
+    event_dispatcher_register_handler(pump, session_sock, context_data->private_event_handler, &vty_nonblock_write_event, (void*)vty_sock);
 }
 
 void http_server_error_response(int type, int socket_fd)

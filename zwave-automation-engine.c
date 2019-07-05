@@ -36,7 +36,10 @@
 #include "event_log.h"
 #include "sensor_manager.h"
 #include "homebridge_manager.h"
+#include "event_dispatcher.h"
 #include <pwd.h>
+#include <stdbool.h>
+#include <socket.h>
 
 #define DEFAULT_PORT 9231
 
@@ -281,9 +284,9 @@ int main (int argc, char *argv[])
         LOG_INFO(General, "Zway API initialized");
         event_log_init();
         event_manager_init();
+        event_dispatcher_init();
         resolver_init();
         cli_init();
-
         service_manager_init(global_config.services_prefix);
         vdev_manager_init(global_config.vdev_prefix);
         scene_manager_init();
@@ -316,14 +319,17 @@ int main (int argc, char *argv[])
            
             signal_init();
 
-            int cli_sock = http_server_get_socket(global_config.client_port);
-            event_register_fd(cli_sock, &cli_commands_handle_connect_event, NULL);
+            socket_create_server(global_config.client_port, &cli_commands_handle_connect_event, NULL);
+            //event_register_fd(cli_sock, &cli_commands_handle_connect_event, NULL);
 
-            int http_socket = http_server_get_socket(8088);
-            event_register_fd(http_socket, &cli_rest_handle_connect_event, NULL);
 
-            int http_cmd_socket = http_server_get_socket(8089);
-            http_server_register_with_event_loop(http_cmd_socket, &cli_commands_handle_http_data_event, NULL);
+            http_server_create(8088, &cli_rest_handle_data_read_event);
+            //int http_socket = http_server_get_socket(8088);
+            //event_register_fd(http_socket, &cli_rest_handle_connect_event, NULL);
+
+            http_server_create(8089, &cli_commands_handle_http_data_event);
+            //int http_cmd_socket = http_server_get_socket(8089);
+            //http_server_register_with_event_loop(http_cmd_socket, &cli_commands_handle_http_data_event, NULL);
 
             homebridge_manager_init();
             //event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
@@ -415,7 +421,8 @@ int main (int argc, char *argv[])
                 }
             }
 
-            event_manager_join();
+            //event_manager_join();
+            event_dispatcher_start();
         }
         else
         {

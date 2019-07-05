@@ -20,4 +20,5 @@ void logging_modules_init()
     REGISTER_LOGGER(EventLog)
     REGISTER_LOGGER(HomebridgeManager)
     REGISTER_LOGGER(CLI)
+    REGISTER_LOGGER(EventPump)
 }

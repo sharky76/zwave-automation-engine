@@ -133,6 +133,12 @@ bool    vty_write(vty_t* vty, const char* format, ...)
     va_list args;
     va_start(args, format);
     char buf[BUFSIZE+1] = {0};
+    
+    if(NULL == format)
+    {
+        return vty->write_cb(vty, NULL, 0);
+    }
+
     int len = vsnprintf(buf, BUFSIZE, format, args);
 
     int size = len;
@@ -776,3 +782,8 @@ void    vty_store_vty(vty_t* vty, vty_t* stored_vty)
     vty->stored_vty = stored_vty;
 }
 
+void    vty_nonblock_write_event(event_pump_t* pump, int fd, void* context)
+{
+    vty_t* vty_ptr = (vty_t*)context;
+    vty_write(vty_ptr, NULL);
+}

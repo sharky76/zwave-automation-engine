@@ -11,7 +11,7 @@
 int DT_IFTTT;
 char*    ifttt_key;
 extern cli_node_t* ifttt_action_node;
-void    ifttt_handle_data_event(int socket, void* context);
+void    ifttt_handle_data_event(event_pump_t* pump, int socket, void* context);
 
 #define IFTTT_MAKER_URL "https://maker.ifttt.com/trigger/%s/with/key/%s"
 
@@ -26,8 +26,9 @@ void    service_create(service_t** service, int service_id)
     DT_IFTTT = service_id;
     ifttt_key = NULL;
 
-    int action_socket = socket_create_server(16777);
-    http_server_register_with_event_loop(action_socket, &ifttt_handle_data_event, NULL);
+    http_server_create(16777, &ifttt_handle_data_event);
+    //int action_socket = socket_create_server(16777);
+    //http_server_register_with_event_loop(action_socket, &ifttt_handle_data_event, NULL);
 
 }
 
@@ -127,7 +128,7 @@ variant_t* ifttt_trigger_event(service_method_t* method, va_list args)
     return variant_create_bool(true);
 }
 
-void    ifttt_handle_data_event(int socket, void* context)
+void    ifttt_handle_data_event(event_pump_t* pump, int socket, void* context)
 {
     vty_t* vty_sock = (vty_t*)context;
     char* str = vty_read(vty_sock);
@@ -137,6 +138,6 @@ void    ifttt_handle_data_event(int socket, void* context)
         cli_exec(ifttt_action_node, vty_sock, str);
     }
 
-    event_unregister_fd(socket);
+    event_dispatcher_unregister_handler(pump, socket);
     vty_free(vty_sock);
 }

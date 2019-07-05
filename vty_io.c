@@ -89,6 +89,9 @@ void    vty_io_config(vty_t* vty)
         vty->cursor_left_cb = socket_cursor_left_cb;
         vty->cursor_right_cb = socket_cursor_right_cb;
         vty->data->close_cb = socket_close_cb;
+        vty->free_priv_cb = socket_free_priv_cb;
+        socket_vty_priv_t* priv = calloc(1, sizeof(socket_vty_priv_t));
+        vty->priv = priv;
 
         //char iac_sga_buf[3] = {255, 251, 3};
         

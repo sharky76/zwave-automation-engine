@@ -5,8 +5,10 @@ List of CLI commands used for interaction
 */
 #include <stdbool.h>
 #include <stack.h>
+#include <poll.h>
 #include "vty.h"
 #include "cli.h"
+#include "event_dispatcher.h"
 
 /*typedef struct cli_command_t
 {
@@ -37,8 +39,12 @@ int     cli_command_quit(int count, int key);
 //variant_stack_t*    cli_get_command_completions(vty_t* vty, const char* buffer, size_t size);
 void    cmd_enter_root_node(vty_t* vty);
 
-void    cli_commands_handle_connect_event(int cli_socket, void* context);
-void    cli_commands_handle_data_event(int cli_socket, void* context);
-void    cli_commands_handle_http_data_event(int socket, void* context);
+void    cli_commands_handle_connect_event_old(int cli_socket, void* context);
+void    cli_commands_handle_data_event_old(int cli_socket, void* context);
+void    cli_commands_handle_http_data_event(event_pump_t* pump, int fd, void* context);
+
+void    cli_commands_handle_connect_event(event_pump_t* pump, int fd, void* context);
+void    cli_commands_handle_data_write_event(event_pump_t* pump, int fd, void* context);
+void    cli_commands_handle_data_read_event(event_pump_t* pump, int fd, void* context);
 
 
