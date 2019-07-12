@@ -110,6 +110,10 @@ int http_server_read_request(http_vty_priv_t* http_priv, char* buffer)
             free(content_len_buf);
             if(http_priv->content_length > 0)
             {
+		if(buflen - pret < http_priv->content_length + 4)
+		{
+		    return 0;
+		}
                 char* request = request_get_data(byte_buffer_get_read_ptr(http_priv->request->buffer));
 
                 if(request == NULL || strlen(request) < http_priv->content_length)
