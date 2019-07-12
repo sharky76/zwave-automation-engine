@@ -67,7 +67,7 @@ int socket_recv(event_pump_t* pump, int fd, byte_buffer_t* buffer)
     int spare_len = byte_buffer_spare_len(buffer);
     int ret = recv(fd, byte_buffer_get_write_ptr(buffer), spare_len, MSG_DONTWAIT);
 
-    if(ret <= 0)
+    if(ret < 0)
     {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
         {
@@ -93,9 +93,9 @@ int socket_send(event_pump_t* pump, int fd, byte_buffer_t* buffer)
 
     int ret = send(fd, byte_buffer_get_read_ptr(buffer), byte_buffer_read_len(buffer), MSG_DONTWAIT);
 
-    if(ret <= 0)
+    if(ret < 0)
     {
-        if(errno == EAGAIN || errno == EWOULDBLOCK || ret == 0)
+        if(errno == EAGAIN || errno == EWOULDBLOCK)
         { 
             return 0;
         }
@@ -126,7 +126,7 @@ int socket_send_v(event_pump_t* pump, int fd, struct iovec* iov, int iovcnt, int
 
     int ret = writev(fd, iov, iovcnt);
 
-    if(ret <= 0)
+    if(ret < 0)
     {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
         {
