@@ -53,7 +53,7 @@ void timer_pump_add_timeout(event_pump_t* pump, va_list args)
 
     timer_event_data_t* event_data = (timer_event_data_t*)malloc(sizeof(timer_event_data_t));
     event_data->handler_id = handler_id;
-    event_data->timeout_msec = event_data->current_timeout = (uint64_t)timeout_msec * 1000000;
+    event_data->timeout_msec = (uint64_t)timeout_msec * 1000000;
     event_data->on_event = on_event;
     event_data->last_poll_time = 0;
     event_data->is_started = false;
@@ -82,7 +82,7 @@ void on_timer_event_visitor(timer_event_data_t* event_data, void* arg)
     timer_event_visitor_data_t* visitor_data = (timer_event_visitor_data_t*)arg;
     uint64_t time_nano = (uint64_t)visitor_data->ts->tv_sec * 1000000000 + visitor_data->ts->tv_nsec;
 
-    if(event_data->is_started)
+    if(event_data->is_started && event_data->last_poll_time < time_nano)
     {
         uint64_t delta = time_nano - event_data->last_poll_time;
         event_data->current_timeout -= delta;
@@ -128,6 +128,7 @@ void timer_pump_start_timer(event_pump_t* pump, ...)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     timer_event_data->last_poll_time = (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+    timer_event_data->current_timeout = timer_event_data->timeout_msec;
 
     LOG_DEBUG(EventPump, "Started timer: %d", timer_event_data->handler_id);
 

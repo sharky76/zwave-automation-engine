@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "stack.h"
 #include "event_dispatcher.h"
+#include "byte_buffer.h"
 #include <poll.h>
 
 typedef enum vty_type_e
@@ -27,18 +28,16 @@ typedef struct vty_io_data_t
         iopair  io_pair;
     } desc;
 
+    event_pump_t* pump;
     void    (*close_cb)(struct vty_io_data_t*);
 } vty_io_data_t;
 
 typedef struct cli_node_t cli_node_t;
 
-//typedef struct cli_command_t cli_command_t;
-//typedef struct cli_node_t    cli_node_t;
-
 typedef struct vty_t
 {
     vty_type type;
-    bool    (*write_cb)(struct vty_t*, const char*, size_t size);
+    bool    (*write_cb)(struct vty_t*);
     int     (*read_cb)(struct vty_t*, char* str);
     bool    (*flush_cb)(struct vty_t*);
     void    (*erase_char_cb)(struct vty_t*); // erase last char
@@ -75,6 +74,8 @@ typedef struct vty_t
     bool    is_interactive;
     void*   priv;
     struct vty_t*  stored_vty;
+    byte_buffer_t* write_buffer;
+    byte_buffer_t* read_buffer;
 } vty_t;
 
 #define VTY_NEWLINE(_vty_)  ((_vty_->type == VTY_SOCKET) ? "\r\n" : "\n")
@@ -116,5 +117,8 @@ bool    vty_is_authenticated(vty_t* vty);
 void    vty_write_multiline(vty_t* vty, char* buffer);
 int     vty_convert_multiline(vty_t* vty, char* buffer, char** output);
 void    vty_set_in_use(vty_t* vty, bool in_use);
+bool    vty_in_use(vty_t* vty);
 void    vty_store_vty(vty_t* vty, vty_t* stored_vty);
 void    vty_nonblock_write_event(event_pump_t* pump, int fd, void* context);
+void    vty_set_pump(vty_t* vty, event_pump_t* pump);
+event_pump_t* vty_get_pump(vty_t* vty);

@@ -38,12 +38,15 @@ blink_camera_entry_t*    blink_camera_find_instance(int instance)
 
 blink_camera_entry_t*    blink_camera_find_name(const char* name)
 {
-    stack_for_each(blink_camera_list, camera_entry_variant)
+    if(NULL != name)
     {
-        blink_camera_entry_t* entry = VARIANT_GET_PTR(blink_camera_entry_t, camera_entry_variant);
-        if(strcmp(entry->name, name) == 0)
+        stack_for_each(blink_camera_list, camera_entry_variant)
         {
-            return entry;
+            blink_camera_entry_t* entry = VARIANT_GET_PTR(blink_camera_entry_t, camera_entry_variant);
+            if(strcmp(entry->name, name) == 0)
+            {
+                return entry;
+            }
         }
     }
 

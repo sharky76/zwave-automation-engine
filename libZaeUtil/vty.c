@@ -8,6 +8,9 @@
 #include <arpa/telnet.h>
 #include <stdio.h>
 #include "lcp.h"
+#include "logger.h"
+
+USING_LOGGER(General)
 
 #define HISTORY_START   -1
 #define KEY_TAB       0x09
@@ -27,6 +30,9 @@
 vty_t*  vty_create(vty_type type, vty_io_data_t* data)
 {
     vty_t* vty = (vty_t*)calloc(1, sizeof(vty_t));
+
+    LOG_DEBUG(General, "Creating VTY %p", vty);
+
     vty->type = type;
     vty->data = data;
     vty->echo = true;
@@ -40,6 +46,8 @@ vty_t*  vty_create(vty_type type, vty_io_data_t* data)
     vty->completions = stack_create();
     vty->in_use = false;
     vty->is_interactive = true;
+    vty->write_buffer = byte_buffer_init(BUFSIZE);
+    //vty->read_buffer = byte_buffer_init(BUFSIZE);
     return vty;
 }
 
@@ -70,15 +78,17 @@ void    vty_set_multiline(vty_t* vty, bool is_multiline, char stop_char)
 
 void    vty_free(vty_t* vty)
 {
-    if(vty->in_use)
+    if(vty->in_use) 
     {
         return;
     }
 
-    if(NULL != vty->flush_cb)
+    LOG_DEBUG(General, "Deleting VTY %p", vty);
+
+    /*if(NULL != vty->flush_cb)
     {
         vty->flush_cb(vty);
-    }
+    }*/
 
     if(vty->data->close_cb)
     {
@@ -96,6 +106,8 @@ void    vty_free(vty_t* vty)
     free(vty->input);
     stack_free(vty->history);
     stack_free(vty->completions);
+    byte_buffer_free(vty->write_buffer);
+    //byte_buffer_free(vty->read_buffer);
     free(vty);
 }
 
@@ -132,36 +144,10 @@ bool    vty_write(vty_t* vty, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    char buf[BUFSIZE+1] = {0};
     
-    if(NULL == format)
-    {
-        return vty->write_cb(vty, NULL, 0);
-    }
+    byte_buffer_vsnprintf(vty->write_buffer, format, args);
+    bool retVal = vty->write_cb(vty);
 
-    int len = vsnprintf(buf, BUFSIZE, format, args);
-
-    int size = len;
-    if(len >= BUFSIZE)
-    {
-        size = BUFSIZE - 1;
-    }
-
-    bool retVal = vty->write_cb(vty, buf, size);
-
-    while(len >= BUFSIZE && retVal) 
-    {
-        memset(buf, 0, BUFSIZE);
-        len = vsnprintf(buf, BUFSIZE, format + size, args);
-
-        size = len;
-        if(len >= BUFSIZE)
-        {
-            size = BUFSIZE - 1;
-        }
-
-        retVal |= vty->write_cb(vty, buf, size);
-    }
     return retVal;
 }
 
@@ -200,6 +186,10 @@ char*   vty_read(vty_t* vty)
         if(n > 1)
         {
             vty_append_string(vty, ch);
+        }
+        else if(n == 0)
+        {
+            return NULL;
         }
         else if(n <= 0)
         {
@@ -777,6 +767,11 @@ void    vty_set_in_use(vty_t* vty, bool in_use)
     vty->in_use = in_use;
 }
 
+bool    vty_in_use(vty_t* vty)
+{
+    return vty->in_use;
+}
+
 void    vty_store_vty(vty_t* vty, vty_t* stored_vty)
 {
     vty->stored_vty = stored_vty;
@@ -785,5 +780,15 @@ void    vty_store_vty(vty_t* vty, vty_t* stored_vty)
 void    vty_nonblock_write_event(event_pump_t* pump, int fd, void* context)
 {
     vty_t* vty_ptr = (vty_t*)context;
-    vty_write(vty_ptr, NULL);
+    vty_flush(vty_ptr);
+}
+
+void    vty_set_pump(vty_t* vty, event_pump_t* pump)
+{
+    vty->data->pump = pump;
+}
+
+event_pump_t* vty_get_pump(vty_t* vty)
+{
+    return vty->data->pump;
 }

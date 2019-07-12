@@ -71,13 +71,16 @@ variant_t*  get_model_info(device_record_t* record, va_list args)
 
 variant_t*  get_all_motion_events(device_record_t* record, va_list args)
 {
+    LOG_DEBUG(DT_BLINK_CAMERA, "Getting motion info for Camera instance: %d", record->instanceId);
     blink_camera_entry_t* entry = blink_camera_find_instance(record->instanceId);
     if(NULL != entry)
     {
+        LOG_DEBUG(DT_BLINK_CAMERA, "Camera instance %d status %d", record->instanceId, entry->camera_motion_detected_event);
         return variant_create_bool(entry->camera_motion_detected_event);
     }
     else
     {
+        LOG_ERROR(DT_BLINK_CAMERA, "Unable to get motion info, camera instance %d not found", record->instanceId);
         return variant_create_bool(false);
     }
 }
@@ -122,6 +125,7 @@ variant_t*  set_camera_motion_detected(device_record_t* record, va_list args)
     {
         if(true == variant_get_bool(new_state_variant))
         {
+            LOG_DEBUG(DT_BLINK_CAMERA, "Starting motion threshold timer");
             event_pump_t* timer_pump = event_dispatcher_get_pump("TIMER_PUMP");
             timer_pump->start(timer_pump, entry->timer_id);
             update_camera_motion_detected_state(entry->instance, variant_get_bool(new_state_variant));

@@ -142,13 +142,12 @@ variant_t*  get_all_motion_events(device_record_t* record, va_list args)
     if(NULL != keeper)
     {
         LOG_DEBUG(DT_SURVEILLANCE_STATION, "Return %d motion events for %s", keeper->event_count, keeper->camera_name);
-        return variant_create_int32(DT_INT32, keeper->event_count);
+        return variant_create_bool(keeper->event_count > 0);
     }
     else
     {
         LOG_ERROR(DT_SURVEILLANCE_STATION, "Camera ID: %d not found", record->instanceId);
-
-        return variant_create_int32(DT_INT32, 0);
+        return variant_create_bool(false);
     }
 }
 

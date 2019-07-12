@@ -31,6 +31,7 @@
 #include "cli_homebridge.h"
 #include "hash.h"
 #include "user_manager.h"
+#include "socket_io.h"
 
 DECLARE_LOGGER(CLI)
 
@@ -253,7 +254,8 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 
             // Insert EOF char
             char eof_ch = (char)EOF;
-            vty_pipe->write_cb(vty_pipe, &eof_ch, 1);
+            //vty_pipe->write_cb(vty_pipe, &eof_ch, 1);
+            vty_write(vty_pipe, "%c", eof_ch);
 
             int status = 0;
             // Wait for pipe to process all input
@@ -300,32 +302,6 @@ void    cli_command_exec_default(char* line)
     cli_command_exec(default_vty, line);
 }
 
-void    cli_commands_handle_connect_event_old(int cli_socket, void* context)
-{
-    int session_sock = accept(cli_socket, NULL, NULL);
-                        
-    vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
-    vty_data->desc.socket = session_sock;
-    vty_t* vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
-    
-    //stack_push_back(client_socket_list, variant_create_ptr(DT_PTR, vty_sock, variant_delete_none));
-    logger_register_target(vty_sock);
-    LOG_ADVANCED(CLI, "Remote client connected");
-
-    cli_set_vty(vty_sock);
-
-    vty_display_banner(vty_sock);
-        
-    if(user_manager_get_count() > 0)
-    {
-        cmd_enter_auth_node(vty_sock);
-    }
-
-    vty_display_prompt(vty_sock);
-
-    event_register_fd(session_sock, &cli_commands_handle_data_event_old, (void*)vty_sock);
-}
-
 void    cli_commands_handle_connect_event(event_pump_t* pump, int fd, void* context)
 {
     int session_sock = accept(fd, NULL, NULL);
@@ -333,6 +309,9 @@ void    cli_commands_handle_connect_event(event_pump_t* pump, int fd, void* cont
     vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
     vty_data->desc.socket = session_sock;
     vty_t* vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
+    vty_set_pump(vty_sock, pump);
+
+    socket_configure_terminal(vty_sock);
 
     event_dispatcher_register_handler(pump, session_sock, &cli_commands_handle_data_read_event, &vty_nonblock_write_event, (void*)vty_sock);
 
@@ -352,36 +331,6 @@ void    cli_commands_handle_connect_event(event_pump_t* pump, int fd, void* cont
     vty_display_prompt(vty_sock);
 }
 
-void    cli_commands_handle_data_event_old(int cli_socket, void* context)
-{
-    vty_t* vty_ptr = (vty_t*)context;
-
-    char* str = vty_read(vty_ptr);
-    
-    if(vty_is_command_received(vty_ptr))
-    {
-        vty_new_line(vty_ptr);
-        cli_command_exec(vty_ptr, str);
-        vty_display_prompt(vty_ptr);
-        vty_flush(vty_ptr);
-    }
-    else if(vty_is_error(vty_ptr))
-    {
-        LOG_ERROR(CLI, "Socket error");
-        logger_unregister_target(vty_ptr);
-        event_unregister_fd(cli_socket);
-        vty_free(vty_ptr);
-    }
-
-    if(vty_is_shutdown(vty_ptr))
-    {
-        LOG_ADVANCED(CLI, "Remote client disconnected");
-        logger_unregister_target(vty_ptr);
-        event_unregister_fd(cli_socket);
-        vty_free(vty_ptr);
-    }
-}
-
 void    cli_commands_handle_data_read_event(event_pump_t* pump, int fd, void* context)
 {
     vty_t* vty_ptr = (vty_t*)context;
@@ -399,16 +348,16 @@ void    cli_commands_handle_data_read_event(event_pump_t* pump, int fd, void* co
     {
         LOG_ERROR(CLI, "Socket error");
         logger_unregister_target(vty_ptr);
-        event_dispatcher_unregister_handler(pump, fd);
-        vty_free(vty_ptr);
+        event_dispatcher_unregister_handler(pump, fd, &vty_free, (void*)vty_ptr);
+        //vty_free(vty_ptr);
     }
 
     if(vty_is_shutdown(vty_ptr))
     {
         LOG_ADVANCED(CLI, "Remote client disconnected");
         logger_unregister_target(vty_ptr);
-        event_dispatcher_unregister_handler(pump, fd);
-        vty_free(vty_ptr);
+        event_dispatcher_unregister_handler(pump, fd, &vty_free, (void*)vty_ptr);
+        //vty_free(vty_ptr);
     }
 }
 
@@ -418,14 +367,17 @@ void    cli_commands_handle_http_data_event(event_pump_t* pump, int fd, void* co
     vty_ptr->current_node = root_node;
     char* str = vty_read(vty_ptr);
     
-    if(NULL != str)
+    if(vty_is_command_received(vty_ptr))
     {
-        // Skip the first 4 chars "GET "
-        cli_command_exec(vty_ptr, str+4);
-    }
+        if(!vty_is_error(vty_ptr))
+        {
+            // Skip the first 4 chars "GET "
+            cli_command_exec(vty_ptr, str+4);
+        }
 
-    event_dispatcher_unregister_handler(pump, fd);
-    vty_free(vty_ptr);
+        vty_flush(vty_ptr);
+        event_dispatcher_unregister_handler(pump, fd, &vty_free, (void*)vty_ptr);
+    }
 }
 
 

@@ -47,7 +47,6 @@ int homebridge_start()
     int pipefd[2];
     if(0 != pipe2(pipefd, O_NONBLOCK))
     {
-        printf("Pipe error\n");
         LOG_ERROR(HomebridgeManager, "Failed to create process pipe");
         return -1;
     }

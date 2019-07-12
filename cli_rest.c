@@ -208,7 +208,23 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
             
                                 if(NULL != tok)
                                 {
-                                    json_object_object_add(dh_item, tok, json_object_new_string(string_value));
+                                    switch(value->type)
+                                    {
+                                        case DT_INT8:
+                                            json_object_object_add(dh_item, tok, json_object_new_int(variant_get_byte(value)));
+                                            break;
+                                        case DT_INT32:
+                                        case DT_INT64:
+                                            json_object_object_add(dh_item, tok, json_object_new_int(variant_get_int(value)));
+                                            break;
+                                        case DT_BOOL:
+                                            json_object_object_add(dh_item, tok, json_object_new_boolean(variant_get_bool(value)));
+                                            break;
+                                        case DT_STRING:
+                                        default:
+                                            json_object_object_add(dh_item, tok, json_object_new_string(string_value));
+                                            break;
+                                    }
                                 }
                                 
                                 json_object_array_add(parameter_array, dh_item);
@@ -217,8 +233,23 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             }
                             else
                             {
-                
-                                json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                                switch(value->type)
+                                {
+                                    case DT_INT8:
+                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_int(variant_get_byte(value)));
+                                        break;
+                                    case DT_INT32:
+                                    case DT_INT64:
+                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_int(variant_get_int(value)));
+                                        break;
+                                    case DT_BOOL:
+                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_boolean(variant_get_bool(value)));
+                                        break;
+                                    case DT_STRING:
+                                    default:
+                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                                        break;
+                                }
                             }
                             
                             free(string_value);
@@ -394,6 +425,12 @@ bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params)
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
 
     const char* dev_name = resolver_name_from_node_id(node_id);
+    if(NULL == dev_name)
+    {
+        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
+        return false;
+    }
+
     device_record_t* record = resolver_get_device_record(dev_name);
 
     int j = 0;
@@ -743,7 +780,23 @@ bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instanc
                 
                                     if(NULL != tok)
                                     {
-                                        json_object_object_add(dh_item, tok, json_object_new_string(string_value));
+                                        switch(value->type)
+                                        {
+                                            case DT_INT8:
+                                                json_object_object_add(dh_item, tok, json_object_new_int(variant_get_byte(value)));
+                                                break;
+                                            case DT_INT32:
+                                            case DT_INT64:
+                                                json_object_object_add(dh_item, tok, json_object_new_int(variant_get_int(value)));
+                                                break;
+                                            case DT_BOOL:
+                                                json_object_object_add(dh_item, tok, json_object_new_boolean(variant_get_bool(value)));
+                                                break;
+                                            case DT_STRING:
+                                            default:
+                                                json_object_object_add(dh_item, tok, json_object_new_string(string_value));
+                                                break;
+                                        }
                                     }
                                     
                                     if(NULL == path)
@@ -754,7 +807,24 @@ bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instanc
                                     }
                                     else
                                     {
-                                        json_object_object_add(cmd_value, tok, json_object_new_string(string_value));
+                                        switch(value->type)
+                                        {
+                                            case DT_INT8:
+                                                json_object_object_add(cmd_value, tok, json_object_new_int(variant_get_byte(value)));
+                                                break;
+                                            case DT_INT32:
+                                            case DT_INT64:
+                                                json_object_object_add(cmd_value, tok, json_object_new_int(variant_get_int(value)));
+                                                break;
+                                            case DT_BOOL:
+                                                json_object_object_add(cmd_value, tok, json_object_new_boolean(variant_get_bool(value)));
+                                                break;
+                                            case DT_STRING:
+                                            default:
+                                                json_object_object_add(cmd_value, tok, json_object_new_string(string_value));
+                                                break;
+                                        }
+
                                         json_object_put(dh_item);
                                     }
                                     free(data_holder);
@@ -1140,7 +1210,7 @@ void    sse_event_handler(event_t* event, void* context)
         stack_remove(event_listeners, dead_vty_variant);
         vty_t* vty = VARIANT_GET_PTR(vty_t, dead_vty_variant);
         vty_set_in_use(vty, false);
-        vty_free(vty);
+        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
     }
 
     stack_free(vty_to_remove);
@@ -1151,15 +1221,16 @@ void    sse_event_handler(event_t* event, void* context)
 
 bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
 {
-    http_set_content_type((http_vty_priv_t*)vty->priv, "text/event-stream");
-    http_set_cache_control((http_vty_priv_t*)vty->priv, false, 0);
-    http_set_header((http_vty_priv_t*)vty->priv, "Connection", "keep-alive");
-
     char* accept_type;
     if(http_request_find_header_value((http_vty_priv_t*)vty->priv, "Accept", &accept_type))
     {
+   
         if(strstr(accept_type, "text/event-stream") != NULL)
         {
+
+            http_set_content_type((http_vty_priv_t*)vty->priv, "text/event-stream");
+            http_set_cache_control((http_vty_priv_t*)vty->priv, false, 0);
+            http_set_header((http_vty_priv_t*)vty->priv, "Connection", "keep-alive");
             http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
 
             char* last_event_id;
@@ -1169,7 +1240,7 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
         
                 free(last_event_id);
             }
-            else
+            //else
             {
                 // Send response with empty ID - this will reset
                 // client id counter too.
@@ -1178,6 +1249,7 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
             }
 
             vty_set_in_use(vty, true); // Mark this VTY as "in use" so it will not be deleted
+            
             stack_lock(sse_event_listener_list);
             stack_push_back(sse_event_listener_list, variant_create_ptr(DT_PTR, vty, variant_delete_none));
             stack_unlock(sse_event_listener_list);
@@ -1185,19 +1257,27 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
 
         free(accept_type);
     }
+        
     return true;
 }
 
 void    cli_rest_handle_data_read_event(event_pump_t* pump, int fd, void* context)
 {
     vty_t* vty_sock = (vty_t*)context;
+    vty_set_pump(vty_sock, pump);
     char* str = vty_read(vty_sock);
 
-    if(NULL != str)
+    if(vty_is_command_received(vty_sock))
     {
-        cli_command_exec_custom_node(rest_root_node, vty_sock, str);
-    }
+        if(!vty_is_error(vty_sock))
+        {
+            cli_command_exec_custom_node(rest_root_node, vty_sock, str);
+        }
 
-    event_dispatcher_unregister_handler(pump, fd);
-    vty_free(vty_sock);
+        if(!vty_in_use(vty_sock))
+        {
+            vty_flush(vty_sock);
+            event_dispatcher_unregister_handler(pump, fd, &vty_free, (void*)vty_sock);
+        }
+    }
 }

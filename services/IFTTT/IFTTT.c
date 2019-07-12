@@ -133,11 +133,25 @@ void    ifttt_handle_data_event(event_pump_t* pump, int socket, void* context)
     vty_t* vty_sock = (vty_t*)context;
     char* str = vty_read(vty_sock);
 
-    if(NULL != str)
+    if(vty_is_command_received(vty_sock))
     {
-        cli_exec(ifttt_action_node, vty_sock, str);
-    }
+        if(!vty_is_error(vty_sock))
+        {
+            LOG_DEBUG(DT_IFTTT, "IFTTT request: %s", str);
+            cli_exec(ifttt_action_node, vty_sock, str);
+        }
+        else
+        {
+            LOG_ERROR(DT_IFTTT, "Socket error");
+        }
+        
 
-    event_dispatcher_unregister_handler(pump, socket);
-    vty_free(vty_sock);
+        vty_flush(vty_sock);
+        event_dispatcher_unregister_handler(pump, socket, &vty_free, (void*)vty_sock);
+    }
+    else
+    {
+        LOG_DEBUG(DT_IFTTT, "More data is needed, buffer: %s", str);
+    }
+    
 }

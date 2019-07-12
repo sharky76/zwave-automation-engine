@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
+#include "socket.h"
 
 DECLARE_LOGGER(SocketIO)
 
@@ -23,6 +24,23 @@ DECLARE_LOGGER(SocketIO)
 #define KEY_LEFT_ARROW 0x44
 #define KEY_NEWLINE     0xa
 #define KEY_RETURN      0xd
+
+void socket_configure_terminal(vty_t* vty)
+{
+    unsigned char cmd_will_echo[] = { IAC, WILL, TELOPT_ECHO };
+    unsigned char cmd_will_sga[] = { IAC, WILL, TELOPT_SGA };
+    unsigned char cmd_dont_linemode[] = { IAC, DONT, TELOPT_LINEMODE };
+    unsigned char cmd_do_naws[] = { IAC, DO, TELOPT_NAWS };
+    
+    //unsigned char cmd_will_cr[] = {IAC, WILL, TELOPT_NAOCRD};
+
+    byte_buffer_append(vty->write_buffer, cmd_will_echo, 3);
+    byte_buffer_append(vty->write_buffer, cmd_will_sga, 3);
+    byte_buffer_append(vty->write_buffer, cmd_dont_linemode, 3);
+    byte_buffer_append(vty->write_buffer, cmd_do_naws, 3);
+
+    socket_write_cb(vty);
+}
 
 void telnet_naws_negotiation_start(vty_t* vty)
 {
@@ -53,26 +71,15 @@ void telnet_subnegotiation_start(vty_t* vty)
     }
 }
 
-bool    socket_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    socket_write_cb(vty_t* vty)
 {
-    socket_vty_priv_t* priv = (socket_vty_priv_t*)vty->priv;
-    
-    if(priv->buf_len - priv->written < len)
+    int ret = socket_send(vty_get_pump(vty), vty->data->desc.socket, vty->write_buffer);
+    if(-1 == ret)
     {
-        priv->write_buf = realloc(priv->write_buf, priv->buf_len + len);
-        priv->buf_len += len;
+        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
     }
 
-    memcpy(priv->write_buf + priv->written, buf, len);
-    priv->written += len;
-
-    if(send(vty->data->desc.socket, priv->write_buf, priv->written, 0) == -1)
-    {
-        return (errno == EAGAIN || errno == EWOULDBLOCK);
-    }
-    
-    priv->written = 0;
-    return true;
+    return ret != -1;
 }
 
 int     socket_read_cb(vty_t* vty, char* str)
@@ -98,16 +105,14 @@ int     socket_read_cb(vty_t* vty, char* str)
             break;
         }
     }
-    //printf("RECV: %d %c (0x%x)\n", n, **str, **str);
+    //printf("RECV: %d %c (0x%x)\n", n, *str, *str);
     return n;
 
 }
 
 bool    socket_flush_cb(vty_t* vty)
 {
-    memset(vty->buffer, 0, vty->buf_size);
-    vty->buf_size = 0;
-    return true;
+   return true;
 }
 
 void    socket_erase_cb(vty_t* vty)
@@ -133,12 +138,4 @@ void    socket_cursor_right_cb(vty_t* vty)
 void    socket_close_cb(vty_io_data_t* vty_data)
 {
     close(vty_data->desc.socket);
-}
-
-void    socket_free_priv_cb(vty_t* vty)
-{
-    socket_vty_priv_t* priv = (socket_vty_priv_t*)vty->priv;
-
-    free(priv->write_buf);
-    free(priv);
 }

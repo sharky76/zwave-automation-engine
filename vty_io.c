@@ -11,12 +11,13 @@
 #include <arpa/telnet.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include "socket.h"
 
-bool    file_write_cb(vty_t* vty, const char* buf, size_t len);
+bool    file_write_cb(vty_t* vty);
 int     file_read_cb(vty_t* vty, char* str);
 void    file_close_cb(vty_io_data_t* vty_data);
 
-bool    std_write_cb(vty_t* vty, const char* buf, size_t len);
+bool    std_write_cb(vty_t* vty);
 int     std_read_cb(vty_t* vty, char* str);
 void    std_erase_cb(vty_t* vty);
 void    std_erase_line_cb(vty_t* vty);
@@ -24,7 +25,7 @@ void    std_cursor_left_cb(vty_t* vty);
 void    std_cursor_right_cb(vty_t* vty);
 
 int     http_read_cb(vty_t* vty, char* str);
-bool    http_write_cb(vty_t* vty, const char* buf, size_t len);
+bool    http_write_cb(vty_t* vty);
 bool    http_flush_cb(vty_t* vty);
 void    http_free_priv_cb(vty_t* vty);
 void    socket_close_cb(vty_io_data_t* vty_data);
@@ -74,7 +75,11 @@ void    vty_io_config(vty_t* vty)
         vty->flush_cb = http_flush_cb;
         vty->free_priv_cb = http_free_priv_cb;
         http_vty_priv_t* http_priv = calloc(1, sizeof(http_vty_priv_t));
+        http_priv->request = calloc(1, sizeof(http_request_t));
+        http_priv->request->buffer = byte_buffer_init(HTTP_REQUEST_BUFSIZE);
+        //http_priv->response = byte_buffer_init(HTTP_REQUEST_BUFSIZE);
         http_priv->resp_code = HTTP_RESP_OK;
+        http_priv->response_header = byte_buffer_init(HTTP_RESPONSE_HEADERS_SIZE);
         vty->priv = http_priv;
         vty->data->close_cb = socket_close_cb;
 
@@ -89,24 +94,9 @@ void    vty_io_config(vty_t* vty)
         vty->cursor_left_cb = socket_cursor_left_cb;
         vty->cursor_right_cb = socket_cursor_right_cb;
         vty->data->close_cb = socket_close_cb;
-        vty->free_priv_cb = socket_free_priv_cb;
-        socket_vty_priv_t* priv = calloc(1, sizeof(socket_vty_priv_t));
-        vty->priv = priv;
 
         //char iac_sga_buf[3] = {255, 251, 3};
         
-        unsigned char cmd_will_echo[] = { IAC, WILL, TELOPT_ECHO };
-        unsigned char cmd_will_sga[] = { IAC, WILL, TELOPT_SGA };
-        unsigned char cmd_dont_linemode[] = { IAC, DONT, TELOPT_LINEMODE };
-        unsigned char cmd_do_naws[] = { IAC, DO, TELOPT_NAWS };
-        
-        //unsigned char cmd_will_cr[] = {IAC, WILL, TELOPT_NAOCRD};
-
-        socket_write_cb(vty, cmd_will_echo, 3);
-        socket_write_cb(vty, cmd_will_sga, 3);
-        socket_write_cb(vty, cmd_dont_linemode, 3);
-        socket_write_cb(vty, cmd_do_naws, 3);
-
         //socket_write_cb(vty, cmd_will_cr, 3);
         
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
@@ -115,9 +105,17 @@ void    vty_io_config(vty_t* vty)
 }
 
 
-bool    file_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    file_write_cb(vty_t* vty)
 {
-    return fwrite(buf, len, 1, vty->data->desc.file) == 1;
+    int n =  fwrite(byte_buffer_get_read_ptr(vty->write_buffer), byte_buffer_read_len(vty->write_buffer), 1, vty->data->desc.file);
+
+    if(n == 1)
+    {
+        byte_buffer_adjust_read_pos(vty->write_buffer, byte_buffer_read_len(vty->write_buffer));
+        byte_buffer_pack(vty->write_buffer);
+    }
+
+    return n == 1;
 }
 
 int   file_read_cb(vty_t* vty, char* str)
@@ -142,16 +140,17 @@ void    file_close_cb(vty_io_data_t* vty_data)
     fclose(vty_data->desc.file);
 }
 
-bool    std_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    std_write_cb(vty_t* vty)
 {
-    bool retVal = false;
-    retVal = write(fileno(vty->data->desc.io_pair[OUT]), buf, len) != -1;
-    if(retVal)
+    int n = write(fileno(vty->data->desc.io_pair[OUT]), byte_buffer_get_read_ptr(vty->write_buffer), byte_buffer_read_len(vty->write_buffer));
+    if(n != -1)
     {
         fflush(vty->data->desc.io_pair[OUT]);
+        byte_buffer_adjust_read_pos(vty->write_buffer, n);
+        byte_buffer_pack(vty->write_buffer);
     }
 
-    return retVal;
+    return n != -1;
 }
 
 int   std_read_cb(vty_t* vty, char* str)
@@ -185,29 +184,35 @@ int   http_read_cb(vty_t* vty, char* str)
 {
     int socket = vty->data->desc.socket;
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
-    char* resp = http_server_read_request(socket, http_priv);
-    
-    if(NULL != resp)
+
+    int ret = socket_recv(vty_get_pump(vty), socket, http_priv->request->buffer);
+
+    if(-1 == ret)
     {
-        int resp_len = strlen(resp);
-        memcpy(str, resp, (resp_len < BUFSIZE-1)? resp_len : BUFSIZE-1);
-        free(resp);
-        return resp_len;
+        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
     }
-    else
+
+    if(ret > 0)
     {
-        return 0;
+        int resp_len = http_server_read_request(http_priv, str);
+        
+        if(0 != resp_len && http_priv->resp_code == HTTP_RESP_OK)
+        {
+            vty_set_command_received(vty, true);
+            return resp_len;
+        }
+        else if(http_priv->resp_code != HTTP_RESP_OK)
+        {
+            vty_set_command_received(vty, true);
+        }
     }
+
+    return 0;
 }
 
-bool    http_write_cb(vty_t* vty, const char* buf, size_t len)
+bool    http_write_cb(vty_t* vty)
 {
-    http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
-    
-    http_priv->response = realloc(http_priv->response, http_priv->response_size + len + 1);
-    http_priv->response[http_priv->response_size] = 0;
-    strncat(http_priv->response, buf, len);
-    http_priv->response_size += len;
+    return true;
 }
 
 bool    http_flush_cb(vty_t* vty)
@@ -216,19 +221,134 @@ bool    http_flush_cb(vty_t* vty)
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
     int socket = vty->data->desc.socket;
 
-    //if(http_priv->response_size > 0)
-    {
-        retVal = http_server_write_response(socket, http_priv);
-    
-        if(http_priv->response_size > 0)
-        {
-            *http_priv->response = 0;
-            http_priv->response_size = 0;
-        }
-    }
-    vty->buf_size = 0;
-    *vty->buffer = 0;
+    http_server_prepare_response_headers(http_priv, byte_buffer_read_len(vty->write_buffer));
 
+    // if(byte_buffer_read_len(http_priv->response_header) == 0 && byte_buffer_read_len(http_priv->response) == 0)
+    // {
+    //     return true;
+    // }
+
+    /*if(byte_buffer_read_len(vty->write_buffer) > 0)
+    {
+        printf("Sending HTTP response: %s\n", byte_buffer_get_read_ptr(vty->write_buffer));
+    }
+    else
+    {
+        printf("No HTTP data to send\n");
+    }*/
+    
+    struct iovec iov[2];
+    iov[0].iov_base = byte_buffer_get_read_ptr(http_priv->response_header);
+    iov[0].iov_len = byte_buffer_read_len(http_priv->response_header);
+
+     //iov[1].iov_base = byte_buffer_get_read_ptr(http_priv->response);
+     //iov[1].iov_len = byte_buffer_read_len(http_priv->response);
+
+    iov[1].iov_base = byte_buffer_get_read_ptr(vty->write_buffer);
+    iov[1].iov_len = byte_buffer_read_len(vty->write_buffer);
+
+
+    int ret = socket_send_v(vty_get_pump(vty), socket, iov, 2, byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(vty->write_buffer));
+    
+    if(-1 == ret)
+    {
+        //printf("HTTP send failed, unregestering socket!\n");
+        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
+    }
+    else if(ret == byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(vty->write_buffer))
+    {
+        byte_buffer_adjust_read_pos(vty->write_buffer, byte_buffer_read_len(vty->write_buffer));
+        byte_buffer_pack(vty->write_buffer);
+        byte_buffer_adjust_read_pos(http_priv->response_header, byte_buffer_read_len(http_priv->response_header));
+        byte_buffer_pack(http_priv->response_header);
+
+        http_set_response(http_priv, HTTP_RESP_NONE);
+        vty->buf_size = 0;
+        *vty->buffer = 0;
+        retVal = true;
+
+        //printf("HTTP send complete: %d\n", ret);
+    }
+    else 
+    {
+        //printf("Partial data sent: %d out of %d\n", ret, byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(vty->write_buffer));
+        if(ret >= byte_buffer_read_len(http_priv->response_header))
+        {
+            int remaining = ret - byte_buffer_read_len(http_priv->response_header);
+
+            if(byte_buffer_read_len(http_priv->response_header) > 0)
+            {
+                byte_buffer_adjust_read_pos(http_priv->response_header, byte_buffer_read_len(http_priv->response_header));
+            }
+
+            if(byte_buffer_read_len(vty->write_buffer) > 0)
+            {
+                byte_buffer_adjust_read_pos(vty->write_buffer, remaining);
+                byte_buffer_pack(vty->write_buffer);
+            }
+
+            http_set_response(http_priv, HTTP_RESP_NONE);
+        }
+        else
+        {
+            byte_buffer_adjust_read_pos(http_priv->response_header, ret);
+        }
+
+        retVal = true;
+    }
+
+
+    /*
+    int ret = socket_send_v(vty_get_pump(vty), socket, iov, 2, byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(http_priv->response));
+    
+    if(-1 == ret)
+    {
+        printf("HTTP send failed, unregestering socket!\n");
+        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
+    }
+    else if(ret == byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(http_priv->response))
+    {
+        byte_buffer_adjust_read_pos(http_priv->response, byte_buffer_read_len(http_priv->response));
+        byte_buffer_pack(http_priv->response);
+        byte_buffer_adjust_read_pos(http_priv->response_header, byte_buffer_read_len(http_priv->response_header));
+        byte_buffer_pack(http_priv->response_header);
+
+        http_set_response(http_priv, HTTP_RESP_NONE);
+        vty->buf_size = 0;
+        *vty->buffer = 0;
+        retVal = true;
+
+        printf("HTTP send complete\n");
+    }
+    else 
+    {
+        printf("Partial data sent: %d out of %d\n", ret, byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(http_priv->response));
+        if(ret >= byte_buffer_read_len(http_priv->response_header))
+        {
+            int remaining = ret - byte_buffer_read_len(http_priv->response_header);
+
+            if(byte_buffer_read_len(http_priv->response_header) > 0)
+            {
+                byte_buffer_adjust_read_pos(http_priv->response_header, byte_buffer_read_len(http_priv->response_header));
+            }
+
+            if(byte_buffer_read_len(http_priv->response) > 0)
+            {
+                byte_buffer_adjust_read_pos(http_priv->response, remaining);
+            }
+
+            http_set_response(http_priv, HTTP_RESP_NONE);
+        }
+        else
+        {
+            byte_buffer_adjust_read_pos(http_priv->response_header, ret);
+        }
+
+        retVal = true;
+    }
+    */
+    
+    
     return retVal;
 }
 
@@ -236,10 +356,12 @@ void    http_free_priv_cb(vty_t* vty)
 {
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
 
+    byte_buffer_free(http_priv->request->buffer);
     free(http_priv->request);
-    free(http_priv->response);
+    //byte_buffer_free(http_priv->response);
     free(http_priv->content_type);
     free(http_priv->post_data);
     free(http_priv->headers);
+    byte_buffer_free(http_priv->response_header);
     free(http_priv);
 }

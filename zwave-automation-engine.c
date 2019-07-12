@@ -159,6 +159,47 @@ void print_help()
     printf("-c <config_file>\n-u <user>\n-d daemonize\n");
 }
 
+typedef struct stdin_event_context_t
+{
+    vty_t* vty;
+    struct termios org_opts;
+
+} stdin_event_context_t;
+
+void on_stdin_event(event_pump_t* pump, int fd, void* context)
+{
+    stdin_event_context_t* c = (stdin_event_context_t*)context;
+    vty_t* vty_std = c->vty;
+    char* str = vty_read(vty_std);
+
+    if(vty_is_command_received(vty_std))
+    {
+        // event_post ... COMMAND_RECEIVED
+        vty_new_line(vty_std);
+        cli_command_exec(vty_std, str);
+        vty_display_prompt(vty_std);
+        vty_flush(vty_std);
+    }
+    else if(vty_is_error(vty_std))
+    {
+        LOG_ERROR(General, "Input error");
+    }
+
+    if(vty_is_shutdown(vty_std))
+    {
+        LOG_ADVANCED(General, "Goodbye");
+        logger_unregister_target(vty_std);
+        vty_free(vty_std);
+        tcsetattr(STDIN_FILENO, TCSANOW, &c->org_opts);
+        homebridge_manager_stop();
+        event_manager_shutdown();
+        zway_stop(zway);
+        zway_terminate(&zway);
+
+        exit(0);
+    }
+}
+
 int main (int argc, char *argv[])
 {
     bool is_daemon = false;
@@ -320,23 +361,17 @@ int main (int argc, char *argv[])
             signal_init();
 
             socket_create_server(global_config.client_port, &cli_commands_handle_connect_event, NULL);
-            //event_register_fd(cli_sock, &cli_commands_handle_connect_event, NULL);
-
 
             http_server_create(8088, &cli_rest_handle_data_read_event);
-            //int http_socket = http_server_get_socket(8088);
-            //event_register_fd(http_socket, &cli_rest_handle_connect_event, NULL);
 
             http_server_create(8089, &cli_commands_handle_http_data_event);
-            //int http_cmd_socket = http_server_get_socket(8089);
-            //http_server_register_with_event_loop(http_cmd_socket, &cli_commands_handle_http_data_event, NULL);
 
             homebridge_manager_init();
             //event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
 
             // Create STD vty
             vty_t* vty_std = NULL;
-            struct termios org_opts, new_opts;
+            stdin_event_context_t context;
 
             if(!is_daemon)
             {
@@ -348,6 +383,7 @@ int main (int argc, char *argv[])
                 memcpy(&new_opts, &org_opts, sizeof(new_opts));
                 new_opts.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOKE | ICRNL | ECHOCTL);
                 tcsetattr(STDIN_FILENO, TCSANOW, &new_opts);
+                context.org_opts = org_opts;
 
                 vty_io_data_t* vty_data = calloc(1, sizeof(vty_io_data_t));
                 vty_data->desc.io_pair[0] = stdin;
@@ -363,65 +399,11 @@ int main (int argc, char *argv[])
                 }
 
                 vty_display_prompt(vty_std);
-                
-                fd_set fds;
+                context.vty = vty_std;
 
-                while(true)
-                {
-                    FD_ZERO (&fds);
-                    //FD_SET(cli_sock,    &fds);    
-    
-                    /*stack_for_each(client_socket_list, cli_vty_variant)
-                    {
-                        vty_t* vty_ptr = VARIANT_GET_PTR(vty_t, cli_vty_variant);
-                        FD_SET(vty_ptr->data->desc.socket, &fds);
-                    }*/
-    
-                    FD_SET(STDIN_FILENO, &fds);
-    
-                    r = select (FD_SETSIZE, &fds, NULL, NULL, NULL);
-    
-                    if(r <= 0)
-                    {
-                        continue;
-                    }
-    
-                    if(FD_ISSET(STDIN_FILENO, &fds))
-                    {
-                        char* str = vty_read(vty_std);
-
-                        if(vty_is_command_received(vty_std))
-                        {
-                            // event_post ... COMMAND_RECEIVED
-                            vty_new_line(vty_std);
-                            cli_command_exec(vty_std, str);
-                            vty_display_prompt(vty_std);
-                            vty_flush(vty_std);
-                        }
-                        else if(vty_is_error(vty_std))
-                        {
-                            LOG_ERROR(General, "Input error");
-                        }
-
-                        if(vty_is_shutdown(vty_std))
-                        {
-                            LOG_ADVANCED(General, "Goodbye");
-                            logger_unregister_target(vty_std);
-                            vty_free(vty_std);
-                            tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
-                            homebridge_manager_stop();
-                            event_manager_shutdown();
-                            zway_stop(zway);
-                            zway_terminate(&zway);
-
-
-                            exit(0);
-                        }
-                    }
-                }
+                event_dispatcher_register_handler(event_dispatcher_get_pump("SOCKET_PUMP"), fileno(stdin), on_stdin_event, NULL, (void*)&context);
             }
 
-            //event_manager_join();
             event_dispatcher_start();
         }
         else
@@ -432,7 +414,6 @@ int main (int argc, char *argv[])
     }
     else
     {
-        printf("Error initializing Zway: %d\n", r);
         LOG_ERROR(General, "Error initializing Zway: %d", r);
     }
 

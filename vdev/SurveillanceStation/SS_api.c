@@ -731,8 +731,6 @@ void  SS_api_get_camera_info(int cam_id)
     snprintf(camera_info_req_buf, 511, "%s/webapi/%s?api=SYNO.SurveillanceStation.Camera&version=8&cameraIds=%d&basic=true&camAppInfo=true&method=GetInfo&_sid=%s", SS_base_url, SS_camera_path, cam_id, SS_auth_sid);
     LOG_DEBUG(DT_SURVEILLANCE_STATION, "Get Camera Info URL: %s", camera_info_req_buf);
 
-printf("URL: %s\n", camera_info_req_buf);
-
     curl_util_get_json(camera_info_req_buf, process_camera_info_response, (void*)cam_id);
 }
 
