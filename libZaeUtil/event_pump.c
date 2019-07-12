@@ -39,17 +39,22 @@ void variant_delete_event_handler(void *arg)
     free(e);
 }
 
+typedef struct event_queue_t
+{
+    int next_slot;
+    event_t queue[MAX_QUEUE_SIZE];
+    pthread_mutex_t lock;
+} event_queue_t;
+
 typedef struct event_pump_data_t
 {
     hash_table_t *event_handlers;
     pthread_mutex_t queue_lock;
-    int next_queue_slot;
-    int next_peniding_queue_slot;
-    event_t event_queue[MAX_QUEUE_SIZE];
-    event_t pending_event_queue[MAX_QUEUE_SIZE];
-    event_t* current_event_queue_ptr;
-    event_t* pending_event_queue_ptr;
-} event_pump_data;
+    event_queue_t current_event_queue;
+    event_queue_t pending_event_queue;
+    event_queue_t* current_event_queue_ptr;
+    event_queue_t* pending_event_queue_ptr;
+} event_pump_data_t;
 
 void event_pump_init(event_pump_t *pump)
 {
@@ -60,18 +65,15 @@ void event_pump_init(event_pump_t *pump)
     pump->unregister_handler = &event_pump_unregister_handler;
     pump->start = NULL;
     pump->stop = NULL;
-    pump->priv = (event_pump_data *)malloc(sizeof(event_pump_data));
-    event_pump_data *data = (event_pump_data *)pump->priv;
+    pump->priv = (event_pump_data_t *)calloc(1, sizeof(event_pump_data_t));
+    event_pump_data_t *data = (event_pump_data *)pump->priv;
 
-    memset(data->event_queue, 0, sizeof(data->event_queue));
-    data->next_queue_slot = 0;
-    data->next_peniding_queue_slot = 0;
     data->event_handlers = variant_hash_init();
-    
-    data->current_event_queue_ptr = data->event_queue;
+    data->current_event_queue_ptr = data->current_event_queue;
     data->pending_event_queue_ptr = data->pending_event_queue;
     
-    pthread_mutex_init(&data->queue_lock, NULL);
+    pthread_mutex_init(&data->current_event_queue_ptr->lock, NULL);
+    pthread_mutex_init(&data->pending_event_queue_ptr->lock, NULL);
 }
 
 void event_pump_send_event(event_pump_t *pump, int event_id, void *event_data)
@@ -79,25 +81,15 @@ void event_pump_send_event(event_pump_t *pump, int event_id, void *event_data)
     event_pump_data *data = (event_pump_data *)pump->priv;
 
     LOG_DEBUG(EventPump, "Event Pump sending event...");
-    if(pthread_mutex_trylock(&data->queue_lock) == 0)
+
+    pthread_mutex_lock(&data->pending_event_queue_ptr->lock);
+    if (data->pending_event_queue_ptr->next_slot < MAX_QUEUE_SIZE)
     {
-        if (data->next_queue_slot < MAX_QUEUE_SIZE)
-        {
-            data->current_event_queue_ptr[data->next_queue_slot].event_id = event_id;
-            data->current_event_queue_ptr[data->next_queue_slot].event_data = event_data;
-            data->next_queue_slot++;
-        }
-        pthread_mutex_unlock(&data->queue_lock);
+        data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_id = event_id;
+        data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_data = event_data;
+        data->data->pending_event_queue_ptr->next_slot++;
     }
-    else
-    {
-        if (data->next_peniding_queue_slot < MAX_QUEUE_SIZE)
-        {
-            data->pending_event_queue_ptr[data->next_peniding_queue_slot].event_id = event_id;
-            data->pending_event_queue_ptr[data->next_peniding_queue_slot].event_data = event_data;
-            data->next_peniding_queue_slot++;
-        }
-    }
+    pthread_mutex_unlock(&data->pending_event_queue_ptr->lock);
 }
 
 void event_pump_register_handler(event_pump_t *pump, va_list args)
@@ -153,14 +145,12 @@ void event_pump_poll(event_pump_t *pump, struct timespec *ts)
 {
     event_pump_data *data = (event_pump_data *)pump->priv;
 
-    if(0 == data->next_queue_slot) return;
+    if(0 == data->current_event_queue_ptr->next_slot) return;
     
-    pthread_mutex_lock(&data->queue_lock);
-
-    //LOG_DEBUG(EventPump, "Event Pump processing events: %d", data->next_queue_slot);
-    for (int i = 0; i < data->next_queue_slot; i++)
+    LOG_DEBUG(EventPump, "Event Pump processing %d events", data->current_event_queue_ptr->next_slot);
+    for (int i = 0; i < data->current_event_queue_ptr->next_slot; i++)
     {
-        event_t *e = &data->current_event_queue_ptr[i];
+        event_t *e = &data->current_event_queue_ptr->queue[i];
         variant_t *event_handler_variant = variant_hash_get(data->event_handlers, e->event_id);
         assert(NULL != event_handler_variant);
 
@@ -175,15 +165,15 @@ void event_pump_poll(event_pump_t *pump, struct timespec *ts)
         }
     }
 
-    data->next_queue_slot = 0;
+    data->current_event_queue_ptr->next_slot = 0;
 
     // Switch current with pending:
-    int tmp_next_slot = data->next_queue_slot;
-    data->current_event_queue_ptr = data->pending_event_queue;
-    data->pending_event_queue_ptr = data->event_queue;
+    pthread_mutex_lock(&data->pending_event_queue_ptr->lock);
+    
+    event_queue_t* tmp_ptr = data->current_event_queue_ptr;
+    data->current_event_queue_ptr = data->pending_event_queue_ptr;
+    data->pending_event_queue_ptr = tmp_ptr;
 
-    data->next_queue_slot = data->next_peniding_queue_slot;
-    data->next_peniding_queue_slot = tmp_next_slot;
-
-    pthread_mutex_unlock(&data->queue_lock);
+    // Yes, the locked mutex is now in current_queue_ptr
+    pthread_mutex_unlock(&data->current_event_queue_ptr->lock);
 }
