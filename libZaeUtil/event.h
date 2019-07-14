@@ -29,6 +29,15 @@ typedef struct event_handler_t
 #define COMMAND_ACTIVATION_EVENT "CommandActivationEvent"
 #define TIMER_TICK_EVENT         "TimerTickEvent"
 
+typedef enum
+{
+    SceneActivationEvent,
+    CommandActivationEvent,
+    EventLogEvent,
+    VdevDataChangeEvent,
+    SensorDataChangeEvent
+} e_events;
+
 void        event_manager_init();
 void        event_manager_shutdown();
 void        event_manager_join();

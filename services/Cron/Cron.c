@@ -4,11 +4,12 @@
 #include <logger.h>
 #include <time.h>
 #include "crontab.h"
+#include "event_dispatcher.h"
 
 int DT_CRON;
 
 static int timer_tick_counter = 0;
-void  timer_tick_event(event_t* pevent, void* context);
+void  timer_tick_event(event_pump_t* pump, int timer_id, void* context);
 
 void  service_create(service_t** service, int service_id)
 {
@@ -17,8 +18,10 @@ void  service_create(service_t** service, int service_id)
     DT_CRON = service_id;
 
     (*service)->get_config_callback = cron_cli_get_config;
-    //SERVICE_SUBSCRIBE_TO_EVENT_SOURCE("Timer", timer_tick_event);
-    event_register_handler(DT_CRON, TIMER_TICK_EVENT, timer_tick_event, NULL);
+
+    event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+    int timer_id = event_dispatcher_register_handler(pump, 60*1000, false, timer_tick_event, NULL);
+    pump->start(pump, timer_id);
 
     // Test
     /*
@@ -161,51 +164,45 @@ void    service_cli_create(cli_node_t* parent_node)
  * @param name 
  * @param pevent 
  */
-void  timer_tick_event(event_t* pevent, void* context)
+void  timer_tick_event(event_pump_t* pump, int timer_id, void* context)
 {
-    //service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
+    time_t t = time(NULL);
+    struct tm* p_tm = localtime(&t);
 
-    if(++timer_tick_counter > 59)
+    current_time_value_t job_time;
+    ADD_MINUTE(job_time, p_tm->tm_min);
+    ADD_HOUR(job_time, p_tm->tm_hour);
+    ADD_DAY(job_time, p_tm->tm_mday);
+    ADD_MONTH(job_time, p_tm->tm_mon);
+    ADD_WEEKDAY(job_time, p_tm->tm_wday);
+
+    LOG_DEBUG(DT_CRON, "Cron Event %d %d %d %d %d", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
+
+    variant_stack_t* action_list = crontab_get_action(job_time);
+
+    if(NULL != action_list)
     {
-        timer_tick_counter = 0;
-    
-        time_t t = time(NULL);
-        struct tm* p_tm = localtime(&t);
-    
-        current_time_value_t job_time;
-        ADD_MINUTE(job_time, p_tm->tm_min);
-        ADD_HOUR(job_time, p_tm->tm_hour);
-        ADD_DAY(job_time, p_tm->tm_mday);
-        ADD_MONTH(job_time, p_tm->tm_mon);
-        ADD_WEEKDAY(job_time, p_tm->tm_wday);
-
-        LOG_DEBUG(DT_CRON, "Cron Event %d %d %d %d %d", MINUTE(job_time), HOUR(job_time), DAY(job_time), MONTH(job_time), WEEKDAY(job_time));
-
-        variant_stack_t* action_list = crontab_get_action(job_time);
-
-        if(NULL != action_list)
+        LOG_ADVANCED(DT_CRON, "Found %d matching actions", action_list->count);
+        stack_for_each(action_list, cron_action_variant)
         {
-            LOG_ADVANCED(DT_CRON, "Found %d matching actions", action_list->count);
-            stack_for_each(action_list, cron_action_variant)
+            cron_action_t* action = VARIANT_GET_PTR(cron_action_t, cron_action_variant);
+
+            if(action->type == CA_SCENE)
             {
-                cron_action_t* action = VARIANT_GET_PTR(cron_action_t, cron_action_variant);
-
-                if(action->type == CA_SCENE)
-                {
-                    const char* scene_name = variant_get_string(action->command);
-                    LOG_DEBUG(DT_CRON, "Sending event for scene %s", scene_name);
-                    service_post_event(DT_CRON, SCENE_ACTIVATION_EVENT, variant_create_string(strdup(scene_name)));
-                }
-                else if(action->type == CA_COMMAND)
-                {
-                    const char* command_name = variant_get_string(action->command);
-                    LOG_DEBUG(DT_CRON, "Executing command %s", command_name);
-                    service_post_event(DT_CRON, COMMAND_ACTIVATION_EVENT, variant_create_string(strdup(command_name)));
-                }
+                const char* scene_name = variant_get_string(action->command);
+                LOG_DEBUG(DT_CRON, "Sending event for scene %s", scene_name);
+                service_post_event_new(DT_CRON, SceneActivationEvent, strdup(scene_name));
             }
-
-            stack_free(action_list);
+            else if(action->type == CA_COMMAND)
+            {
+                const char* command_name = variant_get_string(action->command);
+                LOG_DEBUG(DT_CRON, "Executing command %s", command_name);
+                //service_post_event(DT_CRON, COMMAND_ACTIVATION_EVENT, variant_create_string(strdup(command_name)));
+                service_post_event_new(DT_CRON, CommandActivationEvent, strdup(command_name));
+            }
         }
+
+        stack_free(action_list);
     }
 }
 

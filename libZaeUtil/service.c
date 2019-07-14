@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "hash.h"
 #include "crc32.h"
+#include "event_pump.h"
 
 hash_table_t* service_table;
 
@@ -28,6 +29,22 @@ void    service_post_event(int service_id, const char* name, variant_t* data)
 {
     event_t* new_event = event_create(service_id, name, data);
     event_post(new_event);
+}
+
+void service_event_free(void* event)
+{
+    event_t* e = (event_t*)event;
+    free(e->data);
+    free(e);
+}
+
+void    service_post_event_new(int service_id, int event_id, void* data)
+{
+    event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+    event_t* new_event = (event_t*)malloc(sizeof(event_t));
+    new_event->data = data;
+    new_event->source_id = service_id;
+    event_pump_send_event(pump, event_id, new_event, &service_event_free);
 }
 
 variant_t*  service_call_method(const char* service_name, const char* method_name, ...)

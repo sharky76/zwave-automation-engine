@@ -33,6 +33,7 @@ void socket_pump_init(event_pump_t* pump)
     pump->unregister_handler = &socket_pump_remove_sock;
     pump->start = NULL;
     pump->stop = NULL;
+    pump->free = &socket_pump_free;
     pump->priv = (void*)malloc(sizeof(socket_pump_data));
     socket_pump_data* data = (socket_pump_data*)pump->priv;
 
@@ -43,7 +44,14 @@ void socket_pump_init(event_pump_t* pump)
     pthread_mutex_init(&data->pump_lock, NULL);
 }
 
-void socket_pump_add_sock(event_pump_t* pump, va_list args)
+void socket_pump_free(event_pump_t* pump)
+{
+    LOG_ADVANCED(EventPump, "Destroying Socket Pump...");
+    free(pump->name);
+    free(pump->priv);
+}
+
+int socket_pump_add_sock(event_pump_t* pump, va_list args)
 {
     int sock_fd = va_arg(args, int);
     void(*on_read_event)(event_pump_t*, int,void*);
@@ -61,7 +69,7 @@ void socket_pump_add_sock(event_pump_t* pump, va_list args)
         LOG_ERROR(EventPump, "Socket subscription table full");
         pthread_mutex_unlock(&data->pump_lock);
 
-        return;
+        return -1;
     }
 
     data->fds[data->free_index].fd = sock_fd;
@@ -77,6 +85,7 @@ void socket_pump_add_sock(event_pump_t* pump, va_list args)
     pthread_mutex_unlock(&data->pump_lock);
 
     LOG_ADVANCED(EventPump, "New socket handler %d added", sock_fd);
+    return sock_fd;
 }
 
 void socket_pump_remove_sock(event_pump_t* pump, va_list args)

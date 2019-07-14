@@ -553,6 +553,23 @@ bool    cmd_set_banner(vty_t* vty, variant_stack_t* params)
     vty_write(vty, VTY_NEWLINE(vty));
 }
 
+typedef struct pager_context_t
+{
+    bool keypressed;
+    char key;
+    vty_t* vty;
+} pager_context_t;
+
+void on_pager_command_event(event_pump_t* pump, int fd, void* context)
+{
+    pager_context_t* ctx = (pager_context_t*)context;
+
+    char* str = vty_read(ctx->vty->stored_vty);
+    ctx->keypressed = true;
+    ctx->key = *str;
+    vty_clear_buffer(ctx->vty->stored_vty);
+}
+
 bool    cmd_pager(vty_t* vty, variant_stack_t* params)
 {
     int rows = 0;
@@ -584,24 +601,46 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
         if(ch[0] != (char)EOF && n > 0)
         {
             rows = 0;
-            vty_write(vty->stored_vty, "-- MORE --");
+            vty_write(vty->stored_vty, "-- more --");
+
+            pager_context_t ctx = {.keypressed = false, .key = 0, .vty = vty};
+            // Run event dispatcher here to catch continue or quit
+            event_dispatcher_t* wait_dispatcher = event_dispatcher_new();
+            event_pump_t* socket_pump = wait_dispatcher->get_pump(wait_dispatcher, "SOCKET_PUMP");
+
+            int fd = -1;
+            switch(vty->stored_vty->type)
+            {
+                case VTY_SOCKET:
+                    fd = vty->stored_vty->data->desc.socket;
+                    break;
+                case VTY_STD:
+                    fd = fileno(vty->stored_vty->data->desc.io_pair[IN]);
+                    break;
+            }
+
+            event_dispatcher_register_handler(socket_pump, fd, on_pager_command_event, &vty_nonblock_write_event, &ctx);
             
-            char* c = 0;
-            int n = vty->stored_vty->read_cb(vty->stored_vty, c);
-            while(c[0] != 0xa && c[0] != 0xd && c[0] != ' ' && c[0] != 'q' && c[0] != 'Q')
+            while(!ctx.keypressed)
             {
-                //free(c);
-                memset(ch, 0, n);
-                n = vty->stored_vty->read_cb(vty->stored_vty, c);
+                wait_dispatcher->timed_start(wait_dispatcher, 100);
+
+                if(ctx.key != 0xa && ctx.key != 0xd && ctx.key != ' ' && ctx.key != 'q' && ctx.key != 'Q')
+                {
+                    ctx.keypressed = false;
+                    continue;
+                }
+
+                if(ctx.key == 'q' || ctx.key == 'Q')
+                {
+                    vty_new_line(vty->stored_vty);
+                    is_quit = true;
+                }
             }
 
-            if(c[0] == 'q' || c[0] == 'Q')
-            {
-                vty_new_line(vty->stored_vty);
-                is_quit = true;
-            }
-
-            free(c);
+            event_dispatcher_unregister_handler(socket_pump, fd, NULL);
+            wait_dispatcher->timed_start(wait_dispatcher, 1);
+            wait_dispatcher->free(wait_dispatcher);
         }
 
     } while(ch[0] != (char)EOF && n > 0 && !is_quit);

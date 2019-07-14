@@ -124,7 +124,7 @@ ZAEPlatform.prototype = {
 
 		this.CharacteristicForAlarmType = {
 			Smoke: Characteristic.SmokeDetected,
-			CO: Characteristic.CarbonMonoxideDetected,
+			CO: Characteristic.CarbonMonoxideDetected
 		};
 
 		for(var index in deviceDescriptor.command_classes) {
@@ -599,9 +599,11 @@ ZAEPlatform.prototype = {
 						convert:function(value) {
 							if(value == 255) {
 								//console.log("DOOR OPEN");
+								service.getCharacteristic(Characteristic.TargetDoorState).updateValue(Characteristic.TargetDoorState.OPEN);
 								return Characteristic.CurrentDoorState.OPEN;
 							} else if(value == 0) {
 								//console.log("DOOR CLOSED");
+								service.getCharacteristic(Characteristic.TargetDoorState).updateValue(Characteristic.TargetDoorState.CLOSED);
 								return Characteristic.CurrentDoorState.CLOSED;
 							} else if(value == 254) {
 								//console.log("DOOR OPENING");
@@ -649,9 +651,9 @@ ZAEPlatform.prototype = {
 								commandClass:commandClass.id,
 								convert: function(value) {
 									//console.log("Value: " + value);
-									if(value == Characteristic.LockCurrentState.SECURED) {
+									if(value == Characteristic.LockTargetState.SECURED) {
 										return 255;
-									} else if(value == Characteristic.LockCurrentState.UNSECURED){ 
+									} else if(value == Characteristic.LockTargetState.UNSECURED){ 
 										return 0;
 									}
 								}
@@ -675,6 +677,26 @@ ZAEPlatform.prototype = {
 						}
 					}
 				});
+				this.registerEventListener(Characteristic.LockCurrentState, 
+					{
+						service:service,
+						node_id:this.nodeId,
+						instance:commandClass.instance,
+						command_class: 113,
+						dh:6,
+						valueHolder: "event",
+						convert:function(value) { 
+							if(value == 1) {
+								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.SECURED);
+								return Characteristic.LockCurrentState.SECURED;
+							} else if (value == 2){
+								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.UNSECURED);
+								return Characteristic.LockCurrentState.UNSECURED;
+							} else {
+								return Characteristic.LockCurrentState.UNKNOWN;
+							}
+						}
+					});
 			this.serviceList.push(service);
 		},
 		createNotificationAccessory : function(commandClass, serviceType, sensorAlarmList) {
@@ -855,6 +877,46 @@ ZAEPlatform.prototype = {
 								});
 						}
 					break;
+					/*case 'LockMechanism':
+						var service = new Service.LockMechanism(this.name);
+						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
+
+
+						service.getCharacteristic(Characteristic.LockCurrentState).on('get', this.getSensorValue.bind(
+							{
+								dh: 6,
+								valueHolder: "event",
+								accessory:this,
+								instance:commandClass.instance,
+								commandClass: 113,
+								convert:function(value) { 
+									if(value == 1) {
+										return Characteristic.LockCurrentState.SECURED;
+									} else {
+										return Characteristic.LockCurrentState.UNSECURED;
+									}
+								}
+							}));
+						this.serviceList.push(service);
+
+						this.registerEventListener(Characteristic.LockCurrentState, 
+							{
+								service:service,
+								node_id:this.nodeId,
+								instance:commandClass.instance,
+								command_class: 113,
+								dh:6,
+								valueHolder: "event",
+								convert:function(value) { 
+									if(value == 1) {
+										return Characteristic.LockCurrentState.SECURED;
+									} else {
+										return Characteristic.LockCurrentState.UNSECURED;
+									}
+								}
+							});
+					break;*/
+
 					/*case 'Water':
 						var existingService = this.serviceList.find(function(element) {
 							return typeof element === Service.LeakSensor;

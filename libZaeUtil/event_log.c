@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "logger.h"
 #include "event.h"
+#include "event_dispatcher.h"
+#include "event_pump.h"
 
 static uint32_t monotonic_event_id;
 
@@ -59,8 +61,11 @@ void    event_log_add_event(event_log_entry_t* event_entry)
     stack_push_front(event_log_handle.event_log_list, entry_variant);
 
     // Post event when new log entry is added
-    event_t* event = event_create(EventLog, EVENT_LOG_ADDED_EVENT, variant_clone(entry_variant));
-    event_post(event);
+    //event_t* event = event_create(EventLog, EVENT_LOG_ADDED_EVENT, variant_clone(entry_variant));
+    //event_post(event);
+
+    event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+    event_pump_send_event(pump, EventLogEvent, (void*)event_entry, NULL);
 }
 
 void    event_log_set_limit(int limit)

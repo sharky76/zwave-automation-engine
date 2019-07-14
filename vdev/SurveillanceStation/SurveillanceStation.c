@@ -39,7 +39,8 @@ variant_t*  get_stm_url_path(device_record_t* record, va_list args);
 variant_t*  get_stm_config(device_record_t* record, va_list args);
 
 void        device_start(); 
-void        timer_tick_handler(event_t* pevent, void* context);
+void        timer_tick_handler(event_pump_t* pump, int timer_id, void* context);
+void        reset_active_events_handler(event_pump_t* pump, int timer_id, void* context);
 void        SS_on_data_change_event(event_t* event, void* context);
 
 void    vdev_create(vdev_t** vdev, int vdev_id)
@@ -64,8 +65,13 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
     
     DT_SURVEILLANCE_STATION = vdev_id;
-    event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler, NULL);
-    //event_register_handler(DT_SURVEILLANCE_STATION, VDEV_DATA_CHANGE_EVENT, SS_on_data_change_event, NULL);
+    //event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler, NULL);
+    event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+
+    int query_timer_id = event_dispatcher_register_handler(pump, QUERY_RATE_SEC*1000, false, timer_tick_handler, NULL);
+    int event_timer_id = event_dispatcher_register_handler(pump, EVENT_ACTIVE_TIMEOUT_SEC*1000, false, reset_active_events_handler, NULL);
+    pump->start(pump, query_timer_id);
+    pump->start(pump, event_timer_id);
 
     SS_user = NULL;
     SS_pass = NULL;
@@ -401,40 +407,33 @@ void    reset_active_events(hash_node_data_t* node_data, void* arg)
 {
     SS_event_keeper_t* ev = (SS_event_keeper_t*)variant_get_ptr(node_data->data);
     //LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
-    if(++ev->active_event_tick_counter > EVENT_ACTIVE_TIMEOUT_SEC)
+    if(ev->event_active)
     {
-        if(ev->event_active)
-        {
-            LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Reset active events for camera %s (was %d)", ev->camera_name, ev->event_count);
-            ev->event_active = false;
-            ev->event_count = ev->old_event_count = 0;
-            ev->active_event_tick_counter = 0;
-            vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
-            SS_emit_data_change_event(ev);
-        }
-
+        LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Reset active events for camera %s (was %d)", ev->camera_name, ev->event_count);
+        ev->event_active = false;
+        ev->event_count = ev->old_event_count = 0;
         ev->active_event_tick_counter = 0;
+        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+        SS_emit_data_change_event(ev);
     }
-
-    ev->old_event_count = ev->event_count;
 }
 
-void        timer_tick_handler(event_t* pevent, void* context)
+void        timer_tick_handler(event_pump_t* pump, int timer_id, void* context)
 {
-    service_event_data_t* timer_event_data = (service_event_data_t*)variant_get_ptr(pevent->data);
 
-    if(++timer_tick_counter > QUERY_RATE_SEC)
-    {
-        LOG_DEBUG(DT_SURVEILLANCE_STATION, "Timer event received");
-        timer_tick_counter = 0;
+    LOG_DEBUG(DT_SURVEILLANCE_STATION, "Timer event received");
 
-        // Check for outstanding motion events...
-        //SS_api_get_sid();
-        SS_api_get_motion_events();
-        //SS_api_logout();
-        variant_hash_for_each(SS_event_keeper_table, process_motion_event_table, NULL);
-    }
+    // Check for outstanding motion events...
+    //SS_api_get_sid();
+    SS_api_get_motion_events();
+    //SS_api_logout();
+    variant_hash_for_each(SS_event_keeper_table, process_motion_event_table, NULL);
 
+    
+}
+
+void        reset_active_events_handler(event_pump_t* pump, int timer_id, void* context)
+{
     variant_hash_for_each(SS_event_keeper_table, reset_active_events, NULL);
 }
 

@@ -78,6 +78,7 @@ service_method_t* _method_name = (service_method_t*)malloc(sizeof(service_method
 void    service_create(service_t** service, int service_id);
 void    service_cli_create(cli_node_t* parent_node);
 void    service_post_event(int service_id, const char* name, variant_t* data);
+void    service_post_event_new(int service_id, int event_id, void* data);
 
 service_t*  service_self(const char* service_name);
 service_t*  service_by_id(int service_id);

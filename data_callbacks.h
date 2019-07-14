@@ -15,6 +15,7 @@ typedef struct sensor_event_data_t
     unsigned long  last_update_time;
     ZDataHolder    data_holder;
     bool    callback_added;
+    event_pump_t* event_pump;
 } sensor_event_data_t;
 
 /*

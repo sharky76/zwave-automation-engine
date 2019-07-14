@@ -20,6 +20,7 @@ extern hash_table_t* service_table;
 DECLARE_LOGGER(ServiceManager)
 
 void service_manager_on_command_activation_event(event_t* event, void* context);
+void service_manager_on_command_activation_event_new(event_pump_t* pump, int event_id, void* data, void* context);
 
 void    service_manager_init(const char* service_dir)
 {
@@ -90,6 +91,9 @@ void    service_manager_init(const char* service_dir)
         LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
 
         event_register_handler(ServiceManager, COMMAND_ACTIVATION_EVENT, service_manager_on_command_activation_event, NULL);
+
+        event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+        event_dispatcher_register_handler(pump, CommandActivationEvent, service_manager_on_command_activation_event_new, NULL);
     }
     else
     {
@@ -181,6 +185,42 @@ void    service_manager_for_each_method(const char* service_class, void (*visito
 void service_manager_on_command_activation_event(event_t* event, void* context)
 {
     const char* cmd = variant_get_string(event->data);
+
+    if(NULL != cmd)
+    {
+        LOG_ADVANCED(ServiceManager, "Command activation event from id %d with command %s", event->source_id, cmd);
+        bool isOk = true;
+        variant_stack_t* compiled = command_parser_compile_expression(cmd, &isOk);
+    
+        if(isOk)
+        {
+            variant_t* result = command_parser_execute_expression(compiled);
+    
+            if(NULL != result)
+            {
+                LOG_ADVANCED(ServiceManager, "Command %s executed successfully", cmd);
+                variant_free(result);
+            }
+            else
+            {
+                LOG_ERROR(ServiceManager, "Failed to execute command %s", cmd);
+            }
+        }
+        else
+        {
+            LOG_ERROR(ServiceManager, "Error parsing command %s", cmd);
+        }
+    }
+    else
+    {
+        LOG_ERROR(ServiceManager, "Empty command");
+    }
+}
+
+void service_manager_on_command_activation_event_new(event_pump_t* pump, int event_id, void* data, void* context)
+{
+    event_t* event = (event_t*)data;
+    const char* cmd = (const char*)(event->data);
 
     if(NULL != cmd)
     {

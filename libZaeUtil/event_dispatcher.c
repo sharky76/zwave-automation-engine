@@ -23,6 +23,23 @@ void _event_dispatcher_init(event_dispatcher_t* dispatcher)
     event_pump_init(&dispatcher->pumps[pump_idx++]);
 }
 
+void _event_dispatcher_free(event_dispatcher_t* dispatcher)
+{
+    LOG_INFO(EventPump, "Destroying Event Dispatcher...");
+    dispatcher->event_dispatcher_running = false;
+
+    int pump_idx = 0;
+    for(int i = 0; i < MAX_PUMPS; i++)
+    {
+        if(NULL != dispatcher->pumps[i].free)
+        {
+            dispatcher->pumps[i].free(&dispatcher->pumps[i]);
+        }
+    }
+
+    free(dispatcher);
+}
+
 void _event_dispatcher_start(event_dispatcher_t* dispatcher)
 {
     LOG_INFO(EventPump, "Event Dispatcher started");
@@ -124,12 +141,13 @@ event_pump_t* event_dispatcher_get_pump(const char* name)
     _event_dispatcher_get_pump(&default_dispatcher, name);
 }
 
-void event_dispatcher_register_handler(event_pump_t* pump, ...)
+int event_dispatcher_register_handler(event_pump_t* pump, ...)
 {
     va_list args;
     va_start(args, pump);
-    pump->register_handler(pump, args);
+    int id = pump->register_handler(pump, args);
     va_end(args);
+    return id;
 }
 
 void event_dispatcher_unregister_handler(event_pump_t* pump, ...)
@@ -145,10 +163,10 @@ event_dispatcher_t* event_dispatcher_new()
     event_dispatcher_t* dispatcher = (event_dispatcher_t*)malloc(sizeof(event_dispatcher_t));
     _event_dispatcher_init(dispatcher);
 
-    dispatcher->event_dispatcher_start = &_event_dispatcher_start;
-    dispatcher->event_dispatcher_timed_start = &_event_dispatcher_timed_start;
-    dispatcher->event_dispatcher_stop = &_event_dispatcher_stop;
-    dispatcher->event_dispatcher_get_pump = &_event_dispatcher_get_pump;
-
+    dispatcher->start = &_event_dispatcher_start;
+    dispatcher->timed_start = &_event_dispatcher_timed_start;
+    dispatcher->stop = &_event_dispatcher_stop;
+    dispatcher->get_pump = &_event_dispatcher_get_pump;
+    dispatcher->free = &_event_dispatcher_free;
     return dispatcher;
 }

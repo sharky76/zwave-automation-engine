@@ -205,7 +205,7 @@ bool    cmd_ifttt_action_scene(vty_t* vty, variant_stack_t* params)
             }
             
             // Now call scene...
-            service_post_event(DT_IFTTT, SCENE_ACTIVATION_EVENT, variant_create_string(strdup(action->handler_name)));
+            service_post_event_new(DT_IFTTT, SceneActivationEvent, strdup(action->handler_name));
 
             break;
         }
@@ -284,7 +284,10 @@ bool    cmd_ifttt_action_command(vty_t* vty, variant_stack_t* params)
             LOG_DEBUG(DT_IFTTT, "Processed expression: %s", variant_get_string(processed_expression));
 
             // Now call command...
-            service_post_event(DT_IFTTT, COMMAND_ACTIVATION_EVENT, processed_expression);
+            //service_post_event(DT_IFTTT, COMMAND_ACTIVATION_EVENT, processed_expression);
+            service_post_event_new(DT_IFTTT, CommandActivationEvent, strdup(variant_get_string(processed_expression)));
+            variant_free(processed_expression);
+
 
             break;
         }

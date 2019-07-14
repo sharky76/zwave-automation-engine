@@ -38,7 +38,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params);
 bool    cmd_get_events(vty_t* vty, variant_stack_t* params);
 bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params);
 
-void    sse_event_handler(event_t* event, void* context);
+void    sse_event_handler(event_pump_t* pump, int id, void* data, void* context);
 
 cli_command_t   rest_root_list[] = {
     {"GET rest v1 devices",  cmd_get_sensors,  "Get list of sensors"},
@@ -73,7 +73,6 @@ void    cli_rest_init(cli_node_t* parent_node)
     sse_event_listener_list = stack_create();
     rest_cli_commands = stack_create();
     cli_install_custom_node(rest_cli_commands, &rest_root_node, NULL, rest_root_list, "", "config");
-    event_register_handler(CLI_REST_ID, EVENT_LOG_ADDED_EVENT, sse_event_handler, (void*)sse_event_listener_list);
 }
 
 //============================================================================================================================
@@ -1173,50 +1172,30 @@ bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
 /*
     This event handler is called when new event log entry is added
 */
-void    sse_event_handler(event_t* event, void* context)
+void    sse_event_handler(event_pump_t* pump, int id, void* data, void* context)
 {
-    variant_stack_t* event_listeners = (variant_stack_t*)context;
+    vty_t* vty = (vty_t*)context;
 
-    variant_stack_t* vty_to_remove = stack_create();
+    event_log_entry_t* e = (event_log_entry_t*)data;
+    
+    http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
 
-    stack_lock(event_listeners);
-    stack_for_each(event_listeners, vty_variant)
+    // Add data...
+    vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":%s}\n\n", 
+                e->event_id, 
+                EVENT_LOG_ADDED_EVENT, 
+                (e->device_type == ZWAVE)? "ZWAVE" : "VDEV",
+                e->node_id,
+                e->instance_id,
+                e->command_id,
+                e->event_data);
+
+    // Send data
+    if(!vty_flush(vty))
     {
-        vty_t* vty = VARIANT_GET_PTR(vty_t, vty_variant);
-        event_log_entry_t* e = VARIANT_GET_PTR(event_log_entry_t, event->data);
-        
-        http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
-
-        // Add data...
-        vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":%s}\n\n", 
-                  e->event_id, 
-                  EVENT_LOG_ADDED_EVENT, 
-                  (e->device_type == ZWAVE)? "ZWAVE" : "VDEV",
-                  e->node_id,
-                  e->instance_id,
-                  e->command_id,
-                  e->event_data);
-
-        // Send data
-        if(!vty_flush(vty))
-        {
-            stack_push_back(vty_to_remove, vty_variant);
-            
-        }
+        event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+        event_dispatcher_unregister_handler(pump, EventLogEvent, sse_event_handler, (void*)vty);
     }
-
-    stack_for_each(vty_to_remove, dead_vty_variant)
-    {
-        stack_remove(event_listeners, dead_vty_variant);
-        vty_t* vty = VARIANT_GET_PTR(vty_t, dead_vty_variant);
-        vty_set_in_use(vty, false);
-        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
-    }
-
-    stack_free(vty_to_remove);
-
-    stack_unlock(event_listeners);
-
 }
 
 bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
@@ -1250,9 +1229,8 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
 
             vty_set_in_use(vty, true); // Mark this VTY as "in use" so it will not be deleted
             
-            stack_lock(sse_event_listener_list);
-            stack_push_back(sse_event_listener_list, variant_create_ptr(DT_PTR, vty, variant_delete_none));
-            stack_unlock(sse_event_listener_list);
+            event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+            event_dispatcher_register_handler(pump, EventLogEvent, sse_event_handler, (void*)vty);
         }
 
         free(accept_type);

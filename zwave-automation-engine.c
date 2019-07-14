@@ -339,9 +339,10 @@ int main (int argc, char *argv[])
         
         vdev_manager_start_devices();
 
-        zway_device_add_callback(zway, DeviceAdded, device_added_callback, NULL);
-        zway_device_add_callback(zway, CommandAdded, command_added_callback, NULL);
-        zway_device_add_callback(zway, DeviceRemoved, command_removed_callback, NULL);
+        event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+        zway_device_add_callback(zway, DeviceAdded, device_added_callback, (void*)pump);
+        zway_device_add_callback(zway, CommandAdded, command_added_callback, (void*)pump);
+        zway_device_add_callback(zway, DeviceRemoved, command_removed_callback, (void*)pump);
 
         LOG_INFO(General, "Engine data initialized");
 

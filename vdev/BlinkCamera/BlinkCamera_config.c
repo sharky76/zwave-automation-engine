@@ -16,8 +16,7 @@ blink_camera_entry_t*    blink_camera_add(device_record_t* record)
     entry->instance = record->instanceId;
     entry->active_event_tick_counter = 0;
     entry->camera_motion_detected_event = false;
-    entry->timer_id = entry->instance << 16 | DT_BLINK_CAMERA;
-
+    
     stack_push_back(blink_camera_list, variant_create_ptr(DT_PTR, entry, &delete_blink_camera_entry));
     return entry;
 }

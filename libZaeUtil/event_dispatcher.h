@@ -16,10 +16,11 @@ typedef struct event_pump_t
 {
     char* name;
     void (*poll)(struct event_pump_t*, struct timespec* ts);
-    void (*register_handler)(struct event_pump_t*, va_list args);
+    int (*register_handler)(struct event_pump_t*, va_list args);
     void (*unregister_handler)(struct event_pump_t*, va_list args);
     void (*start)(struct event_pump_t*, ...);
     void (*stop)(struct event_pump_t*, ...);
+    void (*free)(struct event_pump_t*);
     void* priv;
 } event_pump_t;
 
@@ -32,10 +33,11 @@ struct event_dispatcher_t
     event_pump_t pumps[MAX_PUMPS];
     bool event_dispatcher_running;
 
-    void (*event_dispatcher_start)(event_dispatcher_t*);
-    void (*event_dispatcher_timed_start)(event_dispatcher_t*, int);
-    void (*event_dispatcher_stop)(event_dispatcher_t*);
-    event_pump_t* (*event_dispatcher_get_pump)(event_dispatcher_t*, const char*);
+    void (*start)(event_dispatcher_t*);
+    void (*timed_start)(event_dispatcher_t*, int);
+    void (*stop)(event_dispatcher_t*);
+    void (*free)(event_dispatcher_t*);
+    event_pump_t* (*get_pump)(event_dispatcher_t*, const char*);
 };
 
 void event_dispatcher_init();
@@ -43,7 +45,7 @@ void event_dispatcher_start();
 void event_dispatcher_timed_start(int timeout_msec);
 void event_dispatcher_stop();
 
-void event_dispatcher_register_handler(event_pump_t*, ...);
+int event_dispatcher_register_handler(event_pump_t*, ...);
 void event_dispatcher_unregister_handler(event_pump_t*, ...);
 
 event_pump_t* event_dispatcher_get_pump(const char* name);

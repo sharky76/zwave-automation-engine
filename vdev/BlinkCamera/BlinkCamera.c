@@ -55,7 +55,7 @@ void        device_start()
     {
         device_record_t* device_record = VARIANT_GET_PTR(device_record_t, record_variant);
         blink_camera_entry_t* entry = blink_camera_add(device_record);
-        event_dispatcher_register_handler(event_dispatcher_get_pump("TIMER_PUMP"), entry->timer_id, EVENT_ACTIVE_TIMEOUT_SEC*1000, true, on_motion_timeout, (void*)entry);
+        entry->timer_id = event_dispatcher_register_handler(event_dispatcher_get_pump("TIMER_PUMP"), EVENT_ACTIVE_TIMEOUT_SEC*1000, true, on_motion_timeout, (void*)entry);
     }
 
     variant_free(blink_camera_list_variant);
