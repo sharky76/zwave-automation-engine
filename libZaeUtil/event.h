@@ -35,7 +35,8 @@ typedef enum
     CommandActivationEvent,
     EventLogEvent,
     VdevDataChangeEvent,
-    SensorDataChangeEvent
+    SensorDataChangeEvent,
+    DeviceAddedEvent
 } e_events;
 
 void        event_manager_init();

@@ -381,7 +381,7 @@ void    cli_commands_handle_http_data_event(event_pump_t* pump, int fd, void* co
 }
 
 
-void    controller_inclusion_wait_handler(variant_t* event_data, void* context)
+/*void    controller_inclusion_wait_handler(variant_t* event_data, void* context)
 {
     vty_t* vty = (vty_t*)context;
 
@@ -396,6 +396,19 @@ void    controller_inclusion_wait_handler(variant_t* event_data, void* context)
     }
 
     zway_controller_add_node_to_network(zway, FALSE);
+}*/
+typedef struct context_t
+{
+    void* event_data;
+    bool is_found;
+} context_t;
+
+void    controller_inclusion_wait_handler(event_pump_t* pump, int event_id, void* event_data, void* context)
+{
+    context_t* ctx = (context_t*)context;
+    ctx->event_data = event_data;
+    ctx->is_found = true;
+    event_dispatcher_detach();
 }
 
 bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
@@ -408,7 +421,22 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
         err = zway_controller_add_node_to_network(zway, TRUE);
         vty_write(vty, "%% Inclusion started%s", VTY_NEWLINE(vty));
         USING_LOGGER(DeviceCallback)
-        event_wait_async("DeviceAddedEvent", 260, controller_inclusion_wait_handler, (void*)vty);
+        //event_wait_async("DeviceAddedEvent", 260, controller_inclusion_wait_handler, (void*)vty);
+
+        context_t ctx = {.is_found = false};
+        event_dispatcher_register_handler(event_dispatcher_get_pump("EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
+        event_dispatcher_attach(260*1000);
+        event_dispatcher_unregister_handler(event_dispatcher_get_pump("EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
+        if(ctx.is_found)
+        {
+            vty_write(vty, "%% Discovered new device with ID: %d%s", (int)ctx.event_data, VTY_NEWLINE(vty));
+            zway_controller_add_node_to_network(zway, FALSE);
+        }
+        else
+        {
+            vty_write(vty, "%% No new device discovered%s", VTY_NEWLINE(vty));
+        }
+        
     }
     else
     {

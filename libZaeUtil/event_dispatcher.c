@@ -17,6 +17,7 @@ void _event_dispatcher_init(event_dispatcher_t* dispatcher)
 
     int pump_idx = 0;
     dispatcher->event_dispatcher_running = false;
+    dispatcher->event_dispatcher_joined = false;
 
     socket_pump_init(&dispatcher->pumps[pump_idx++]);
     timer_pump_init(&dispatcher->pumps[pump_idx++]);
@@ -40,6 +41,21 @@ void _event_dispatcher_free(event_dispatcher_t* dispatcher)
     free(dispatcher);
 }
 
+void _event_dispatcher_run(event_dispatcher_t* dispatcher, struct timespec* ts)
+{
+    for(int i = 0; i < MAX_PUMPS; i++)
+    {
+        if(NULL != dispatcher->pumps[i].poll)
+        {
+            dispatcher->pumps[i].poll(&dispatcher->pumps[i], ts);
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
 void _event_dispatcher_start(event_dispatcher_t* dispatcher)
 {
     LOG_INFO(EventPump, "Event Dispatcher started");
@@ -49,20 +65,39 @@ void _event_dispatcher_start(event_dispatcher_t* dispatcher)
     while(dispatcher->event_dispatcher_running)
     {
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        for(int i = 0; i < MAX_PUMPS; i++)
-        {
-            if(NULL != dispatcher->pumps[i].poll)
-            {
-                dispatcher->pumps[i].poll(&dispatcher->pumps[i], &ts);
-            }
-            else
-            {
-                break;
-            }
-        }
+        _event_dispatcher_run(dispatcher, &ts);
     }
 
     LOG_INFO(EventPump, "Event Dispatcher stopped");
+}
+
+void _event_dispatcher_wait_handler(event_pump_t* pump, int timer_id, void* context)
+{
+    bool* timer_fired = (bool*)context;
+    *timer_fired = true;
+}
+
+void _event_dispatcher_attach(event_dispatcher_t* dispatcher, int timeout_msec)
+{
+    event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+    bool timer_fired = false;
+    dispatcher->event_dispatcher_joined = true;
+    int timer_id = event_dispatcher_register_handler(pump, timeout_msec, true, _event_dispatcher_wait_handler, &timer_fired);
+    pump->start(pump, timer_id);
+    struct timespec ts;
+    while(!timer_fired && dispatcher->event_dispatcher_joined) 
+    {
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        _event_dispatcher_run(dispatcher, &ts);
+    }
+
+    dispatcher->event_dispatcher_joined = false;
+    pump->stop(pump, timer_id);
+}
+
+void _event_dispatcher_detach(event_dispatcher_t* dispatcher)
+{
+    dispatcher->event_dispatcher_joined = false;
 }
 
 void _event_dispatcher_timed_start(event_dispatcher_t* dispatcher, int timeout_msec)
@@ -79,17 +114,7 @@ void _event_dispatcher_timed_start(event_dispatcher_t* dispatcher, int timeout_m
     while(dispatcher->event_dispatcher_running)
     {
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        for(int i = 0; i < MAX_PUMPS; i++)
-        {
-            if(NULL != dispatcher->pumps[i].poll)
-            {
-                dispatcher->pumps[i].poll(&dispatcher->pumps[i], &ts);
-            }
-            else
-            {
-                break;
-            }
-        }
+        _event_dispatcher_run(dispatcher, &ts);
 
         current_time = (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
         dispatcher->event_dispatcher_running = ((start_time + (uint64_t)timeout_msec*1000000) > current_time);
@@ -131,6 +156,16 @@ void event_dispatcher_timed_start(int timeout_msec)
     _event_dispatcher_timed_start(&default_dispatcher, timeout_msec);
 }
 
+void event_dispatcher_attach(int timeout_msec)
+{
+    _event_dispatcher_attach(&default_dispatcher, timeout_msec);
+}
+
+void event_dispatcher_detach()
+{
+    _event_dispatcher_detach(&default_dispatcher);
+}
+
 void event_dispatcher_stop()
 {
     _event_dispatcher_stop(&default_dispatcher);
@@ -168,5 +203,8 @@ event_dispatcher_t* event_dispatcher_new()
     dispatcher->stop = &_event_dispatcher_stop;
     dispatcher->get_pump = &_event_dispatcher_get_pump;
     dispatcher->free = &_event_dispatcher_free;
+    dispatcher->attach = &_event_dispatcher_attach;
+    dispatcher->detach = &_event_dispatcher_detach;
+
     return dispatcher;
 }

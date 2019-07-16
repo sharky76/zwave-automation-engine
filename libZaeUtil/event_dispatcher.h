@@ -32,16 +32,21 @@ struct event_dispatcher_t
 {
     event_pump_t pumps[MAX_PUMPS];
     bool event_dispatcher_running;
+    bool event_dispatcher_joined;
 
     void (*start)(event_dispatcher_t*);
     void (*timed_start)(event_dispatcher_t*, int);
     void (*stop)(event_dispatcher_t*);
     void (*free)(event_dispatcher_t*);
+    void (*attach)(event_dispatcher_t*, int);
+    void (*detach)(event_dispatcher_t*);
     event_pump_t* (*get_pump)(event_dispatcher_t*, const char*);
 };
 
 void event_dispatcher_init();
 void event_dispatcher_start();
+void event_dispatcher_attach(int timeout_msec);
+void event_dispatcher_detach();
 void event_dispatcher_timed_start(int timeout_msec);
 void event_dispatcher_stop();
 
