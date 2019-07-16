@@ -3,6 +3,7 @@
 #include <ZWayLib.h>
 #include <ZData.h>
 #include <stdbool.h>
+#include "event_pump.h"
 
 #define SENSOR_DATA_CHANGE_EVENT   "SensorDataChangeEvent"
 

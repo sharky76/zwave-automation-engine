@@ -39,7 +39,7 @@ typedef struct event_queue_t
 typedef struct event_pump_data_t
 {
     hash_table_t *event_handlers;
-    pthread_mutex_t queue_lock;
+    pthread_mutex_t pump_lock;
     event_queue_t current_event_queue;
     event_queue_t pending_event_queue;
     event_queue_t* current_event_queue_ptr;
@@ -66,6 +66,7 @@ void event_pump_init(event_pump_t *pump)
     
     pthread_mutex_init(&data->current_event_queue.lock, NULL);
     pthread_mutex_init(&data->pending_event_queue.lock, NULL);
+    pthread_mutex_init(&data->pump_lock, NULL);
 }
 
 void event_pump_free(event_pump_t* pump)
@@ -82,7 +83,7 @@ void event_pump_send_event(event_pump_t *pump, int event_id, void *event_data, v
     event_pump_data_t *data = (event_pump_data_t*)pump->priv;
 
     LOG_DEBUG(EventPump, "Event Pump sending event...");
-    pthread_mutex_lock(&data->pending_event_queue_ptr->lock);
+    pthread_mutex_lock(&data->pump_lock);
     if (data->pending_event_queue_ptr->next_slot < MAX_QUEUE_SIZE)
     {
         data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_id = event_id;
@@ -90,7 +91,7 @@ void event_pump_send_event(event_pump_t *pump, int event_id, void *event_data, v
         data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_free = event_free;
         data->pending_event_queue_ptr->next_slot++;
     }
-    pthread_mutex_unlock(&data->pending_event_queue_ptr->lock);
+    pthread_mutex_unlock(&data->pump_lock);
 }
 
 int event_pump_register_handler(event_pump_t *pump, va_list args)
@@ -170,7 +171,6 @@ void event_pump_poll(event_pump_t *pump, struct timespec *ts)
 {
     event_pump_data_t *data = (event_pump_data_t *)pump->priv;
 
-    pthread_mutex_lock(&data->current_event_queue_ptr->lock);
     if(0 != data->current_event_queue_ptr->next_slot) 
     {
         LOG_DEBUG(EventPump, "Event Pump processing %d events", data->current_event_queue_ptr->next_slot);
@@ -200,16 +200,13 @@ void event_pump_poll(event_pump_t *pump, struct timespec *ts)
 
         data->current_event_queue_ptr->next_slot = 0;
     }
-    pthread_mutex_unlock(&data->current_event_queue_ptr->lock);
 
     // Switch current with pending:
-    pthread_mutex_lock(&data->pending_event_queue.lock);
-    pthread_mutex_lock(&data->current_event_queue.lock);
+    pthread_mutex_lock(&data->pump_lock);
     
     event_queue_t* tmp_ptr = data->current_event_queue_ptr;
     data->current_event_queue_ptr = data->pending_event_queue_ptr;
     data->pending_event_queue_ptr = tmp_ptr;
 
-    pthread_mutex_unlock(&data->current_event_queue.lock);
-    pthread_mutex_unlock(&data->pending_event_queue.lock);
+    pthread_mutex_unlock(&data->pump_lock);
 }

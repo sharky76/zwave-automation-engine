@@ -56,6 +56,7 @@ typedef struct SS_camera_info_t
     int     port;
     char*   username;
     char*   password;
+    int     timer_id;
 } SS_camera_info_t;
 
 extern hash_table_t* SS_camera_info_table;

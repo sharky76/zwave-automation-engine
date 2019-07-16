@@ -69,9 +69,9 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
 
     int query_timer_id = event_dispatcher_register_handler(pump, QUERY_RATE_SEC*1000, false, timer_tick_handler, NULL);
-    int event_timer_id = event_dispatcher_register_handler(pump, EVENT_ACTIVE_TIMEOUT_SEC*1000, false, reset_active_events_handler, NULL);
+    //int event_timer_id = event_dispatcher_register_handler(pump, EVENT_ACTIVE_TIMEOUT_SEC*1000, false, reset_active_events_handler, NULL);
     pump->start(pump, query_timer_id);
-    pump->start(pump, event_timer_id);
+    //pump->start(pump, event_timer_id);
 
     SS_user = NULL;
     SS_pass = NULL;
@@ -327,6 +327,9 @@ void update_resolver_entries(hash_node_data_t* node_data, void* arg)
     SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(node_data->data);
     resolver_add_entry(VDEV, cam_info->name, DT_SURVEILLANCE_STATION, cam_info->id, COMMAND_CLASS_MOTION_EVENTS);
     resolver_add_entry_default(VDEV, DT_SURVEILLANCE_STATION, cam_info->id, COMMAND_CLASS_CAMERA);
+
+    cam_info->timer_id = event_dispatcher_register_handler(event_dispatcher_get_pump("TIMER_PUMP"), 
+                                EVENT_ACTIVE_TIMEOUT_SEC*1000, true, reset_active_events_handler, (void*)cam_info);
 }
 
 void    device_start()
@@ -398,6 +401,11 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
         vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
         SS_emit_data_change_event(ev);
+
+        event_pump_t* timer_pump = event_dispatcher_get_pump("TIMER_PUMP");
+        variant_t* cam_info_var = variant_hash_get(SS_camera_info_table, ev->camera_id);
+        SS_camera_info_t* cam_info = (SS_camera_info_t*)variant_get_ptr(cam_info_var);
+        timer_pump->start(timer_pump, cam_info->timer_id);
     }
 
     ev->old_event_count = ev->event_count;
@@ -405,7 +413,11 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
 
 void    reset_active_events(hash_node_data_t* node_data, void* arg)
 {
+    SS_camera_info_t* cam_info = (SS_camera_info_t*)arg;
     SS_event_keeper_t* ev = (SS_event_keeper_t*)variant_get_ptr(node_data->data);
+    
+    if(cam_info->id != ev->camera_id) return;
+
     //LOG_DEBUG(DT_SURVEILLANCE_STATION, "Key: %u value: %s %d, old: %d", node_data->key, ev->camera_name, ev->event_count, ev->old_event_count);
     if(ev->event_active)
     {
@@ -434,7 +446,7 @@ void        timer_tick_handler(event_pump_t* pump, int timer_id, void* context)
 
 void        reset_active_events_handler(event_pump_t* pump, int timer_id, void* context)
 {
-    variant_hash_for_each(SS_event_keeper_table, reset_active_events, NULL);
+    variant_hash_for_each(SS_event_keeper_table, reset_active_events, context);
 }
 
 variant_t*  get_camera_snapshot(device_record_t* record, va_list args)

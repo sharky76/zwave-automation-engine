@@ -84,7 +84,8 @@ void    vty_free(vty_t* vty)
     }
 
     LOG_DEBUG(General, "Deleting VTY %p", vty);
-
+    logger_unregister_target(vty);
+    
     /*if(NULL != vty->flush_cb)
     {
         vty->flush_cb(vty);
@@ -146,7 +147,8 @@ bool    vty_write(vty_t* vty, const char* format, ...)
     va_start(args, format);
     
     byte_buffer_vsnprintf(vty->write_buffer, format, args);
-    bool retVal = vty->write_cb(vty);
+    
+    bool retVal = (NULL != vty->write_cb)? vty->write_cb(vty) : true;
 
     return retVal;
 }

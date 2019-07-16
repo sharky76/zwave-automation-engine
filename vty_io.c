@@ -70,7 +70,7 @@ void    vty_io_config(vty_t* vty)
         //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_HTTP:
-        vty->write_cb = http_write_cb;
+        vty->write_cb = NULL;
         vty->read_cb = http_read_cb;
         vty->flush_cb = http_flush_cb;
         vty->free_priv_cb = http_free_priv_cb;
@@ -210,11 +210,6 @@ int   http_read_cb(vty_t* vty, char* str)
     return 0;
 }
 
-bool    http_write_cb(vty_t* vty)
-{
-    return true;
-}
-
 bool    http_flush_cb(vty_t* vty)
 {
     bool retVal = false;
@@ -223,26 +218,9 @@ bool    http_flush_cb(vty_t* vty)
 
     http_server_prepare_response_headers(http_priv, byte_buffer_read_len(vty->write_buffer));
 
-    // if(byte_buffer_read_len(http_priv->response_header) == 0 && byte_buffer_read_len(http_priv->response) == 0)
-    // {
-    //     return true;
-    // }
-
-    /*if(byte_buffer_read_len(vty->write_buffer) > 0)
-    {
-        printf("Sending HTTP response: %s\n", byte_buffer_get_read_ptr(vty->write_buffer));
-    }
-    else
-    {
-        printf("No HTTP data to send\n");
-    }*/
-    
     struct iovec iov[2];
     iov[0].iov_base = byte_buffer_get_read_ptr(http_priv->response_header);
     iov[0].iov_len = byte_buffer_read_len(http_priv->response_header);
-
-     //iov[1].iov_base = byte_buffer_get_read_ptr(http_priv->response);
-     //iov[1].iov_len = byte_buffer_read_len(http_priv->response);
 
     iov[1].iov_base = byte_buffer_get_read_ptr(vty->write_buffer);
     iov[1].iov_len = byte_buffer_read_len(vty->write_buffer);
