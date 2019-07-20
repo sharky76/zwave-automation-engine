@@ -32,6 +32,7 @@
 #include "hash.h"
 #include "user_manager.h"
 #include "socket_io.h"
+#include <ctype.h>
 
 DECLARE_LOGGER(CLI)
 

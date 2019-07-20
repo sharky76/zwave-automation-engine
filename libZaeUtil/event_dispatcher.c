@@ -93,6 +93,7 @@ void _event_dispatcher_attach(event_dispatcher_t* dispatcher, int timeout_msec)
 
     dispatcher->event_dispatcher_joined = false;
     pump->stop(pump, timer_id);
+    event_dispatcher_unregister_handler(pump, timer_id);
 }
 
 void _event_dispatcher_detach(event_dispatcher_t* dispatcher)
@@ -207,4 +208,28 @@ event_dispatcher_t* event_dispatcher_new()
     dispatcher->detach = &_event_dispatcher_detach;
 
     return dispatcher;
+}
+
+typedef struct event_wait_context_t
+{
+    void* event_data;
+    bool is_found;
+} event_wait_context_t;
+
+void event_id_wait_handler(event_pump_t* pump, int event_id, void* event_data, void* ctx)
+{
+    event_wait_context_t* context = (event_wait_context_t*)ctx;
+    context->is_found = true;
+    context->event_data = event_data;
+    event_dispatcher_detach();
+}
+
+bool event_dispatcher_wait(int event_id, int timeout_msec)
+{
+    event_wait_context_t ctx = {.is_found = false};
+    event_dispatcher_register_handler(event_dispatcher_get_pump("EVENT_PUMP"), event_id, &event_id_wait_handler, (void*)&ctx);
+    event_dispatcher_attach(timeout_msec);
+    event_dispatcher_unregister_handler(event_dispatcher_get_pump("EVENT_PUMP"), event_id, &event_id_wait_handler, (void*)&ctx);
+
+    return ctx.is_found;
 }

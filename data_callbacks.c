@@ -171,8 +171,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             event_data->last_update_time = time_msec;
             
             // TODO: Repace with event pump
-            event_t* event = event_create(DataCallback, SENSOR_DATA_CHANGE_EVENT, variant_create_ptr(DT_SENSOR_EVENT_DATA, event_data, &variant_delete_none));
-            event_post(event);
+            event_pump_send_event(event_data->event_pump, SensorDataChangeEvent, (void*)event_data, NULL);
 
             event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
             new_entry->node_id = event_data->node_id;

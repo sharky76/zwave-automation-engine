@@ -127,8 +127,10 @@ void         zway_data_read_success_cb(const ZWay zway, ZWBYTE functionId, void*
               ctx->record->deviceName,
               functionId);
 
-    event_t* event = event_create(DataCallback, COMMAND_DATA_READY_EVENT, NULL);
-    event_post(event);
+    //event_t* event = event_create(DataCallback, COMMAND_DATA_READY_EVENT, NULL);
+    //event_post(event);
+    event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+    event_pump_send_event(pump, CommandDataReadyEvent, NULL, NULL);
 
     free(ctx);
 }
@@ -145,8 +147,8 @@ void         zway_data_read_fail_cb(const ZWay zway, ZWBYTE functionId, void* ar
               ctx->record->deviceName,
               functionId);
 
-    event_t* event = event_create(DataCallback, COMMAND_DATA_READY_EVENT, NULL);
-    event_post(event);
+    event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+    event_pump_send_event(pump, CommandDataReadyEvent, NULL, NULL);
 
     free(ctx);
 }
@@ -391,9 +393,9 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
         zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
 
         // Block here...
-        if(0 != event_wait(COMMAND_DATA_READY_EVENT, 1000))
+        if(!event_dispatcher_wait(CommandDataReadyEvent, 2000))
         {
-            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+            LOG_DEBUG(DataCallback, "Failed to get a response in 2000 msec");
         }
 
         ret_val = command_class_read_data(record, "level");
@@ -539,9 +541,11 @@ variant_t*   command_class_eval_indicator(const char* method, device_record_t* r
         ctx->record = record;
         zway_cc_indicator_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
-        if(0 != event_wait(COMMAND_DATA_READY_EVENT, 1000))
+
+
+        if(!event_dispatcher_wait(CommandDataReadyEvent, 2000))
         {
-            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+            LOG_DEBUG(DataCallback, "Failed to get a response in 2000 msec");
         }
         ret_val = command_class_read_data(record, NULL);
     }
@@ -565,9 +569,9 @@ variant_t*   command_class_eval_node_naming(const char* method, device_record_t*
         ctx->record = record;
         zway_cc_node_naming_get_name(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
-        if(0 != event_wait(COMMAND_DATA_READY_EVENT, 1000))
+        if(!event_dispatcher_wait(CommandDataReadyEvent, 2000))
         {
-            LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
+            LOG_DEBUG(DataCallback, "Failed to get a response in 2000 msec");
         }
         ret_val = command_class_read_data(record, "nodename");
     }
@@ -577,7 +581,7 @@ variant_t*   command_class_eval_node_naming(const char* method, device_record_t*
         ctx->record = record;
         zway_cc_node_naming_get_location(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
         // Block here...
-        if(0 != event_wait(COMMAND_DATA_READY_EVENT, 1000))
+        if(!event_dispatcher_wait(CommandDataReadyEvent, 2000))
         {
             LOG_DEBUG(DataCallback, "Failed to get a response in 1000 msec");
         }

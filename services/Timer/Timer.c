@@ -7,6 +7,7 @@
 #include "timer_cli.h"
 #include "timer_config.h"
 #include "event.h"
+#include "timer_pump.h"
 
 // Config variables
 bool timer_enabled;
@@ -44,7 +45,7 @@ void service_create(service_t** service, int service_id)
     // Default config values
     timer_enabled = true;
 
-    timer_thread_start();
+    //timer_thread_start();
 }
 
 void    service_cli_create(cli_node_t* parent_node)
@@ -52,25 +53,38 @@ void    service_cli_create(cli_node_t* parent_node)
     timer_cli_init(parent_node);
 }
 
-bool    add_timer_event(const char* name, int timeout, timer_event_type_t event_type, bool singleshot)
+void    on_timer_expired(event_pump_t* pump, int timer_id, void* context)
+{
+    timer_info_t* timer = (timer_info_t*)context;
+    service_post_event(DT_TIMER, timer->event_id, strdup(timer->name));
+
+    if(timer_pump_is_singleshot(pump, timer_id))
+    {
+        stack_lock(timer_list);
+        stack_for_each(timer_list, timer_variant)
+        {
+            timer_info_t* timer = variant_get_ptr(timer_variant);
+            if(timer->timer_id == timer_id)
+            {
+                event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+                event_dispatcher_unregister_handler(pump, timer->timer_id);
+                stack_remove(timer_list, timer_variant);
+                variant_free(timer_variant);
+                break;
+            }
+        }
+        stack_unlock(timer_list);
+    }
+}
+
+bool    add_timer_event(const char* name, int timeout, int event_id, bool singleshot)
 {
     timer_info_t* timer = (timer_info_t*)malloc(sizeof(timer_info_t));
-
     timer->name = strdup(name);
-
-    switch(event_type)
-    {
-    case SCENE:
-        timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
-        break;
-    case COMMAND:
-        timer->event_name = strdup(COMMAND_ACTIVATION_EVENT);
-        break;
-    }
-
-    timer->event_type = event_type;
-    timer->timeout = timer->ticks_left = timeout;
-    timer->singleshot = singleshot;
+    timer->event_id = event_id;
+    event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+    timer->timer_id = event_dispatcher_register_handler(pump, timeout*1000, singleshot, &on_timer_expired, (void*)timer);
+    pump->start(pump, timer->timer_id);
 
     stack_lock(timer_list);
     stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
@@ -88,13 +102,7 @@ variant_t*  timer_start(service_method_t* method, va_list args)
     
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
-            /*timer->name = strdup(variant_get_string(name_variant));
-            timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
-            timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
-            timer->singleshot = true;
-        
-            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));*/
-            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), SCENE, true);
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), SceneActivationEvent, true);
             return variant_create_bool(true);
         }
         else
@@ -111,6 +119,31 @@ variant_t*  timer_start(service_method_t* method, va_list args)
 }
 
 variant_t*  timer_stop(service_method_t* method, va_list args)
+{
+    bool retVal = false;
+    variant_t* name_variant = va_arg(args, variant_t*);
+    if(NULL != variant_get_string(name_variant))
+    {
+        stack_lock(timer_list);
+        stack_for_each(timer_list, timer_variant)
+        {
+            timer_info_t* timer = variant_get_ptr(timer_variant);
+            if(strcmp(timer->name, variant_get_string(name_variant)) == 0)
+            {
+                event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+                event_dispatcher_unregister_handler(pump, timer->timer_id);
+                stack_remove(timer_list, timer_variant);
+                variant_free(timer_variant);
+                retVal = true;
+            }
+        }
+        stack_unlock(timer_list);
+    }
+
+    return variant_create_bool(retVal);
+}
+
+variant_t*  timer_stop_old(service_method_t* method, va_list args)
 {
     bool retVal = false;
     variant_t* name_variant = va_arg(args, variant_t*);
@@ -144,14 +177,8 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
     
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
-            /*timer->name = strdup(variant_get_string(name_variant));
-            timer->event_name = strdup(SCENE_ACTIVATION_EVENT);
-            timer->timeout = timer->ticks_left = variant_get_int(timeout_variant);
-            timer->singleshot = false;
-        
-            stack_push_front(timer_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));*/
-            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), SCENE, false);
-        
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), SceneActivationEvent, false);
+       
             return variant_create_bool(true);
         }
         else
@@ -167,65 +194,12 @@ variant_t*  timer_start_interval(service_method_t* method, va_list args)
     }
 }
 
-void* timer_alarm_thread_func(void* arg)
-{
-    while(true)
-    {
-        sleep(1);
-        if(timer_enabled)
-        {
-            stack_lock(timer_list);
-            stack_for_each(timer_list, timer_variant)
-            {
-                if(NULL != timer_variant)
-                {
-                    timer_info_t* timer = variant_get_ptr(timer_variant);
-                    if(--timer->ticks_left == 0)
-                    {
-                        service_post_event(DT_TIMER, timer->event_name, variant_create_string(strdup(timer->name)));
-            
-                        if(timer->singleshot)
-                        {
-                            stack_remove(timer_list, timer_variant);
-                            variant_free(timer_variant);
-                        }
-                        else
-                        {
-                            timer->ticks_left = timer->timeout;
-                        }
-                    }
-                }
-            }
-            stack_unlock(timer_list);
-            service_post_event(DT_TIMER, TIMER_TICK_EVENT, NULL);
-        }
-    }
-}
-
-void timer_thread_start()
-{
-    pthread_t   timer_thread;
-    pthread_create(&timer_thread, NULL, timer_alarm_thread_func, NULL);
-    pthread_detach(timer_thread);
-}
-
 void timer_delete_timer(void* arg)
 {
     timer_info_t* timer = (timer_info_t*)arg;
 
     free(timer->name);
-    free(timer->event_name);
     free(timer);
-}
-
-variant_t* call_timer_start(service_method_t* method, ...)
-{
-    va_list args;
-    va_start(args, method);
-    variant_t* result = timer_start(method, args);
-    va_end(args);
-
-    return result;
 }
 
 variant_t*  timer_invoke_command(service_method_t* method, va_list args)
@@ -237,7 +211,8 @@ variant_t*  timer_invoke_command(service_method_t* method, va_list args)
     
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
-            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), COMMAND, true);
+            //add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), COMMAND, true);
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), CommandActivationEvent, true);
             return variant_create_bool(true);
         }
         else
@@ -261,7 +236,8 @@ variant_t*  timer_interval_invoke_command(service_method_t* method, va_list args
     
         if(name_variant->type == DT_STRING && timeout_variant->type == DT_INT32)
         {
-            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), COMMAND, false);
+            //add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), COMMAND, false);
+            add_timer_event(variant_get_string(name_variant), variant_get_int(timeout_variant), CommandActivationEvent, false);
             return variant_create_bool(true);
         }
         else
@@ -287,7 +263,7 @@ variant_t*  timer_show_timers(service_method_t* method, va_list args)
         {
             timer_info_t* timer = variant_get_ptr(timer_variant);
             char buf[256] = {0};
-            snprintf(buf, 255, "%d %s: %s", timer->ticks_left, timer->event_name, timer->name);
+            snprintf(buf, 255, "%s", timer->name);
             stack_push_back(result, variant_create_string(strdup(buf)));
         }
         stack_unlock(timer_list);

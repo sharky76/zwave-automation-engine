@@ -115,7 +115,7 @@ void sigsegv(int sig) {
 void sighup(int sig)
 {
     homebridge_manager_stop();
-    event_manager_shutdown();
+    //event_manager_shutdown();
     zway_stop(zway);
     zway_terminate(&zway);
     exit(1);
@@ -192,7 +192,7 @@ void on_stdin_event(event_pump_t* pump, int fd, void* context)
         vty_free(vty_std);
         tcsetattr(STDIN_FILENO, TCSANOW, &c->org_opts);
         homebridge_manager_stop();
-        event_manager_shutdown();
+        //event_manager_shutdown();
         zway_stop(zway);
         zway_terminate(&zway);
 
@@ -324,7 +324,7 @@ int main (int argc, char *argv[])
     {
         LOG_INFO(General, "Zway API initialized");
         event_log_init();
-        event_manager_init();
+        //event_manager_init();
         event_dispatcher_init();
         resolver_init();
         cli_init();

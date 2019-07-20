@@ -25,10 +25,6 @@ typedef struct event_handler_t
     int   event_timeout;
 } event_handler_t;
 
-#define SCENE_ACTIVATION_EVENT   "SceneActivationEvent"
-#define COMMAND_ACTIVATION_EVENT "CommandActivationEvent"
-#define TIMER_TICK_EVENT         "TimerTickEvent"
-
 typedef enum
 {
     SceneActivationEvent,
@@ -36,10 +32,11 @@ typedef enum
     EventLogEvent,
     VdevDataChangeEvent,
     SensorDataChangeEvent,
-    DeviceAddedEvent
+    DeviceAddedEvent,
+    CommandDataReadyEvent
 } e_events;
 
-void        event_manager_init();
+/*void        event_manager_init();
 void        event_manager_shutdown();
 void        event_manager_join();
 
@@ -58,5 +55,5 @@ event_t*    event_create(int source_id, const char* event_name, variant_t* data)
 void        event_delete(event_t* event);
 void        event_post(event_t* event);
 variant_t*  event_wait(const char* event_name, uint32_t timeout);
-bool        event_wait_async(const char* event_name, uint32_t timeout, void(*callback)(variant_t*,void*), void* context);
+bool        event_wait_async(const char* event_name, uint32_t timeout, void(*callback)(variant_t*,void*), void* context);*/
 

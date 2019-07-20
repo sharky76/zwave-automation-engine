@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <event_dispatcher.h>
 
 DECLARE_LOGGER(HomebridgeManager)
 
@@ -36,7 +37,8 @@ int homebridge_manager_init()
         if(-1 == homebridge_fd)
         {
             homebridge_fd = homebridge_start();
-            event_register_fd(homebridge_fd, &homebridge_on_event, NULL);
+            //event_pump_t* pump = event_dispatcher_get_pump("SOCKET_PUMP");
+            //event_dispatcher_register_handler(pump, homebridge_fd, &homebridge_on_event, NULL, NULL);
         }
     }
     return homebridge_fd;
@@ -114,7 +116,9 @@ void homebridge_stopped_handler(int sig)
   {
       // The following 2 lines cause hangs if signal is received from within malloc() call
       LOG_DEBUG(HomebridgeManager, "Homebridge stopped");
-      event_unregister_fd(homebridge_fd);
+      //event_unregister_fd(homebridge_fd);
+      //event_pump_t* pump = event_dispatcher_get_pump("SOCKET_PUMP");
+      //event_dispatcher_unregister_handler(pump, homebridge_fd);
 
       if (homebridge_restart_on_crash)
       {
@@ -128,7 +132,8 @@ void homebridge_stopped_handler(int sig)
 void homebridge_manager_stop()
 {
     homebridge_restart_on_crash = false;
-    event_unregister_fd(homebridge_fd);
+    //event_pump_t* pump = event_dispatcher_get_pump("SOCKET_PUMP");
+    //event_dispatcher_unregister_handler(pump, homebridge_fd);
     kill(homebridge_pid, SIGINT);
     homebridge_fd = -1;
 }

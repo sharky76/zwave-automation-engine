@@ -90,8 +90,6 @@ void    service_manager_init(const char* service_dir)
         closedir(dp);
         LOG_ADVANCED(ServiceManager, "Service manager initialized with %d services", service_table->count);
 
-        event_register_handler(ServiceManager, COMMAND_ACTIVATION_EVENT, service_manager_on_command_activation_event, NULL);
-
         event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
         event_dispatcher_register_handler(pump, CommandActivationEvent, service_manager_on_command_activation_event_new, NULL);
     }

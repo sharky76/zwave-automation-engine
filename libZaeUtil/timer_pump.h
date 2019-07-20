@@ -12,3 +12,4 @@ void timer_pump_poll(event_pump_t* pump, struct timespec* ts);
 
 void timer_pump_start_timer(event_pump_t* pump, ...);
 void timer_pump_stop_timer(event_pump_t* pump, ...);
+bool timer_pump_is_singleshot(event_pump_t* pump, int timer_id);

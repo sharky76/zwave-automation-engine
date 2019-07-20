@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <service.h>
 
-typedef enum timer_event_type_t
+/*typedef enum timer_event_type_t
 {
     SCENE,
     COMMAND
@@ -16,6 +16,13 @@ typedef struct timer_info_t
     timer_event_type_t event_type;
     uint32_t    timeout;
     uint32_t    ticks_left;
+} timer_info_t;*/
+
+typedef struct timer_info_t
+{
+    char* name;
+    int timer_id;
+    int event_id;
 } timer_info_t;
 
 extern bool timer_enabled;

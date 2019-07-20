@@ -113,4 +113,4 @@ void    command_parser_register_symbol(const char* symbol, variant_t* value);
 
 void    vdev_create(vdev_t** vdev, int vdev_id);
 void    vdev_cli_create(cli_node_t* parent_node);
-void    vdev_post_event(int vdev_id, int command_id, int instance_id, const char* event_name, void* data);
+void    vdev_post_event(int event_id, int vdev_id, int command_id, int instance_id);

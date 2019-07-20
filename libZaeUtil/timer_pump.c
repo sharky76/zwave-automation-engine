@@ -83,16 +83,16 @@ int timer_pump_add_timeout(event_pump_t* pump, va_list args)
 
 void timer_pump_remove_timeout(event_pump_t* pump, va_list args)
 {
-    int handler_id = va_arg(args, int);
+    int timer_id = va_arg(args, int);
     timer_pump_data_t* data = (timer_pump_data_t*)pump->priv;
     
     pthread_mutex_lock(&data->lock);
     for(int i = 0; i < MAX_TIMERS; i++)
     {
         timer_event_data_t* event_data = &data->timer_table[i];
-        if(event_data->timer_id == handler_id)
+        if(event_data->timer_id == timer_id)
         {
-            LOG_DEBUG(EventPump, "Removed timer id: %d", handler_id);
+            LOG_DEBUG(EventPump, "Removed timer id: %d", timer_id);
             event_data->remove_pending_flag = true;
             break;
         }
@@ -195,4 +195,24 @@ void timer_pump_stop_timer(event_pump_t* pump, ...)
         }
     }
     pthread_mutex_unlock(&data->lock);
+}
+
+bool timer_pump_is_singleshot(event_pump_t* pump, int timer_id)
+{
+    bool is_singleshot = false;
+    timer_pump_data_t* data = (timer_pump_data_t*)pump->priv;
+
+    pthread_mutex_lock(&data->lock);
+    for(int i = 0; i < data->next_timer_slot; i++)
+    {
+        timer_event_data_t* timer_event_data = &data->timer_table[i];
+        if(timer_event_data->timer_id == timer_id)
+        {
+            is_singleshot = timer_event_data->is_singleshot;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&data->lock);
+
+    return is_singleshot;
 }

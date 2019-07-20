@@ -25,11 +25,6 @@ void    delete_service_event_data(void* arg)
  * @param name 
  * @param data 
  */
-void    service_post_event(int service_id, const char* name, variant_t* data)
-{
-    event_t* new_event = event_create(service_id, name, data);
-    event_post(new_event);
-}
 
 void service_event_free(void* event)
 {
@@ -38,7 +33,7 @@ void service_event_free(void* event)
     free(e);
 }
 
-void    service_post_event_new(int service_id, int event_id, void* data)
+void    service_post_event(int service_id, int event_id, void* data)
 {
     event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
     event_t* new_event = (event_t*)malloc(sizeof(event_t));

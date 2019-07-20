@@ -399,7 +399,7 @@ void    process_motion_event_table(hash_node_data_t* node_data, void* arg)
         ev->active_event_tick_counter = 0;
         SS_api_get_events_info(ev);
         LOG_ADVANCED(DT_SURVEILLANCE_STATION, "Motion detected event on camera: %s with ID %d", ev->camera_name, ev->camera_id);
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+        vdev_post_event(VdevDataChangeEvent, DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id);
         SS_emit_data_change_event(ev);
 
         event_pump_t* timer_pump = event_dispatcher_get_pump("TIMER_PUMP");
@@ -425,7 +425,7 @@ void    reset_active_events(hash_node_data_t* node_data, void* arg)
         ev->event_active = false;
         ev->event_count = ev->old_event_count = 0;
         ev->active_event_tick_counter = 0;
-        vdev_post_event(DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id, VDEV_DATA_CHANGE_EVENT, ev);
+        vdev_post_event(VdevDataChangeEvent, DT_SURVEILLANCE_STATION, COMMAND_CLASS_MOTION_EVENTS, ev->camera_id);
         SS_emit_data_change_event(ev);
     }
 }

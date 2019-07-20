@@ -191,14 +191,13 @@ void  timer_tick_event(event_pump_t* pump, int timer_id, void* context)
             {
                 const char* scene_name = variant_get_string(action->command);
                 LOG_DEBUG(DT_CRON, "Sending event for scene %s", scene_name);
-                service_post_event_new(DT_CRON, SceneActivationEvent, strdup(scene_name));
+                service_post_event(DT_CRON, SceneActivationEvent, strdup(scene_name));
             }
             else if(action->type == CA_COMMAND)
             {
                 const char* command_name = variant_get_string(action->command);
                 LOG_DEBUG(DT_CRON, "Executing command %s", command_name);
-                //service_post_event(DT_CRON, COMMAND_ACTIVATION_EVENT, variant_create_string(strdup(command_name)));
-                service_post_event_new(DT_CRON, CommandActivationEvent, strdup(command_name));
+                service_post_event(DT_CRON, CommandActivationEvent, strdup(command_name));
             }
         }
 

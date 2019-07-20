@@ -110,7 +110,7 @@ void update_camera_motion_detected_state(int instance, bool state)
         event_log_add_event(new_entry);
     
         // Notify system about security state change
-        vdev_post_event(DT_BLINK_CAMERA, 48, instance, VDEV_DATA_CHANGE_EVENT, (void*)entry->camera_motion_detected_event);
+        vdev_post_event(VdevDataChangeEvent, DT_BLINK_CAMERA, 48, instance);
     }
 }
 
