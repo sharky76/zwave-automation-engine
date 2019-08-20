@@ -20,6 +20,7 @@ typedef struct pending_event_t
     int event_id;
     void *event_data;
     void (*event_free)(void*);
+    bool processing;
 } pending_event_t;
 
 typedef struct event_handler_cb_st
@@ -89,6 +90,7 @@ void event_pump_send_event(event_pump_t *pump, int event_id, void *event_data, v
         data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_id = event_id;
         data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_data = event_data;
         data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].event_free = event_free;
+        data->pending_event_queue_ptr->queue[data->pending_event_queue_ptr->next_slot].processing = false;
         data->pending_event_queue_ptr->next_slot++;
     }
     pthread_mutex_unlock(&data->pump_lock);
@@ -177,24 +179,29 @@ void event_pump_poll(event_pump_t *pump, struct timespec *ts)
         for (int i = 0; i < data->current_event_queue_ptr->next_slot; i++)
         {
             pending_event_t *e = &data->current_event_queue_ptr->queue[i];
-            variant_t *event_handler_variant = variant_hash_get(data->event_handlers, e->event_id);
 
-            if (NULL != event_handler_variant)
+            if(!e->processing)
             {
-                variant_stack_t *event_handlers = VARIANT_GET_PTR(variant_stack_t, event_handler_variant);
-                stack_for_each(event_handlers, event_handler_variant)
-                {
-                    event_handler_cb_t *event_handler_cb = VARIANT_GET_PTR(event_handler_cb_t, event_handler_variant);
-                    event_handler_cb->on_event(pump, e->event_id, e->event_data, event_handler_cb->context);
-                }
+                e->processing = true;
+                variant_t *event_handler_variant = variant_hash_get(data->event_handlers, e->event_id);
 
-                if(NULL != e->event_free)
+                if (NULL != event_handler_variant)
                 {
-                    LOG_DEBUG(EventPump, "Calling registered free callback for event");
-                    e->event_free(e->event_data);
+                    variant_stack_t *event_handlers = VARIANT_GET_PTR(variant_stack_t, event_handler_variant);
+                    stack_for_each(event_handlers, event_handler_variant)
+                    {
+                        event_handler_cb_t *event_handler_cb = VARIANT_GET_PTR(event_handler_cb_t, event_handler_variant);
+                        event_handler_cb->on_event(pump, e->event_id, e->event_data, event_handler_cb->context);
+                    }
+
+                    if(NULL != e->event_free)
+                    {
+                        LOG_DEBUG(EventPump, "Calling registered free callback for event");
+                        e->event_free(e->event_data);
+                    }
+                    
+                    event_pump_purge_handlers(pump, e->event_id);
                 }
-                
-                event_pump_purge_handlers(pump, e->event_id);
             }
         }
 

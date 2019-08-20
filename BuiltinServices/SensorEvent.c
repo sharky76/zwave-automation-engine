@@ -128,7 +128,15 @@ variant_t*  event_device_value_impl(struct service_method_t* method, va_list arg
             
             if(NULL != cmd_class)
             {
-                return command_class_exec(cmd_class, "Get", device_record, variant_get_string(path_variant));
+                if(NULL == path_variant || *variant_get_string(path_variant) == 0)
+                {
+                    return command_class_exec(cmd_class, "Get", device_record, path_variant);
+                }
+                else
+                {
+                    return command_class_exec(cmd_class, "GetPath", device_record, path_variant);
+                }
+                
             }
             else
             {

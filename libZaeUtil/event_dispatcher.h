@@ -56,4 +56,4 @@ void event_dispatcher_unregister_handler(event_pump_t*, ...);
 event_pump_t* event_dispatcher_get_pump(const char* name);
 
 event_dispatcher_t* event_dispatcher_new();
-bool event_dispatcher_wait(int event_id, int timeout_msec);
+bool event_dispatcher_wait(int event_id, int timeout_msec, void** event_data);

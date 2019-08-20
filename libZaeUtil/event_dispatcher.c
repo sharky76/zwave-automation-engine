@@ -224,12 +224,16 @@ void event_id_wait_handler(event_pump_t* pump, int event_id, void* event_data, v
     event_dispatcher_detach();
 }
 
-bool event_dispatcher_wait(int event_id, int timeout_msec)
+bool event_dispatcher_wait(int event_id, int timeout_msec, void** event_data)
 {
     event_wait_context_t ctx = {.is_found = false};
     event_dispatcher_register_handler(event_dispatcher_get_pump("EVENT_PUMP"), event_id, &event_id_wait_handler, (void*)&ctx);
     event_dispatcher_attach(timeout_msec);
     event_dispatcher_unregister_handler(event_dispatcher_get_pump("EVENT_PUMP"), event_id, &event_id_wait_handler, (void*)&ctx);
-
+    
+    if(NULL != event_data)
+    {
+        *event_data = ctx.event_data;
+    }
     return ctx.is_found;
 }

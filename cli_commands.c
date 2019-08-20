@@ -402,6 +402,7 @@ typedef struct context_t
 {
     void* event_data;
     bool is_found;
+    event_dispatcher_t* d;
 } context_t;
 
 void    controller_inclusion_wait_handler(event_pump_t* pump, int event_id, void* event_data, void* context)
@@ -423,14 +424,17 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
         vty_write(vty, "%% Inclusion started%s", VTY_NEWLINE(vty));
         USING_LOGGER(DeviceCallback)
         //event_wait_async("DeviceAddedEvent", 260, controller_inclusion_wait_handler, (void*)vty);
-
-        context_t ctx = {.is_found = false};
-        event_dispatcher_register_handler(event_dispatcher_get_pump("EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
-        event_dispatcher_attach(260*1000);
-        event_dispatcher_unregister_handler(event_dispatcher_get_pump("EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
-        if(ctx.is_found)
+        
+        /*event_dispatcher_t* d = event_dispatcher_new();
+        context_t ctx = {.is_found = false, .d = d};
+        event_dispatcher_register_handler(d->get_pump(d, "EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
+        event_dispatcher_exec(d, 260*1000);
+        event_dispatcher_unregister_handler(d->get_pump(d, "EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
+        */
+       void* event_data;
+        if(event_dispatcher_wait(DeviceAddedEvent, 260*1000, &event_data))
         {
-            vty_write(vty, "%% Discovered new device with ID: %d%s", (int)ctx.event_data, VTY_NEWLINE(vty));
+            vty_write(vty, "%% Discovered new device with ID: %d%s", *(int*)event_data, VTY_NEWLINE(vty));
             zway_controller_add_node_to_network(zway, FALSE);
         }
         else

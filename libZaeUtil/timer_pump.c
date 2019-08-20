@@ -130,15 +130,18 @@ void timer_pump_poll(event_pump_t* pump, struct timespec* ts)
 
             if(event_data->current_timeout <= 0)
             {
-                LOG_DEBUG(EventPump, "Timer event: %d", event_data->timer_id);
-                event_data->on_event(pump, event_data->timer_id, event_data->context);
-                if(event_data->is_singleshot)
+                if(!event_data->remove_pending_flag)
                 {
-                    event_data->is_started = false;
-                }
-                else
-                {
-                    event_data->current_timeout = event_data->timeout_msec;
+                    LOG_DEBUG(EventPump, "Timer event: %d", event_data->timer_id);
+                    event_data->on_event(pump, event_data->timer_id, event_data->context);
+                    if(event_data->is_singleshot)
+                    {
+                        event_data->is_started = false;
+                    }
+                    else
+                    {
+                        event_data->current_timeout = event_data->timeout_msec;
+                    }
                 }
 
                 timer_purge_timers(pump, i);
