@@ -80,7 +80,10 @@ ZAEPlatform.prototype = {
 		for(var index in json.devices) {
 			this.log("buildAccessoriesList " + json.devices[index].node_id);
 			// Attempt to create accessory for each device entry...
-			accessoriesList.push(new ZAEAccessory(this.log, this.config, json.devices[index], this));
+			if(json.devices[index].command_classes.length > 0)
+			{
+				accessoriesList.push(new ZAEAccessory(this.log, this.config, json.devices[index], this));
+			}
 		}
 
 		return accessoriesList;

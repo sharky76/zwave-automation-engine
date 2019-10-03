@@ -21,7 +21,7 @@ void homebridge_stopped_handler(int sig);
 pid_t   homebridge_pid;
 int     homebridge_fd = -1;
 static bool can_start_homebridge = false;
-static bool homebridge_restart_on_crash = true;
+static bool homebridge_restart_on_crash = false;
 void homebridge_on_event(event_pump_t* pump, int homebridge_fd, void* context);
 
 void homebridge_manager_set_start_state(bool isStart)
@@ -118,9 +118,6 @@ void homebridge_stopped_handler(int sig)
       // The following 2 lines cause hangs if signal is received from within malloc() call
       LOG_DEBUG(HomebridgeManager, "Homebridge stopped");
       //event_unregister_fd(homebridge_fd);
-      event_pump_t* pump = event_dispatcher_get_pump("SOCKET_PUMP");
-      event_dispatcher_unregister_handler(pump, homebridge_fd);
-
       if (homebridge_restart_on_crash)
       {
           homebridge_manager_init();
@@ -134,7 +131,7 @@ void homebridge_manager_stop()
 {
     homebridge_restart_on_crash = false;
     event_pump_t* pump = event_dispatcher_get_pump("SOCKET_PUMP");
-    event_dispatcher_unregister_handler(pump, homebridge_fd);
+    event_dispatcher_unregister_handler(pump, homebridge_fd, NULL, NULL);
     kill(homebridge_pid, SIGINT);
     homebridge_fd = -1;
 }

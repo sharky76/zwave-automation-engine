@@ -434,7 +434,7 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
        void* event_data;
         if(event_dispatcher_wait(DeviceAddedEvent, 260*1000, &event_data))
         {
-            vty_write(vty, "%% Discovered new device with ID: %d%s", *(int*)event_data, VTY_NEWLINE(vty));
+            vty_write(vty, "%% Discovered new device with ID: %d%s", (int)event_data, VTY_NEWLINE(vty));
             zway_controller_add_node_to_network(zway, FALSE);
         }
         else
@@ -671,8 +671,6 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
                 }
             }
 
-            event_dispatcher_unregister_handler(socket_pump, fd, NULL);
-            wait_dispatcher->timed_start(wait_dispatcher, 1);
             wait_dispatcher->free(wait_dispatcher);
         }
 
