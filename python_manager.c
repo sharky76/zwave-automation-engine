@@ -214,7 +214,7 @@ void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* d
             }
 
             Py_DECREF(pValue);
-            Py_DECREF(pArgs);
+            //Py_DECREF(pArgs);
             Py_DECREF(pFunc);
         }
     }
