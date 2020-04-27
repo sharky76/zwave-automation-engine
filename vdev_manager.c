@@ -11,12 +11,21 @@
 #include "service_manager.h"
 #include "cli_vdev.h"
 #include <crc32.h>
+#include <event_log.h>
+#include <event_dispatcher.h>
+#include <event_pump.h>
 
 DECLARE_LOGGER(VDevManager)
 
 hash_table_t* vdev_table;
 command_class_t*    vdev_manager_create_command_class(vdev_t* vdev);
 variant_t*   vdev_call_method(const char* method, device_record_t* vdev, va_list args);
+static int vdev_id_counter = 260;
+
+static int vdev_get_next_user_type()
+{
+    return vdev_id_counter++;
+}
 
 void    vdev_manager_init(const char* vdev_dir)
 {
@@ -60,7 +69,7 @@ void    vdev_manager_init(const char* vdev_dir)
                 else
                 {
                     vdev_t* vdev;
-                    int vdev_id = variant_get_next_user_type();
+                    int vdev_id = vdev_get_next_user_type();
                     //printf("VDEV_ID = %d\n", vdev_id);
                     (*vdev_create)(&vdev, vdev_id);
                     logger_register_service_with_id(vdev->vdev_id, vdev->name);
@@ -135,6 +144,9 @@ void vdev_manager_start_devices()
     {
         vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_iterator_value(it));
         vdev->start();
+        
+        event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+        event_pump_send_event(pump, DeviceAddedEvent, (void*)(int)vdev->vdev_id, NULL);
     }
 
     free(it);
@@ -219,6 +231,11 @@ void    vdev_manager_for_each_method(const char* vdev_name, void (*visitor)(vdev
 variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, va_list args)
 {
     vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_get(vdev_table, vdev_record->nodeId));
+    if(NULL == vdev)
+    {
+        LOG_ERROR(VDevManager, "Unable to call method %s on VDEV id %d: device not found", method, vdev_record->nodeId);
+        return NULL;
+    }
 
     //free(vdev_record);
 

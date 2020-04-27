@@ -15,6 +15,9 @@
 #include "sensor_manager.h"
 #include "vty_io.h"
 #include <signal.h>
+#include <logger.h>
+
+USING_LOGGER(CLI);
 
 extern ZWay zway;
 cli_node_t*     rest_node;
@@ -179,7 +182,12 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                         {
                             json_object_object_add(cmd_class, "instance", json_object_new_int(instance_id));
                             variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, device_record);
-        
+                            if(NULL == value)
+                            {
+                                LOG_ERROR(CLI, "Unable to call method %s on VDEV: device not found", vdev_command->name);
+                                continue;
+                            }
+
                             char* string_value;
                             variant_to_string(value, &string_value);
             
@@ -421,7 +429,7 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
 */
 bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
 
     const char* dev_name = resolver_name_from_node_id(node_id);
     if(NULL == dev_name)
@@ -512,8 +520,8 @@ bool    cmd_get_sensor_node_id(vty_t* vty, variant_stack_t* params)
 */
 bool    cmd_get_sensor_command_classes(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, params->count-1));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    int instance_id = variant_get_int(stack_peek_at(params, params->count-1));
 
     json_object* json_resp = json_object_new_object();
     //json_object* command_class_array = json_object_new_array();
@@ -659,7 +667,7 @@ void command_class_to_json(command_class_t* cmd_class, void* arg)
 */
 bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 4));
+    int command_id = variant_get_int(stack_peek_at(params, 4));
 
     json_object* json_resp = json_object_new_object();
     json_object* command_class = json_object_new_object();
@@ -686,7 +694,7 @@ bool    cmd_get_sensor_command_class_info(vty_t* vty, variant_stack_t* params)
     return 0;
 }
 
-bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instance_id, ZWBYTE command_id, const char* path)
+bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, int command_id, const char* path)
 {
     json_object* json_resp = json_object_new_object();
 
@@ -869,18 +877,18 @@ bool    get_sensor_command_class_data(vty_t* vty, ZWBYTE node_id, ZWBYTE instanc
 }
 bool    cmd_get_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    int instance_id = variant_get_int(stack_peek_at(params, 6));
+    int command_id = variant_get_int(stack_peek_at(params, 8));
 
     return get_sensor_command_class_data(vty, node_id,instance_id,command_id, ".");
 }
 
 bool    cmd_get_multisensor_command_class_data(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 6));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 8));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    int instance_id = variant_get_int(stack_peek_at(params, 6));
+    int command_id = variant_get_int(stack_peek_at(params, 8));
 
     char* data_string;
     variant_t* data_variant = stack_peek_at(params, 10);
@@ -893,18 +901,18 @@ bool    cmd_get_multisensor_command_class_data(vty_t* vty, variant_stack_t* para
 
 bool    cmd_get_sensor_command_class_data_short(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    int instance_id = variant_get_int(stack_peek_at(params, 5));
+    int command_id = variant_get_int(stack_peek_at(params, 6));
 
     return get_sensor_command_class_data(vty, node_id,instance_id,command_id, ".");
 }
 
 bool    cmd_get_multisensor_command_class_data_short(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    int instance_id = variant_get_int(stack_peek_at(params, 5));
+    int command_id = variant_get_int(stack_peek_at(params, 6));
 
     char* data_string;
     variant_t* data_variant = stack_peek_at(params, 7);
@@ -925,9 +933,9 @@ bool    cmd_get_multisensor_command_class_data_short(vty_t* vty, variant_stack_t
 */
 bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
 {
-    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 4));
-    ZWBYTE instance_id = variant_get_int(stack_peek_at(params, 5));
-    ZWBYTE command_id = variant_get_int(stack_peek_at(params, 6));
+    int node_id = variant_get_int(stack_peek_at(params, 4));
+    int instance_id = variant_get_int(stack_peek_at(params, 5));
+    int command_id = variant_get_int(stack_peek_at(params, 6));
 
     const char* device_name = resolver_name_from_id(node_id, instance_id, command_id);
     const char* json_data = ((http_vty_priv_t*)vty->priv)->post_data;

@@ -170,7 +170,6 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             LOG_ADVANCED(DataCallback, "Data changed for device (%s) node-id: %d, instance-id: %d, command-id: %d", event_data->device_name, event_data->node_id, event_data->instance_id, event_data->command_id);
             event_data->last_update_time = time_msec;
             
-            // TODO: Repace with event pump
             event_pump_send_event(event_data->event_pump, SensorDataChangeEvent, (void*)event_data, NULL);
 
             event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));

@@ -7,6 +7,7 @@
 #include <logger.h>
 #include <event.h>
 #include "command_class.h"
+#include <event_log.h>
 
 DECLARE_LOGGER(DeviceCallback)
 
@@ -39,7 +40,6 @@ void device_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE node
         //event_post(device_added_event);
 
         event_pump_send_event(pump, DeviceAddedEvent, (void*)(int)node_id, NULL);
-
     }
 }
 

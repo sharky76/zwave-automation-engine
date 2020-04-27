@@ -104,6 +104,14 @@ bool    config_load(const char* file)
         global_config.homebridge_plugin_path = NULL;
     }
 
+    struct json_object* python_object;
+    json_object_object_get_ex(config_object, "python", &python_object);
+    if(NULL == python_object)
+    {
+        return false;
+    }
+    global_config.python_prefix = strdup(json_object_get_string(python_object));
+
     json_object_put(config_object);
     return true;
 }

@@ -15,6 +15,7 @@ typedef struct config_t
     int     client_port;
     int     api_debug_level;
     char*   homebridge_plugin_path;
+    char*   python_prefix;
 } config_t;
 
 extern config_t    global_config;

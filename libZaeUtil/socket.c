@@ -75,6 +75,7 @@ int socket_recv(event_pump_t* pump, int fd, byte_buffer_t* buffer)
         }
         else
         {
+            //event_dispatcher_unregister_handler(pump, fd, &socket_stop_callback, &fd)
             return -1;
         }
     }

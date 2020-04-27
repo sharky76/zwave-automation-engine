@@ -50,6 +50,7 @@ void    cmd_enter_auth_node(vty_t* vty)
             char prompt[256] = {0};
             strncpy(prompt, node->prompt, 255);
             vty_set_prompt(vty, prompt);
+            vty_set_history_enabled(vty, false);
             vty->current_node = node;
             break;
         }
@@ -95,6 +96,7 @@ bool cmd_auth_password(vty_t* vty, variant_stack_t* params)
         // Go to root node on success
         vty_set_authenticated(vty, true);
         cmd_enter_root_node(vty);
+        vty_set_history_enabled(vty, true);
     }
     else
     {

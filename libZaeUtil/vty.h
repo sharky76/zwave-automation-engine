@@ -60,6 +60,7 @@ typedef struct vty_t
     variant_stack_t*    history;
     int     history_size;
     int     history_index;  // 0 - most recent entry
+    bool    history_enabled;
     cli_node_t* current_node;
     bool    command_completion_started;
     bool    esc_sequence_started;
@@ -98,6 +99,7 @@ bool    vty_is_error(vty_t* vty);
 void    vty_add_history(vty_t* vty);
 const char*   vty_get_history(vty_t* vty, bool direction); // true - to newest, false - to oldest
 void    vty_set_history_size(vty_t* vty, int size);
+void    vty_set_history_enabled(vty_t* vty, bool is_enabled);
 void    vty_insert_char(vty_t* vty, char ch);
 void    vty_append_char(vty_t* vty, char ch);
 void    vty_append_string(vty_t* vty, const char* format, ...);

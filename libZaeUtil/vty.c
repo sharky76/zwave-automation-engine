@@ -41,6 +41,7 @@ vty_t*  vty_create(vty_type type, vty_io_data_t* data)
     vty->history = stack_create();
     vty->history_size = 0;
     vty->history_index = HISTORY_START;
+    vty->history_enabled = true;
     vty->buffer = calloc(BUFSIZE, sizeof(char));
     vty->input = calloc(BUFSIZE, sizeof(char));
     vty->completions = stack_create();
@@ -433,6 +434,8 @@ bool    vty_is_error(vty_t* vty)
 
 void    vty_add_history(vty_t* vty)
 {
+    if(!vty->history_enabled) return;
+
     variant_t* recent_entry = stack_peek_front(vty->history);
     if(vty->buf_size > 0 && 
        (NULL == recent_entry || strcmp(variant_get_string(recent_entry), vty->buffer))
@@ -483,6 +486,11 @@ void    vty_set_history_size(vty_t* vty, int size)
         variant_t* victim = stack_pop_back(vty->history);
         variant_free(victim);
     }
+}
+
+void    vty_set_history_enabled(vty_t* vty, bool is_enabled)
+{
+    vty->history_enabled = is_enabled;
 }
 
 void    vty_insert_char(vty_t* vty, char ch)

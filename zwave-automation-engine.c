@@ -37,6 +37,7 @@
 #include "sensor_manager.h"
 #include "homebridge_manager.h"
 #include "event_dispatcher.h"
+#include "python_manager.h"
 #include <pwd.h>
 #include <stdbool.h>
 #include <socket.h>
@@ -338,6 +339,7 @@ int main (int argc, char *argv[])
         cli_load_config();
         
         vdev_manager_start_devices();
+        python_manager_init(global_config.python_prefix);
 
         event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
         zway_device_add_callback(zway, DeviceAdded, device_added_callback, (void*)pump);
@@ -362,9 +364,7 @@ int main (int argc, char *argv[])
             signal_init();
 
             socket_create_server(global_config.client_port, &cli_commands_handle_connect_event, NULL);
-
             http_server_create(8088, &cli_rest_handle_data_read_event);
-
             http_server_create(8089, &cli_commands_handle_http_data_event);
 
             homebridge_manager_init();
