@@ -35,8 +35,8 @@ void cli_print_data_holder(vty_t* vty, ZDataHolder dh);
 cli_node_t*     sensor_descriptor_node;
 
 cli_command_t   sensor_root_list[] = {
-    {"show sensor",                             cmd_sensor_show_nodes,     "List sensors"},
-    {"show sensor brief",                       cmd_sensor_show_node_info, "Show sensor nodes information"},
+    {"list sensor",                             cmd_sensor_show_nodes,     "List sensors"},
+    {"list sensor brief",                       cmd_sensor_show_node_info, "Show sensor nodes information"},
     {"show sensor name WORD",              cmd_sensor_info,           "Display sensor data"},
     {"show sensor node-id INT",            cmd_sensor_info_noname,           "Display sensor data"},
     {"show sensor node-id INT instance INT command-class INT",          cmd_sensor_info_noname,           "Display sensor data"},

@@ -19,6 +19,9 @@ typedef enum DeviceType
 
 typedef struct device_record_t device_record_t;
 
+#define VARIANT_GET_DEVICE_RECORD(_variant_)    \
+    VARIANT_GET_PTR(device_record_t, _variant_)
+
 typedef struct vdev_event_data_t
 {
     uint8_t  vdev_id;

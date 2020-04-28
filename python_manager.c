@@ -61,6 +61,7 @@ void module_entry_free(void* arg)
     module_entry_t* entry = (module_entry_t*)arg;
     free(entry->name);
     Py_DECREF(entry->module);
+    free(entry);
 }
 
 static hash_table_t* registered_module_table;
