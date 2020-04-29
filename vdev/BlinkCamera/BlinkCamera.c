@@ -22,9 +22,10 @@ variant_t*  set_camera_armed(device_record_t* record, va_list args);
 void        timer_tick_handler(event_t* pevent, void* context);
 void        on_motion_timeout(event_pump_t* pump, int handler_id, void* context);
 
-void    vdev_create(vdev_t** vdev, int vdev_id)
+void    vdev_create(vdev_t** vdev)
 {
-    VDEV_INIT("BlinkCamera", device_start)
+    DT_BLINK_CAMERA = 261;
+    VDEV_INIT(DT_BLINK_CAMERA, "BlinkCamera", device_start)
 
     VDEV_ADD_COMMAND_CLASS("Get", 48, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
     VDEV_ADD_COMMAND_CLASS("GetModelInfo", 114, NULL, 0, get_model_info, "Get model info")
@@ -32,7 +33,6 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
     VDEV_ADD_COMMAND("SetArmed", 1, set_camera_armed, "Arm/Disarm camera motion detection")
 
 
-    DT_BLINK_CAMERA = vdev_id;
     blink_camera_list = stack_create();
 }
 
@@ -65,7 +65,7 @@ void        device_start()
 
 variant_t*  get_model_info(device_record_t* record, va_list args)
 {
-    char* model_info = "{\"vendor\":\"Alex\"}";
+    char* model_info = "{\"vendor\":\"Alex\", \"model\":\"Blink Camera\"}";
     return variant_create_string(strdup(model_info));
 }
 

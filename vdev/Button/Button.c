@@ -1,4 +1,5 @@
 #include "Button_config.h"
+#include "Button_cli.h"
 #include <vdev.h>
 #include <stdio.h>
 #include <logger.h>
@@ -7,7 +8,7 @@
 #include <event_log.h>
 #include <resolver.h>
 
-int  DT_BUTTON;
+int  DT_BUTTON = 263;
 
 void        device_start(); 
 variant_t*  get_model_info(device_record_t* record, va_list args);
@@ -15,16 +16,16 @@ variant_t*  get_button_state(device_record_t* record, va_list args);
 variant_t*  set_button_state(device_record_t* record, va_list args);
 variant_t*  update_button_state(device_record_t* record, va_list args);
 
-void    vdev_create(vdev_t** vdev, int vdev_id)
+void    vdev_create(vdev_t** vdev)
 {
-    VDEV_INIT("Button", device_start)
+    VDEV_INIT(DT_BUTTON, "Button", device_start)
 
     VDEV_ADD_COMMAND_CLASS("Get", 0x25, "level", 0, get_button_state, "Get state of Button")
-    VDEV_ADD_COMMAND_CLASS("Set", 0x25, "level", 1, set_button_state, "Get state of Button")
+    VDEV_ADD_COMMAND_CLASS("Set", 0x25, "level", 1, set_button_state, "Set state of Button")
     VDEV_ADD_COMMAND_CLASS("GetModelInfo", 0x72, NULL, 0, get_model_info, "Get model info")
     VDEV_ADD_COMMAND("ChangeState", 1, update_button_state, "Update the state of button");
+    VDEV_ADD_CONFIG_PROVIDER(Button_get_config);
 
-    DT_BUTTON = vdev_id;
     button_list = stack_create();
 
     command_parser_register_symbol("ON", variant_create_byte(DT_INT8, ON));
@@ -34,26 +35,23 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
 void    device_start()
 {
     LOG_INFO(DT_BUTTON, "Starting Button device");
-    variant_stack_t* instance_list = resolver_get_instances(DT_BUTTON);
 
-    if(instance_list->count == 0)
+    if(button_list->count == 0)
     {
         LOG_INFO(DT_BUTTON, "No configured buttons found");
-    }
-
-    stack_for_each(instance_list, device_record_variant)
-    {
-        device_record_t* record = VARIANT_GET_DEVICE_RECORD(device_record_variant);
-        button_entry_t* entry = button_add(record);
-        LOG_ADVANCED(DT_BUTTON, "Added button %s", entry->name);
     }
 
     LOG_INFO(DT_BUTTON, "Button device started");
 }
 
+void    vdev_cli_create(cli_node_t* parent_node)
+{
+    Button_cli_create(parent_node);
+}
+
 variant_t*  get_model_info(device_record_t* record, va_list args)
 {
-    char* model_info = "{\"vendor\":\"Alex\"}";
+    char* model_info = "{\"vendor\":\"Alex\", \"model\":\"Button\"}";
     return variant_create_string(strdup(model_info));
 }
 

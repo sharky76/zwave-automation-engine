@@ -20,7 +20,7 @@ char* SS_info_path;
 int   SS_camera_count;
 hash_table_t*   SS_event_keeper_table;
 hash_table_t* SS_camera_info_table;
-int  DT_SURVEILLANCE_STATION;
+int  DT_SURVEILLANCE_STATION = 262;
 bool SS_device_started;
 
 static int timer_tick_counter;
@@ -43,9 +43,9 @@ void        timer_tick_handler(event_pump_t* pump, int timer_id, void* context);
 void        reset_active_events_handler(event_pump_t* pump, int timer_id, void* context);
 void        SS_on_data_change_event(event_t* event, void* context);
 
-void    vdev_create(vdev_t** vdev, int vdev_id)
+void    vdev_create(vdev_t** vdev)
 {
-    VDEV_INIT("SurveillanceStation", device_start)
+    VDEV_INIT(DT_SURVEILLANCE_STATION, "SurveillanceStation", device_start)
 
     // Mimic the ZWAVE SENSOR_BINARY data holder path (1.level)
     VDEV_ADD_COMMAND_CLASS("Get", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
@@ -64,8 +64,6 @@ void    vdev_create(vdev_t** vdev, int vdev_id)
 
     VDEV_ADD_CONFIG_PROVIDER(SurveillanceStation_get_config);
     
-    DT_SURVEILLANCE_STATION = vdev_id;
-    //event_register_handler(DT_SURVEILLANCE_STATION, TIMER_TICK_EVENT, timer_tick_handler, NULL);
     event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
 
     int query_timer_id = event_dispatcher_register_handler(pump, QUERY_RATE_SEC*1000, false, timer_tick_handler, NULL);

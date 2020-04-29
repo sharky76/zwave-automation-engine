@@ -6,7 +6,7 @@
 #include <event.h>
 #include <event_log.h>
 
-int  DT_SECURITY_SYSTEM;
+int  DT_SECURITY_SYSTEM = 260;
 SecuritySystemState_t    SS_State;
 
 void        device_start(); 
@@ -15,16 +15,15 @@ variant_t*  get_security_system_state(device_record_t* record, va_list args);
 variant_t*  set_security_system_state(device_record_t* record, va_list args);
 variant_t*  update_security_system_state(device_record_t* record, va_list args);
 
-void    vdev_create(vdev_t** vdev, int vdev_id)
+void    vdev_create(vdev_t** vdev)
 {
-    VDEV_INIT("SecuritySystem", device_start)
+    VDEV_INIT(DT_SECURITY_SYSTEM, "SecuritySystem", device_start)
 
     VDEV_ADD_COMMAND_CLASS("Get", COMMAND_CLASS_SECURITY_SYSTEM, "level", 0, get_security_system_state, "Get state of Security System")
     VDEV_ADD_COMMAND_CLASS("GetModelInfo", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
     VDEV_ADD_COMMAND("Set", 1, set_security_system_state, "Set state of Security System (0 - 4)")
     VDEV_ADD_COMMAND("ChangeState", 1, update_security_system_state, "Update the state of security system");
 
-    DT_SECURITY_SYSTEM = vdev_id;
     SS_State = DISARMED;
 
     command_parser_register_symbol("STAY_ARMED", variant_create_byte(DT_INT8, STAY_ARMED));

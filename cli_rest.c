@@ -181,6 +181,11 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                         if(NULL != device_record)
                         {
                             json_object_object_add(cmd_class, "instance", json_object_new_int(instance_id));
+                            if(vdev_command->nargs != 0)
+                            {
+                                continue;
+                            }
+
                             variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, device_record);
                             if(NULL == value)
                             {
@@ -946,6 +951,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
     }
     else
     {
+        LOG_DEBUG(CLI, "Calling command for device %s", device_name);
         device_record_t* device_record = resolver_get_device_record(device_name);
         http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
         struct json_object* response_obj = json_tokener_parse(json_data);
@@ -1080,8 +1086,12 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
                                             }
                                         }
             
-                                        // To call VDEV method we need root device record
-                                        device_record = device_record->parent; 
+                                        // To call VDEV method we need root device record, but not command class!
+                                        if(!vdev_command->is_command_class)
+                                        {
+                                            device_record = device_record->parent; 
+                                        }
+
                                         variant_t* ret = NULL;
                                         switch(arg_count)
                                         {

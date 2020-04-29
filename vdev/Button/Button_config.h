@@ -18,5 +18,6 @@ typedef struct button_entry_t
 
 variant_stack_t* button_list;
 
-button_entry_t*    button_add(device_record_t* record);
+button_entry_t*    button_add(int instance, const char* name);
+bool               button_del(int instance);
 button_entry_t*    button_find_instance(int instance);

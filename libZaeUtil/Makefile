@@ -20,7 +20,7 @@ endif
 ifeq "$(CFG)" "Debug"
 OUTDIR=Debug
 OUTFILE=$(OUTDIR)/libZaeUtil.so
-CFG_INC=-I../../z-way-devel/include 
+CFG_INC=-I../../../z-way-devel/include 
 CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 CFG_OBJ=
