@@ -20,7 +20,7 @@ endif
 ifeq "$(CFG)" "Debug"
 OUTDIR=Debug
 OUTFILE=$(OUTDIR)/zwave-automation-engine
-CFG_INC=-I../z-way-devel/include -IlibZaeUtil -IlibZaeService 
+CFG_INC=-I../../z-way-devel/include -IlibZaeUtil -IlibZaeService 
 CFG_LIB=-l:libreadline.a -l:libncurses.a -lrt 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
@@ -65,7 +65,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	-lrt 
 
 COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -c  -fno-omit-frame-pointer -x c "-D_GNU_SOURCE" -g -std=c99 -o "$(OUTDIR)/$(*F).o" $(CFG_INC) $<
-LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -Wl,-Rlibs/ -Wl,--dynamic-list=exports.txt -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -lcurl -ljson-c -ldl -lexpat -lpython3.7m -o "$(OUTFILE)" $(ALL_OBJ)
+LINK=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc  -g -Wl,-Rlibs/ -Wl,--dynamic-list=exports.txt -LlibZaeUtil/Debug -lZaeUtil -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L../../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -lcurl -ljson-c -ldl -lexpat -lpython3.7m -o "$(OUTFILE)" $(ALL_OBJ)
 
 # Pattern rules
 $(OUTDIR)/%.o : %.c
@@ -97,6 +97,7 @@ deps:
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/Button/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all

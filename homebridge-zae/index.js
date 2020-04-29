@@ -277,7 +277,9 @@ ZAEPlatform.prototype = {
 
 					service
 						.setCharacteristic(Characteristic.Manufacturer, deviceDescriptor.command_classes[index].dh.vendor)
-						.setCharacteristic(Characteristic.Model, deviceDescriptor.deviceTypeString || deviceDescriptor.name)
+						.setCharacteristic(Characteristic.Model, deviceDescriptor.command_classes[index].dh.model || 
+																 deviceDescriptor.deviceTypeString || 
+																 deviceDescriptor.name)
 						.setCharacteristic(Characteristic.SerialNumber, serialNumber);
 							
 					this.serviceList.push(service);

@@ -34,7 +34,7 @@ void    vdev_manager_init(const char* vdev_dir)
     struct dirent *ep;     
     dp = opendir (vdev_dir);
 
-    void    (*vdev_create)(vdev_t**, int);
+    void    (*vdev_create)(vdev_t**);
     void    (*vdev_cli_create)(cli_node_t* root_node);
     char full_path[256] = {0};
     
@@ -69,9 +69,15 @@ void    vdev_manager_init(const char* vdev_dir)
                 else
                 {
                     vdev_t* vdev;
-                    int vdev_id = vdev_get_next_user_type();
                     //printf("VDEV_ID = %d\n", vdev_id);
-                    (*vdev_create)(&vdev, vdev_id);
+                    (*vdev_create)(&vdev);
+
+                    if(NULL != variant_hash_get(vdev_table, vdev->vdev_id))
+                    {
+                        LOG_ERROR(VDevManager, "Duplicate ID %d", vdev->vdev_id);
+                        continue;
+                    }
+                    
                     logger_register_service_with_id(vdev->vdev_id, vdev->name);
 
                     cli_add_logging_class(vdev->name);
