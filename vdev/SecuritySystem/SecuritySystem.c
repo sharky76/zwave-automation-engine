@@ -19,9 +19,9 @@ void    vdev_create(vdev_t** vdev)
 {
     VDEV_INIT(DT_SECURITY_SYSTEM, "SecuritySystem", device_start)
 
-    VDEV_ADD_COMMAND_CLASS("Get", COMMAND_CLASS_SECURITY_SYSTEM, "level", 0, get_security_system_state, "Get state of Security System")
-    VDEV_ADD_COMMAND_CLASS("Set", COMMAND_CLASS_SECURITY_SYSTEM, "", 1, set_security_system_state, "Set state of Security System (0 - 4)")
-    VDEV_ADD_COMMAND_CLASS("GetModelInfo", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", COMMAND_CLASS_SECURITY_SYSTEM, "level", 0, get_security_system_state, "Get state of Security System")
+    VDEV_ADD_COMMAND_CLASS_SET("Set", COMMAND_CLASS_SECURITY_SYSTEM, "", 1, set_security_system_state, "Set state of Security System (0 - 4)")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
     VDEV_ADD_COMMAND("ChangeState", 1, update_security_system_state, "Update the state of security system");
 
     SS_State = DISARMED;

@@ -27,8 +27,8 @@ void    vdev_create(vdev_t** vdev)
     DT_BLINK_CAMERA = 261;
     VDEV_INIT(DT_BLINK_CAMERA, "BlinkCamera", device_start)
 
-    VDEV_ADD_COMMAND_CLASS("Get", 48, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
-    VDEV_ADD_COMMAND_CLASS("GetModelInfo", 114, NULL, 0, get_model_info, "Get model info")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", 48, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", 114, NULL, 0, get_model_info, "Get model info")
     VDEV_ADD_COMMAND("MotionDetected", 2, set_camera_motion_detected, "Set camera motion detected event (args: camera name, bool)")
     VDEV_ADD_COMMAND("SetArmed", 1, set_camera_armed, "Arm/Disarm camera motion detection")
 

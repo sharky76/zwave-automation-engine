@@ -48,9 +48,9 @@ void    vdev_create(vdev_t** vdev)
     VDEV_INIT(DT_SURVEILLANCE_STATION, "SurveillanceStation", device_start)
 
     // Mimic the ZWAVE SENSOR_BINARY data holder path (1.level)
-    VDEV_ADD_COMMAND_CLASS("Get", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
-    VDEV_ADD_COMMAND_CLASS("GetModelInfo", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
-    VDEV_ADD_COMMAND_CLASS("GetCameraConfig", COMMAND_CLASS_CAMERA, NULL, 0, get_stm_config, "Get Camera stream config");
+    VDEV_ADD_COMMAND_CLASS_GET("Get", COMMAND_CLASS_MOTION_EVENTS, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", COMMAND_CLASS_MODEL_INFO, NULL, 0, get_model_info, "Get model info")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", COMMAND_CLASS_CAMERA, NULL, 0, get_stm_config, "Get Camera stream config");
 
     VDEV_ADD_COMMAND("GetEvents", 1, get_motion_events, "Get Motion event count (arg: id)")
     VDEV_ADD_COMMAND("GetCameraName", 1, get_camera_name_by_id, "Get Camera name (arg: id)")

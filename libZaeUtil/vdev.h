@@ -44,7 +44,7 @@ typedef struct vdev_command_t
 typedef struct vdev_command_t
 {
     bool  is_command_class;
-
+    bool  is_get;
     char* name;
     int   nargs;
     char* help;
@@ -77,6 +77,7 @@ typedef struct vdev_t
 vdev_command_t* cmd = (vdev_command_t*)calloc(1, sizeof(vdev_command_t));  \
 cmd->name = strdup(_name);  \
 cmd->command_id = 0; \
+cmd->is_get = false; \
 cmd->data_holder = NULL; \
 cmd->is_command_class = false;      \
 cmd->nargs = _nargs;  \
@@ -85,10 +86,11 @@ cmd->command_impl = _callback;    \
 stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, NULL)); \
 }
 
-#define VDEV_ADD_COMMAND_CLASS(_name, _id, _dh, _nargs, _callback, _help)  \
+#define VDEV_ADD_COMMAND_CLASS(_name, _id, _isget, _dh, _nargs, _callback, _help)  \
 {   \
 vdev_command_t* cmd = (vdev_command_t*)calloc(1, sizeof(vdev_command_t));  \
 cmd->is_command_class = true; \
+cmd->is_get = _isget; \
 cmd->name = strdup(_name);  \
 cmd->command_id = _id;      \
 cmd->nargs = _nargs;  \
@@ -97,6 +99,12 @@ cmd->command_impl = _callback;    \
 cmd->data_holder = (NULL != _dh)?strdup(_dh):NULL; \
 stack_push_back((*vdev)->supported_method_list, variant_create_ptr(DT_PTR, cmd, NULL)); \
 }
+
+#define VDEV_ADD_COMMAND_CLASS_GET(_name, _id, _dh, _nargs, _callback, _help) \
+    VDEV_ADD_COMMAND_CLASS(_name, _id, true, _dh, _nargs, _callback, _help)
+
+#define VDEV_ADD_COMMAND_CLASS_SET(_name, _id, _dh, _nargs, _callback, _help) \
+    VDEV_ADD_COMMAND_CLASS(_name, _id, false, _dh, _nargs, _callback, _help)
 
 #define VDEV_ADD_CONFIG_PROVIDER(_config)    \
 (*vdev)->get_config_callback = _config;
