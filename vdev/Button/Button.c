@@ -22,7 +22,7 @@ void    vdev_create(vdev_t** vdev)
 
     VDEV_ADD_COMMAND_CLASS("Get", 0x25, "level", 0, get_button_state, "Get state of Button")
     VDEV_ADD_COMMAND_CLASS("Set", 0x25, "level", 1, set_button_state, "Set state of Button")
-    VDEV_ADD_COMMAND_CLASS("GetModelInfo", 0x72, NULL, 0, get_model_info, "Get model info")
+    VDEV_ADD_COMMAND_CLASS("Get", 0x72, NULL, 0, get_model_info, "Get model info")
     VDEV_ADD_COMMAND("ChangeState", 1, update_button_state, "Update the state of button");
     VDEV_ADD_CONFIG_PROVIDER(Button_get_config);
 

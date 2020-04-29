@@ -703,6 +703,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
 {
     json_object* json_resp = json_object_new_object();
 
+    // try to get a pointer to device ID
     device_record_t* record = resolver_resolve_id(node_id, instance_id, command_id);
 
     if(NULL == record)
@@ -753,18 +754,19 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
             {
                 vdev_t* vdev = vdev_manager_get_vdev(root_vdev_name);
     
+                // Now lets find a command matching the required command ID
                 stack_for_each(vdev->supported_method_list, vdev_command_variant)
                 {
                     vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
                     if(vdev_command->is_command_class)
                     {
-                        if(vdev_command->command_id == command_id)
+                        if(vdev_command->command_id == command_id && vdev_command->is_get)
                         {
                             json_object* cmd_value = json_object_new_object();
                             command_class_t* vdev_cmd_class = vdev_manager_get_command_class(record->nodeId);
                             if(NULL != vdev_cmd_class)
                             {
-                                variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record);
+                                variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record, path);
                                 char* string_value;
                                 variant_to_string(value, &string_value);
             
@@ -1026,6 +1028,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
         }
         else // VDEV 
         {
+            // Either get a specific device + command class
             vdev_t* vdev = vdev_manager_get_vdev(device_record->deviceName);
 
             if(NULL == vdev)
