@@ -59,7 +59,7 @@ variant_t*  get_security_system_state(device_record_t* record, va_list args)
 
 variant_t*  set_security_system_state(device_record_t* record, va_list args)
 {
-    update_security_system_state(record, args);
+    variant_free(update_security_system_state(record, args));
 
     // Notify system about security state change
     vdev_post_event(VdevDataChangeEvent, DT_SECURITY_SYSTEM, COMMAND_CLASS_SECURITY_SYSTEM, 0);

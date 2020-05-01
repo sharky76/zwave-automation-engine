@@ -14,7 +14,6 @@ void        device_start();
 variant_t*  get_model_info(device_record_t* record, va_list args);
 variant_t*  get_button_state(device_record_t* record, va_list args);
 variant_t*  set_button_state(device_record_t* record, va_list args);
-variant_t*  update_button_state(device_record_t* record, va_list args);
 
 void    vdev_create(vdev_t** vdev)
 {
@@ -23,7 +22,6 @@ void    vdev_create(vdev_t** vdev)
     VDEV_ADD_COMMAND_CLASS_GET("Get", 0x25, "level", 0, get_button_state, "Get state of Button")
     VDEV_ADD_COMMAND_CLASS_SET("Set", 0x25, "level", 1, set_button_state, "Set state of Button")
     VDEV_ADD_COMMAND_CLASS_GET("Get", 0x72, NULL, 0, get_model_info, "Get model info")
-    VDEV_ADD_COMMAND("ChangeState", 1, update_button_state, "Update the state of button");
     VDEV_ADD_CONFIG_PROVIDER(Button_get_config);
 
     button_list = stack_create();
@@ -80,7 +78,8 @@ variant_t*  set_button_state(device_record_t* record, va_list args)
     {
         LOG_DEBUG(DT_BUTTON, "Button instance %d set state %d", record->instanceId, new_state);
         entry->state = (new_state)? ON : OFF;
-        update_button_state(record, args);
+        publish_button_state(entry);
+        vdev_post_event(VdevDataChangeEvent, DT_BUTTON, 0x25, record->instanceId);
     }
     else
     {
@@ -89,13 +88,11 @@ variant_t*  set_button_state(device_record_t* record, va_list args)
     }
 }
 
-variant_t*  update_button_state(device_record_t* record, va_list args)
+void  publish_button_state(button_entry_t* entry)
 {
-    variant_t* new_state_variant = va_arg(args, variant_t*);
-    button_entry_t* entry = button_find_instance(record->instanceId);
     if(NULL != entry)
     {
-        LOG_INFO(DT_BUTTON, "Button system state set to %d", entry->state);
+        LOG_INFO(DT_BUTTON, "Button %s state set to %d", entry->name, entry->state);
         char json_buf[256] = {0};
         
         snprintf(json_buf, 255, "{\"data_holder\":\"level\",\"level\":%d}",
@@ -103,17 +100,14 @@ variant_t*  update_button_state(device_record_t* record, va_list args)
 
         event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
         new_entry->node_id = DT_BUTTON;
-        new_entry->instance_id = record->instanceId;
+        new_entry->instance_id = entry->instance;
         new_entry->command_id = 0x25;
         new_entry->device_type = VDEV;
         new_entry->event_data = strdup(json_buf);
         event_log_add_event(new_entry);
-
-        return variant_create_bool(true);
     }
     else
     {
-        LOG_ERROR(DT_BUTTON, "Button instance %d not found", record->instanceId);
-        return variant_create_bool(false);
+        LOG_ERROR(DT_BUTTON, "Button instance %d not found", entry->instance);
     }
 }
