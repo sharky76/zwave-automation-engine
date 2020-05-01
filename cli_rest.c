@@ -181,7 +181,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                         if(NULL != device_record)
                         {
                             json_object_object_add(cmd_class, "instance", json_object_new_int(instance_id));
-                            if(vdev_command->nargs != 0)
+                            if(vdev_command->nargs != 0 || !vdev_command->is_get)
                             {
                                 continue;
                             }
@@ -212,7 +212,6 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
             
                                 if(NULL != tok)
                                 {
-                                    
                                     json_object_object_add(dh_item, "data_holder", json_object_new_string(tok));
                                 }
             
@@ -220,23 +219,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
             
                                 if(NULL != tok)
                                 {
-                                    switch(value->type)
-                                    {
-                                        case DT_INT8:
-                                            json_object_object_add(dh_item, tok, json_object_new_int(variant_get_byte(value)));
-                                            break;
-                                        case DT_INT32:
-                                        case DT_INT64:
-                                            json_object_object_add(dh_item, tok, json_object_new_int(variant_get_int(value)));
-                                            break;
-                                        case DT_BOOL:
-                                            json_object_object_add(dh_item, tok, json_object_new_boolean(variant_get_bool(value)));
-                                            break;
-                                        case DT_STRING:
-                                        default:
-                                            json_object_object_add(dh_item, tok, json_object_new_string(string_value));
-                                            break;
-                                    }
+                                    json_object_object_add(dh_item, tok, variant_to_json_object(value));
                                 }
                                 
                                 json_object_array_add(parameter_array, dh_item);
@@ -245,23 +228,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             }
                             else
                             {
-                                switch(value->type)
-                                {
-                                    case DT_INT8:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_int(variant_get_byte(value)));
-                                        break;
-                                    case DT_INT32:
-                                    case DT_INT64:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_int(variant_get_int(value)));
-                                        break;
-                                    case DT_BOOL:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_boolean(variant_get_bool(value)));
-                                        break;
-                                    case DT_STRING:
-                                    default:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
-                                        break;
-                                }
+                                json_object_object_add(cmd_value, vdev_command->data_holder, variant_to_json_object(value));
                             }
                             
                             free(string_value);
