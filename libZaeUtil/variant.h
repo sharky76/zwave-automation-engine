@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <zway_json.h>
 
 /*
 This is a weak attempt to define a variant type in C
@@ -18,10 +19,10 @@ typedef enum VariantDataType
     DT_STRING,
     DT_PTR,
     DT_SENSOR,
-    DT_SENSOR_EVENT_DATA,
-    DT_SERVICE_EVENT_DATA,
-    DT_VDEV,
-    DT_VDEV_EVENT_DATA,
+    //DT_SENSOR_EVENT_DATA,
+    //DT_SERVICE_EVENT_DATA,
+    //DT_VDEV,
+    //DT_VDEV_EVENT_DATA,
     DT_LIST,
     DT_EVENT_LOG_ENTRY,
     DT_NULL,
@@ -87,4 +88,6 @@ variant_t*  variant_add(variant_t* arg1, variant_t* arg2);
 variant_t*  variant_subtract(variant_t* arg1, variant_t* arg2);
 
 void        variant_register_converter_string(VariantDataType source_type,  void (*converter)(struct variant_t*, char** str));
+
+struct json_object* variant_to_json_object(variant_t* variant);
 #endif // VARIANT_H

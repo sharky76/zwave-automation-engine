@@ -10,7 +10,7 @@
 #include "command_class.h"
 #include "event_log.h"
 #include "event.h"
-#include "zway_json.h"
+#include <zway_json.h>
 #include "vdev_manager.h"
 #include "sensor_manager.h"
 #include "vty_io.h"
@@ -794,23 +794,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                 
                                     if(NULL != tok)
                                     {
-                                        switch(value->type)
-                                        {
-                                            case DT_INT8:
-                                                json_object_object_add(dh_item, tok, json_object_new_int(variant_get_byte(value)));
-                                                break;
-                                            case DT_INT32:
-                                            case DT_INT64:
-                                                json_object_object_add(dh_item, tok, json_object_new_int(variant_get_int(value)));
-                                                break;
-                                            case DT_BOOL:
-                                                json_object_object_add(dh_item, tok, json_object_new_boolean(variant_get_bool(value)));
-                                                break;
-                                            case DT_STRING:
-                                            default:
-                                                json_object_object_add(dh_item, tok, json_object_new_string(string_value));
-                                                break;
-                                        }
+                                        json_object_object_add(dh_item, tok, variant_to_json_object(value));
                                     }
                                     
                                     if(NULL == path)
@@ -821,24 +805,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                                     }
                                     else
                                     {
-                                        switch(value->type)
-                                        {
-                                            case DT_INT8:
-                                                json_object_object_add(cmd_value, tok, json_object_new_int(variant_get_byte(value)));
-                                                break;
-                                            case DT_INT32:
-                                            case DT_INT64:
-                                                json_object_object_add(cmd_value, tok, json_object_new_int(variant_get_int(value)));
-                                                break;
-                                            case DT_BOOL:
-                                                json_object_object_add(cmd_value, tok, json_object_new_boolean(variant_get_bool(value)));
-                                                break;
-                                            case DT_STRING:
-                                            default:
-                                                json_object_object_add(cmd_value, tok, json_object_new_string(string_value));
-                                                break;
-                                        }
-
+                                        json_object_object_add(cmd_value, tok, variant_to_json_object(value));
                                         json_object_put(dh_item);
                                     }
                                     free(data_holder);
@@ -846,7 +813,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                                 else
                                 {
                     
-                                    json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                                    json_object_object_add(cmd_value, vdev_command->data_holder, variant_to_json_object(value));
                                 }
                             
         
@@ -1050,7 +1017,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
                     vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
                     if(vdev_command->is_command_class)
                     {
-                        if(vdev_command->command_id == device_record->commandId)
+                        if(vdev_command->command_id == device_record->commandId && !vdev_command->is_get)
                         {
     
                             command_class_t* command_class = vdev_manager_get_command_class(device_record->nodeId);
