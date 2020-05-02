@@ -404,15 +404,16 @@ ZAEPlatform.prototype = {
 		},
 		registerEventListener : function(Characteristics, data) {
 			this.log("Add event listener for device " +  this.name + " command_id " + data.command_class);
-			this.platform.eventSource.addEventListener('EventLogAddedEvent', function(e) {
+			this.platform.eventSource.addEventListener('EventLogAddedEvent'+this.nodeId, function(e) {
 				//console.log(e.data);
     			var json = JSON.parse(e.data);
 				var type = json.type;
 				var instance = json.instance_id;
 				var command_id = json.command_id;
 				var dh = json.data.data_holder;
+				//console.log("Event: " + command_id + " " + json.node_id + " " + dh)
 				if(command_id == this.command_class && json.node_id == this.node_id && dh == this.dh && instance == this.instance)  {
-					//console.log("Event accepted");
+					//console.log("Event accepted " + command_id + " " + json.node_id + " " + dh);
 					var sensorValue = json.data[this.valueHolder || "level"];
 
 					var alarmTypeValue = '';
@@ -1041,6 +1042,7 @@ ZAEPlatform.prototype = {
 			for(var index in commandClass.dh.parameters) {
 				switch(commandClass.dh.parameters[index].data_holder) {
 					case "1":
+						console.log("Adding temperature sensor for " + this.nodeId);
 						// Temperature...
 						var service = new Service.TemperatureSensor(commandClass.dh.parameters[index].sensorTypeString);
 						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
@@ -1059,12 +1061,14 @@ ZAEPlatform.prototype = {
 								service:service,
 								node_id:this.nodeId,
 								instance:commandClass.instance,
-								command_class:this.commandClass,
+								command_class:commandClass.id,
 								dh:1,
+								valueHolder:"val",
 								convert:function(value) { return (value - 32) * 5/9; }
 							});
 						break;
 					case "3":
+						console.log("Adding luminiscense sensor for " + this.nodeId);
 						// Luminiscense
 						var service = new Service.LightSensor(commandClass.dh.parameters[index].sensorTypeString);
 						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
@@ -1081,11 +1085,13 @@ ZAEPlatform.prototype = {
 								service:service,
 								node_id:this.nodeId,
 								instance:commandClass.instance,
-								command_class:this.commandClass,
-								dh:3
+								command_class:commandClass.id,
+								dh:3,
+								valueHolder:"val"
 							});
 						break;
 					case "5":
+						console.log("Adding humidity sensor for " + this.nodeId);
 						// Humidity
 						var service = new Service.HumiditySensor(commandClass.dh.parameters[index].sensorTypeString);
 						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
@@ -1102,8 +1108,9 @@ ZAEPlatform.prototype = {
 								service:service,
 								node_id:this.nodeId,
 								instance:commandClass.instance,
-								command_class:this.commandClass,
-								dh:5
+								command_class:commandClass.id,
+								dh:5,
+								valueHolder:"val"
 							});
 						break;
 

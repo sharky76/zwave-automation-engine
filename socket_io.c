@@ -86,6 +86,7 @@ int     socket_read_cb(vty_t* vty, char* str)
 {
     int socket = vty->data->desc.socket;
     //*str = calloc(1, sizeof(char));
+    //TODO: Replace with socket_read
     int n = recv(socket, str, 1, 0);
     if(vty->iac_started || *str == IAC)
     {

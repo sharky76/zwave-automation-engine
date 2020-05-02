@@ -5,6 +5,7 @@
 #include <string.h>
 #include "stack.h"
 #include "hash.h"
+#include "zway_json.h"
 
 static int  auto_inc_data_type = DT_USER+1;
 
@@ -498,3 +499,23 @@ void    variant_register_converter_string(VariantDataType type, void (*converter
     variant_hash_insert(variant_string_converter_table, type, variant_create_ptr(DT_PTR, converter, NULL));
 }
 
+struct json_object *variant_to_json_object(variant_t *variant)
+{
+    switch (variant->type)
+    {
+    case DT_INT8:
+        return json_object_new_int(variant_get_byte(variant));
+        break;
+    case DT_INT32:
+    case DT_INT64:
+        return json_object_new_int(variant_get_int(variant));
+        break;
+    case DT_BOOL:
+        return json_object_new_boolean(variant_get_bool(variant));
+        break;
+    case DT_STRING:
+    default:
+        return json_object_new_string(variant_get_string(variant));
+        break;
+    }
+}

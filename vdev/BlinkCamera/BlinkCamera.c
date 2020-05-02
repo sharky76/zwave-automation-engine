@@ -8,6 +8,7 @@
 #include "service.h"
 #include "service_args.h"
 #include "BlinkCamera_config.h"
+#include "BlinkCamera_cli.h"
 
 #define EVENT_ACTIVE_TIMEOUT_SEC 180
 
@@ -27,11 +28,11 @@ void    vdev_create(vdev_t** vdev)
     DT_BLINK_CAMERA = 261;
     VDEV_INIT(DT_BLINK_CAMERA, "BlinkCamera", device_start)
 
-    VDEV_ADD_COMMAND_CLASS("Get", 48, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
-    VDEV_ADD_COMMAND_CLASS("GetModelInfo", 114, NULL, 0, get_model_info, "Get model info")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", 48, "1.level", 0, get_all_motion_events, "Get Motion event count from all cameras")
+    VDEV_ADD_COMMAND_CLASS_GET("Get", 114, NULL, 0, get_model_info, "Get model info")
     VDEV_ADD_COMMAND("MotionDetected", 2, set_camera_motion_detected, "Set camera motion detected event (args: camera name, bool)")
     VDEV_ADD_COMMAND("SetArmed", 1, set_camera_armed, "Arm/Disarm camera motion detection")
-
+    VDEV_ADD_CONFIG_PROVIDER(BlinkCamera_get_config);
 
     blink_camera_list = stack_create();
 }
@@ -40,27 +41,17 @@ void        device_start()
 {
     LOG_INFO(DT_BLINK_CAMERA, "Starting Blink Camera device");
 
-    service_method_t* resolver_get_instances = builtin_service_manager_get_method("Resolver", "GetListOfInstances");
-
-    variant_t* node_id_variant = variant_create_int32(DT_INT32, DT_BLINK_CAMERA);
-    variant_t* cmd_class_variant = variant_create_int32(DT_INT32, 48);
-
-    variant_t* blink_camera_list_variant = service_eval_method(resolver_get_instances, node_id_variant, cmd_class_variant);
-    variant_free(node_id_variant);
-    variant_free(cmd_class_variant);
-
-    variant_stack_t* record_list = VARIANT_GET_PTR(variant_stack_t, blink_camera_list_variant);
-
-    stack_for_each(record_list, record_variant)
+    if(blink_camera_list->count == 0)
     {
-        device_record_t* device_record = VARIANT_GET_PTR(device_record_t, record_variant);
-        blink_camera_entry_t* entry = blink_camera_add(device_record);
-        entry->timer_id = event_dispatcher_register_handler(event_dispatcher_get_pump("TIMER_PUMP"), EVENT_ACTIVE_TIMEOUT_SEC*1000, true, on_motion_timeout, (void*)entry);
+        LOG_INFO(DT_BLINK_CAMERA, "No configured vameras found");
     }
 
-    variant_free(blink_camera_list_variant);
-
     LOG_INFO(DT_BLINK_CAMERA, "Blink Camera device started");
+}
+
+void    vdev_cli_create(cli_node_t* parent_node)
+{
+    BlinkCamera_cli_create(parent_node);
 }
 
 variant_t*  get_model_info(device_record_t* record, va_list args)

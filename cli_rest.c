@@ -10,7 +10,7 @@
 #include "command_class.h"
 #include "event_log.h"
 #include "event.h"
-#include "zway_json.h"
+#include <zway_json.h>
 #include "vdev_manager.h"
 #include "sensor_manager.h"
 #include "vty_io.h"
@@ -181,11 +181,12 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                         if(NULL != device_record)
                         {
                             json_object_object_add(cmd_class, "instance", json_object_new_int(instance_id));
-                            if(vdev_command->nargs != 0)
+                            if(vdev_command->nargs != 0 || !vdev_command->is_get)
                             {
                                 continue;
                             }
-
+                            LOG_DEBUG(CLI, "Calling command %s on device %s, node_id: %d, instance_id: %d, command_id: %d",
+                                            vdev->name, vdev_command->name, device_record->nodeId, device_record->instanceId, device_record->commandId);
                             variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, device_record);
                             if(NULL == value)
                             {
@@ -212,7 +213,6 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
             
                                 if(NULL != tok)
                                 {
-                                    
                                     json_object_object_add(dh_item, "data_holder", json_object_new_string(tok));
                                 }
             
@@ -220,23 +220,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
             
                                 if(NULL != tok)
                                 {
-                                    switch(value->type)
-                                    {
-                                        case DT_INT8:
-                                            json_object_object_add(dh_item, tok, json_object_new_int(variant_get_byte(value)));
-                                            break;
-                                        case DT_INT32:
-                                        case DT_INT64:
-                                            json_object_object_add(dh_item, tok, json_object_new_int(variant_get_int(value)));
-                                            break;
-                                        case DT_BOOL:
-                                            json_object_object_add(dh_item, tok, json_object_new_boolean(variant_get_bool(value)));
-                                            break;
-                                        case DT_STRING:
-                                        default:
-                                            json_object_object_add(dh_item, tok, json_object_new_string(string_value));
-                                            break;
-                                    }
+                                    json_object_object_add(dh_item, tok, variant_to_json_object(value));
                                 }
                                 
                                 json_object_array_add(parameter_array, dh_item);
@@ -245,23 +229,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             }
                             else
                             {
-                                switch(value->type)
-                                {
-                                    case DT_INT8:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_int(variant_get_byte(value)));
-                                        break;
-                                    case DT_INT32:
-                                    case DT_INT64:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_int(variant_get_int(value)));
-                                        break;
-                                    case DT_BOOL:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_boolean(variant_get_bool(value)));
-                                        break;
-                                    case DT_STRING:
-                                    default:
-                                        json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
-                                        break;
-                                }
+                                json_object_object_add(cmd_value, vdev_command->data_holder, variant_to_json_object(value));
                             }
                             
                             free(string_value);
@@ -703,6 +671,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
 {
     json_object* json_resp = json_object_new_object();
 
+    // try to get a pointer to device ID
     device_record_t* record = resolver_resolve_id(node_id, instance_id, command_id);
 
     if(NULL == record)
@@ -753,18 +722,21 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
             {
                 vdev_t* vdev = vdev_manager_get_vdev(root_vdev_name);
     
+                // Now lets find a command matching the required command ID
                 stack_for_each(vdev->supported_method_list, vdev_command_variant)
                 {
                     vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
                     if(vdev_command->is_command_class)
                     {
-                        if(vdev_command->command_id == command_id)
+                        if(vdev_command->command_id == command_id && vdev_command->is_get)
                         {
                             json_object* cmd_value = json_object_new_object();
                             command_class_t* vdev_cmd_class = vdev_manager_get_command_class(record->nodeId);
                             if(NULL != vdev_cmd_class)
                             {
-                                variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record);
+                                LOG_DEBUG(CLI, "Calling command %s on device %s, node_id: %d, instance_id: %d, command_id: %d",
+                                            vdev->name, vdev_command->name, record->nodeId, record->instanceId, record->commandId);
+                                variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record, path);
                                 char* string_value;
                                 variant_to_string(value, &string_value);
             
@@ -792,23 +764,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                 
                                     if(NULL != tok)
                                     {
-                                        switch(value->type)
-                                        {
-                                            case DT_INT8:
-                                                json_object_object_add(dh_item, tok, json_object_new_int(variant_get_byte(value)));
-                                                break;
-                                            case DT_INT32:
-                                            case DT_INT64:
-                                                json_object_object_add(dh_item, tok, json_object_new_int(variant_get_int(value)));
-                                                break;
-                                            case DT_BOOL:
-                                                json_object_object_add(dh_item, tok, json_object_new_boolean(variant_get_bool(value)));
-                                                break;
-                                            case DT_STRING:
-                                            default:
-                                                json_object_object_add(dh_item, tok, json_object_new_string(string_value));
-                                                break;
-                                        }
+                                        json_object_object_add(dh_item, tok, variant_to_json_object(value));
                                     }
                                     
                                     if(NULL == path)
@@ -819,24 +775,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                                     }
                                     else
                                     {
-                                        switch(value->type)
-                                        {
-                                            case DT_INT8:
-                                                json_object_object_add(cmd_value, tok, json_object_new_int(variant_get_byte(value)));
-                                                break;
-                                            case DT_INT32:
-                                            case DT_INT64:
-                                                json_object_object_add(cmd_value, tok, json_object_new_int(variant_get_int(value)));
-                                                break;
-                                            case DT_BOOL:
-                                                json_object_object_add(cmd_value, tok, json_object_new_boolean(variant_get_bool(value)));
-                                                break;
-                                            case DT_STRING:
-                                            default:
-                                                json_object_object_add(cmd_value, tok, json_object_new_string(string_value));
-                                                break;
-                                        }
-
+                                        json_object_object_add(cmd_value, tok, variant_to_json_object(value));
                                         json_object_put(dh_item);
                                     }
                                     free(data_holder);
@@ -844,7 +783,7 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                                 else
                                 {
                     
-                                    json_object_object_add(cmd_value, vdev_command->data_holder, json_object_new_string(string_value));
+                                    json_object_object_add(cmd_value, vdev_command->data_holder, variant_to_json_object(value));
                                 }
                             
         
@@ -1026,6 +965,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
         }
         else // VDEV 
         {
+            // Either get a specific device + command class
             vdev_t* vdev = vdev_manager_get_vdev(device_record->deviceName);
 
             if(NULL == vdev)
@@ -1047,7 +987,7 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
                     vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
                     if(vdev_command->is_command_class)
                     {
-                        if(vdev_command->command_id == device_record->commandId)
+                        if(vdev_command->command_id == device_record->commandId && !vdev_command->is_get)
                         {
     
                             command_class_t* command_class = vdev_manager_get_command_class(device_record->nodeId);
@@ -1198,10 +1138,13 @@ void    sse_event_handler(event_pump_t* pump, int id, void* data, void* context)
     
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
 
+    LOG_DEBUG(CLI, "Data read for device id: %d, instance: %d, command: %d", e->node_id, e->instance_id, e->command_id);
     // Add data...
+    char event_name[32] = {0};
+    snprintf(event_name, 31, "%s%d", EVENT_LOG_ADDED_EVENT, e->node_id);
     vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":%s}\n\n", 
                 e->event_id, 
-                EVENT_LOG_ADDED_EVENT, 
+                event_name, 
                 (e->device_type == ZWAVE)? "ZWAVE" : "VDEV",
                 e->node_id,
                 e->instance_id,

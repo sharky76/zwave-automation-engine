@@ -242,6 +242,7 @@ void    python_manager_on_data_event(event_pump_t* pump, int event_id, void* dat
         PyObject* pFunc = PyObject_GetAttrString(mod_entry->module, "on_data_event");
         if (pFunc && PyCallable_Check(pFunc)) 
         {
+            LOG_DEBUG(PythonManager, "Calling on_data_event callback for device %d", event_log_entry->node_id);
             PyObject* pArgs = PyTuple_New(5);
             PyObject* devType = PyLong_FromLong(event_log_entry->device_type);
             PyObject* nodeId = PyLong_FromLong(event_log_entry->node_id);
