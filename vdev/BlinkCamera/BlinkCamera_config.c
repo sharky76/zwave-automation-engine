@@ -21,8 +21,8 @@ blink_camera_entry_t*    blink_camera_add(int instance, const char* name)
     stack_push_back(blink_camera_list, variant_create_ptr(DT_PTR, entry, &delete_blink_camera_entry));
 
     char name_buf[32] = {0};
-    snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 0x25);
-    resolver_add_entry(VDEV, name_buf, DT_BLINK_CAMERA, entry->instance, 0x25);
+    snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 48);
+    resolver_add_entry(VDEV, name_buf, DT_BLINK_CAMERA, entry->instance, 48);
 
     memset(name_buf, 0, sizeof(name_buf));
     snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 0x72);
@@ -43,7 +43,7 @@ bool    blink_camera_del(int instance)
         {
             victim = camera_variant;
             char name_buf[32] = {0};
-            snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 0x25);
+            snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 48);
             resolver_remove_entry(name_buf);
             memset(name_buf, 0, sizeof(name_buf));
             snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 0x72);
