@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <zway_json.h>
 
 /*
 This is a weak attempt to define a variant type in C

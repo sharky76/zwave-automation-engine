@@ -185,7 +185,8 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             {
                                 continue;
                             }
-
+                            LOG_DEBUG(CLI, "Calling command %s on device %s, node_id: %d, instance_id: %d, command_id: %d",
+                                            vdev->name, vdev_command->name, device_record->nodeId, device_record->instanceId, device_record->commandId);
                             variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, device_record);
                             if(NULL == value)
                             {
@@ -733,6 +734,8 @@ bool    get_sensor_command_class_data(vty_t* vty, int node_id, int instance_id, 
                             command_class_t* vdev_cmd_class = vdev_manager_get_command_class(record->nodeId);
                             if(NULL != vdev_cmd_class)
                             {
+                                LOG_DEBUG(CLI, "Calling command %s on device %s, node_id: %d, instance_id: %d, command_id: %d",
+                                            vdev->name, vdev_command->name, record->nodeId, record->instanceId, record->commandId);
                                 variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, record, path);
                                 char* string_value;
                                 variant_to_string(value, &string_value);
@@ -1135,10 +1138,13 @@ void    sse_event_handler(event_pump_t* pump, int id, void* data, void* context)
     
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
 
+    LOG_DEBUG(CLI, "Data read for device id: %d, instance: %d, command: %d", e->node_id, e->instance_id, e->command_id);
     // Add data...
+    char event_name[32] = {0};
+    snprintf(event_name, 31, "%s%d", EVENT_LOG_ADDED_EVENT, e->node_id);
     vty_write(vty, "id: %d\nevent: %s\ndata: {\"type\": \"%s\",\"node_id\": \"%d\",\"instance_id\":\"%d\",\"command_id\":\"%d\",\"data\":%s}\n\n", 
                 e->event_id, 
-                EVENT_LOG_ADDED_EVENT, 
+                event_name, 
                 (e->device_type == ZWAVE)? "ZWAVE" : "VDEV",
                 e->node_id,
                 e->instance_id,

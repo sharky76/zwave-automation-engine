@@ -14,7 +14,8 @@ typedef struct blink_camera_entry_t
 
 variant_stack_t* blink_camera_list;
 
-blink_camera_entry_t*    blink_camera_add(device_record_t* record);
+blink_camera_entry_t*    blink_camera_add(int instance, const char* name);
+bool                     blink_camera_del(int instance);
 blink_camera_entry_t*    blink_camera_find_instance(int instance);
 blink_camera_entry_t*    blink_camera_find_name(const char* name);
 

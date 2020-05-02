@@ -5,6 +5,7 @@
 #include <crc32.h>
 #include <event.h>
 #include <event_log.h>
+#include <resolver.h>
 
 int  DT_SECURITY_SYSTEM = 260;
 SecuritySystemState_t    SS_State;

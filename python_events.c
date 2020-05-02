@@ -35,12 +35,13 @@ static PyObject* register_data_events(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    LOG_ADVANCED(PythonManager, "Registering module \"%s\" with EventLogEvent", python_manager_name_from_id(module_id));
+    LOG_ADVANCED(PythonManager, "Registering module \"%s\" with EventLogEvent for device %d", python_manager_name_from_id(module_id), device_id);
     
-    if(data_events_module_table->count == 0)
+    variant_t* module_variant = variant_hash_get(data_events_module_table, device_id);
+    if(NULL == module_variant)
     {
-        variant_stack_t* new_module_list = stack_create();
-        variant_hash_insert(data_events_module_table, device_id, variant_create_list(new_module_list));
+        variant_stack_t* module_list = stack_create();
+        variant_hash_insert(data_events_module_table, device_id, variant_create_list(module_list));
     }
 
     variant_t* module_list_variant = variant_hash_get(data_events_module_table, device_id);

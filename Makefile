@@ -98,6 +98,7 @@ deps:
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/Button/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd scripts/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all
@@ -203,6 +204,7 @@ deps:
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd scripts/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
 rebuild: cleanall all

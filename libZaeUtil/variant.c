@@ -5,6 +5,7 @@
 #include <string.h>
 #include "stack.h"
 #include "hash.h"
+#include "zway_json.h"
 
 static int  auto_inc_data_type = DT_USER+1;
 
