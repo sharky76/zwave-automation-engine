@@ -40,7 +40,7 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
-	$(OUTDIR)/python_manager.o $(OUTDIR)/python_logging.o $(OUTDIR)/python_events.o \
+	$(OUTDIR)/python_manager.o $(OUTDIR)/python_logging.o $(OUTDIR)/python_events.o $(OUTDIR)/python_command.o \
 	$(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
@@ -60,7 +60,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
-	$(OUTDIR)/python_manager.o $(OUTDIR)/python_logging.o $(OUTDIR)/python_events.o \
+	$(OUTDIR)/python_manager.o $(OUTDIR)/python_logging.o $(OUTDIR)/python_events.o $(OUTDIR)/python_command.o  \
 	$(OUTDIR)/zwave-automation-engine.o \
 	-lrt 
 
@@ -149,6 +149,7 @@ COMMON_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
+	$(OUTDIR)/python_manager.o $(OUTDIR)/python_logging.o $(OUTDIR)/python_events.o $(OUTDIR)/python_command.o  \
 	$(OUTDIR)/zwave-automation-engine.o 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
@@ -168,6 +169,7 @@ ALL_OBJ=$(OUTDIR)/Conditional.o $(OUTDIR)/EventLog.o \
 	$(OUTDIR)/script_action_handler.o $(OUTDIR)/sensor_manager.o \
 	$(OUTDIR)/service_manager.o $(OUTDIR)/socket_io.o \
 	$(OUTDIR)/user_manager.o $(OUTDIR)/vdev_manager.o $(OUTDIR)/vty_io.o \
+	$(OUTDIR)/python_manager.o $(OUTDIR)/python_logging.o $(OUTDIR)/python_events.o $(OUTDIR)/python_command.o  \
 	$(OUTDIR)/zwave-automation-engine.o -l:libreadline.a -l:libncurses.a \
 	-lrt 
 
