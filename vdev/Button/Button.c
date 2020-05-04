@@ -14,6 +14,7 @@ void        device_start();
 variant_t*  get_model_info(device_record_t* record, va_list args);
 variant_t*  get_button_state(device_record_t* record, va_list args);
 variant_t*  set_button_state(device_record_t* record, va_list args);
+void  publish_button_state(button_entry_t* entry);
 
 void    vdev_create(vdev_t** vdev)
 {

@@ -38,7 +38,7 @@
 #include <variant.h>
 #include "python_logging.h"
 #include "python_events.h"
-#include "python_comnmand.h"
+#include "python_command.h"
 #include <event_dispatcher.h>
 #include <event.h>
 #include <hash.h>
@@ -55,7 +55,7 @@ typedef struct module_entry_t
     char* name;
     int   module_id;
     PyObject* module;
-    void* context;
+    PyObject* context;
 } module_entry_t;
 
 void module_entry_free(void* arg)
@@ -90,6 +90,7 @@ void python_manager_init(const char* python_dir)
     PyImport_AppendInittab("command", &PyInit_command);
 
 	Py_Initialize();
+    LOG_DEBUG(PythonManager, "Interpreter verison: %s", Py_GetVersion());
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("import os");
     char path_cmd[257] = {0};
@@ -110,6 +111,7 @@ void python_manager_init(const char* python_dir)
             Py_DECREF(pName);
             if(NULL == pModule)
             {
+                PyErr_Print();
                 LOG_ERROR(PythonManager, "Failed to import module %s", ep->d_name);
             }
             else
@@ -185,7 +187,7 @@ const char* python_manager_name_from_id(int module_id)
     return mod_entry->name;
 }
 
-void** python_manager_get_context(int module_id)
+PyObject** python_manager_get_context(int module_id)
 {
     variant_t* mod_entry_variant = variant_hash_get(registered_module_table, module_id);
     if(NULL == mod_entry_variant)
@@ -217,7 +219,7 @@ void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* d
         if (pFunc && PyCallable_Check(pFunc)) 
         {
             PyObject* pArgs = PyTuple_New(2);
-            PyObject* pContext = (PyObject*)mod_entry->context;
+            PyObject* pContext = mod_entry->context;
             PyObject* pValue = PyLong_FromLong(device_id);
             PyTuple_SetItem(pArgs, 0, pContext);
             PyTuple_SetItem(pArgs, 1, pValue);
@@ -225,6 +227,7 @@ void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* d
             PyObject* pRetValue = PyObject_CallObject(pFunc, pArgs);
             if(NULL == pRetValue)
             {
+                PyErr_Print();
                 LOG_ERROR(PythonManager, "Error callong device event handle for module %s", python_manager_name_from_id(module_id));
             }
             else
@@ -262,7 +265,7 @@ void    python_manager_on_data_event(event_pump_t* pump, int event_id, void* dat
         {
             LOG_DEBUG(PythonManager, "Calling on_data_event callback for device %d", event_log_entry->node_id);
             PyObject* pArgs = PyTuple_New(6);
-            PyObject* pContext = (PyObject*)mod_entry->context;
+            PyObject* pContext = mod_entry->context;
             PyObject* devType = PyLong_FromLong(event_log_entry->device_type);
             PyObject* nodeId = PyLong_FromLong(event_log_entry->node_id);
             PyObject* instanceId = PyLong_FromLong(event_log_entry->instance_id);
@@ -283,7 +286,8 @@ void    python_manager_on_data_event(event_pump_t* pump, int event_id, void* dat
                 PyObject* pRetValue = PyObject_CallObject(pFunc, pArgs);
                 if(NULL == pRetValue)
                 {
-                    LOG_ERROR(PythonManager, "Error callong device event handle for module %s", python_manager_name_from_id(module_id));
+                    PyErr_Print();
+                    LOG_ERROR(PythonManager, "Error callong data event handle for module %s", python_manager_name_from_id(module_id));
                 }
                 else
                 {

@@ -54,16 +54,17 @@ static PyObject* register_data_events(PyObject *self, PyObject *args)
 static PyObject* register_context(PyObject *self, PyObject *args)
 {
     int module_id;
-    void* context;
+    PyObject* context;
      
-    if(!PyArg_ParseTuple(args, "io:register_context", &module_id, &context))
+    if(!PyArg_ParseTuple(args, "iO:register_context", &module_id, &context))
     {
         LOG_ERROR(PythonManager, "register_context: Argument parse error");
         Py_RETURN_NONE;
     }
 
     LOG_ADVANCED(PythonManager, "Registering context for module \"%s\"", python_manager_name_from_id(module_id));
-    void** context_ptr = python_manager_get_context(module_id)
+    PyObject** context_ptr = python_manager_get_context(module_id);
+    Py_INCREF(context);
     *context_ptr = context;
 
     Py_RETURN_NONE;

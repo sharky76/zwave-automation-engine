@@ -162,7 +162,7 @@ ZAEPlatform.prototype = {
 							node_id:this.nodeId,
 							instance:deviceDescriptor.command_classes[index].instance,
 							command_class:deviceDescriptor.command_classes[index].id,
-							dh:1
+							dh:"level"
 						});
 
 					break;
