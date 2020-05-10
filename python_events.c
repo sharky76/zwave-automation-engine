@@ -14,7 +14,7 @@ static PyObject* register_device_events(PyObject *self, PyObject *args)
      
     if(!PyArg_ParseTuple(args, "i:register_device_events", &module_id))
     {
-        LOG_ERROR(PythonManager, "Argument parse error");
+        LOG_ERROR(PythonManager, "register_device_events: Argument parse error");
         Py_RETURN_NONE;
     }
 
@@ -31,7 +31,7 @@ static PyObject* register_data_events(PyObject *self, PyObject *args)
      
     if(!PyArg_ParseTuple(args, "ii:register_device_events", &module_id, &device_id))
     {
-        LOG_ERROR(PythonManager, "Argument parse error");
+        LOG_ERROR(PythonManager, "register_data_events: Argument parse error");
         Py_RETURN_NONE;
     }
 
@@ -51,9 +51,30 @@ static PyObject* register_data_events(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject* register_context(PyObject *self, PyObject *args)
+{
+    int module_id;
+    PyObject* context;
+     
+    if(!PyArg_ParseTuple(args, "iO:register_context", &module_id, &context))
+    {
+        LOG_ERROR(PythonManager, "register_context: Argument parse error");
+        Py_RETURN_NONE;
+    }
+
+    LOG_ADVANCED(PythonManager, "Registering context for module \"%s\"", python_manager_name_from_id(module_id));
+    PyObject** context_ptr = python_manager_get_context(module_id);
+    Py_INCREF(context);
+    *context_ptr = context;
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef EventsMethods[] = {
     {"register_device_events", register_device_events, METH_VARARGS, "Register to receive Device Added / Device Removed events"},
     {"register_data_events", register_data_events, METH_VARARGS, "Register to receive EventLogEvent events"},
+    {"register_context", register_context, METH_VARARGS, "Register context object to pass to event callbacks"},
     {NULL, NULL, 0, NULL}
 };
 
