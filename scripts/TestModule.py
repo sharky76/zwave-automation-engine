@@ -63,7 +63,7 @@ class FSM:
 			},
 
 			States.ExplicitOff: {
-				Events.MotionDetected: self.onImplicitOnOrImplicitOffTimeOfDay,
+				Events.MotionDetected: self.onImplicitOnOrExplicitOffTimeOfDay,
 				Events.NoMotionDetected: self.Noop,
 				Events.ButtonOn: self.onExplicitOn,
 				Events.ButtonOff: self.Noop
@@ -81,6 +81,7 @@ class FSM:
 		self.context = context
 		self.button_id = button_id
 		self.button_command = button_command
+		self.nextImplicitOnStart = datetime.datetime.now()
 
 	def changeState(self, event):
 		state = self.currentState
@@ -91,8 +92,14 @@ class FSM:
 		pass
 
 	def onImplicitOnOrImplicitOffTimeOfDay(self):
-		if datetime.datetime.now().hour > 16 and datetime.datetime.now().hour < 23:
-			if self.context.lum < 20:
+		if datetime.datetime.now().hour > 7 and datetime.datetime.now().hour < 23:
+			if self.context.lum < 15:
+				self.currentState = States.ImplicitOn
+				command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
+
+	def onImplicitOnOrExplicitOffTimeOfDay(self):
+		if datetime.datetime.now() >= self.nextImplicitOnStart and datetime.datetime.now().hour < 23:
+			if self.context.lum < 15:
 				self.currentState = States.ImplicitOn
 				command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
 
@@ -107,6 +114,8 @@ class FSM:
 	def onExplicitOff(self):
 		self.currentState = States.ExplicitOff
 		command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
+		dt = datetime.datetime.now() + datetime.timedelta(days=1)
+		self.nextImplicitOnStart = dt.replace(hour=7, minute=0, second=0, microsecond=0)
 
 class Context:
 	def __init__(self):
@@ -115,7 +124,7 @@ class Context:
 		self.temp = 0
 		self.motion = False
 		self.humidity = 0
-		self.fsm = FSM(self)
+		self.fsm = FSM(self, 263, 37)
 
 def on_init(id):
 	context = Context()
