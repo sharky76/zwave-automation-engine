@@ -196,8 +196,7 @@ void on_stdin_event(event_pump_t* pump, int fd, void* context)
         //event_manager_shutdown();
         zway_stop(zway);
         zway_terminate(&zway);
-
-        exit(0);
+        event_dispatcher_stop();
     }
 }
 
@@ -373,7 +372,7 @@ int main (int argc, char *argv[])
             // Create STD vty
             vty_t* vty_std = NULL;
             stdin_event_context_t context;
-
+            
             if(!is_daemon)
             {
                 struct termios org_opts, new_opts;
