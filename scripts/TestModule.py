@@ -6,30 +6,40 @@ import datetime
 from enum import Enum
 
 ##
-#States: ImplicitOff, ImplicitOn, ExplicitOff, explicitOn 
-#Events: MotionDetected, NoMotionDetected, ButtonOn, ButtonOff
+#States: ImplicitOff, ImplicitOn, ExplicitOff, explicitOn, SteadyLight
+#Events: MotionDetected, NoMotionDetected, ButtonOn, ButtonOff, TimerExpired
 #Initial State: ImplicitOff
 #Transitions:
-#ImplicitOff -> MotionDetected -> ImplicitOff (timeofday) / ImplicitOn
+
+#SteadyLight -> MotionDetected -> SteadyLight
+#SteadyLight -> NoMotionDetected -> Noop
+#SteadyLight -> ButtonOn -> ExplicitOn
+#SteadyLight -> ButtonOff -> ExplicitOff
+#SteadyLight -> TimerExpired -> ImplicitOff
+
+#ImplicitOff -> MotionDetected -> ImplicitOff (timeofday) / SteadyLight
 #ImplicitOff -> NoMotionDetected -> ImplicitOff
 #ImplicitOff -> ButtonOn -> ExplicitOn
 #ImplicitOff -> ButtonOff -> ImplicitOff
+#ImplicitOff -> TimerExpired -> Noop
 
-#ImplicitOn -> MotionDetected -> ImplicitOn
+#ImplicitOn -> MotionDetected -> SteadyLight
 #ImplicitOn -> NoMotionDetected -> ImplicitOff
 #ImplicitOn -> ButtonOn -> ImplicitOn
 #ImplicitOn -> ButtonOff -> ExplicitOff 
+#ImplicitOn -> TimerExpired -> Noop
 
-
-#ExplicitOff -> MotionDetected -> ExplicitOff / ImplicitOn (timeofday)
+#ExplicitOff -> MotionDetected -> ExplicitOff / SteadyLight (timeofday)
 #ExplicitOff -> NoMotionDetected -> ExplicitOff
 #ExplicitOff -> ButtonOn -> ExplicitOn
 #ExplicitOff -> ButtonOff -> ExplicitOff
+#ExplicitOff -> TimerExpired -> Noop
 
 #ExplicitOn -> MotionDetected -> ExplicitOn
 #ExplicitOn -> NoMotionDetected -> ExplicitOn
 #ExplicitOn -> ButtonOn -> ExplicitOn
 #ExplicitOn -> ButtonOff -> ExplicitOff
+#ExplicitOn -> TimerExpired -> Noop
 
 ##
 
@@ -38,12 +48,14 @@ class States(Enum):
 	ImplicitOn = 2
 	ExplicitOff = 3
 	ExplicitOn = 4
+	SteadyLight = 5
 
 class Events(Enum):
 	MotionDetected = 1
 	NoMotionDetected = 2
 	ButtonOn = 3
 	ButtonOff = 4
+	TimerExpired = 5
 
 class FSM:
 	def __init__(self, context, button_id, button_command):
@@ -52,28 +64,40 @@ class FSM:
 				Events.MotionDetected: self.onImplicitOnOrImplicitOffTimeOfDay,
 			 	Events.NoMotionDetected: self.Noop,
 			 	Events.ButtonOn: self.onExplicitOn,
-			 	Events.ButtonOff: self.Noop
+			 	Events.ButtonOff: self.Noop,
+				Events.TimerExpired: self.Noop
 			},
 
 			States.ImplicitOn: {
-				Events.MotionDetected: self.Noop,
+				Events.MotionDetected: self.onImplicitOn,
 				Events.NoMotionDetected: self.onImplicitOff,
 				Events.ButtonOn: self.Noop,
-				Events.ButtonOff: self.onExplicitOff
+				Events.ButtonOff: self.onExplicitOff,
+				Events.TimerExpired: self.onImplicitOff
 			},
 
 			States.ExplicitOff: {
 				Events.MotionDetected: self.onImplicitOnOrExplicitOffTimeOfDay,
 				Events.NoMotionDetected: self.Noop,
 				Events.ButtonOn: self.onExplicitOn,
-				Events.ButtonOff: self.Noop
+				Events.ButtonOff: self.Noop,
+				Events.TimerExpired: self.Noop
 			},
 
 			States.ExplicitOn: {
 				Events.MotionDetected: self.Noop,
 				Events.NoMotionDetected: self.Noop,
 				Events.ButtonOn: self.Noop,
-				Events.ButtonOff: self.onExplicitOff
+				Events.ButtonOff: self.onImplicitOff,
+				Events.TimerExpired: self.Noop
+			},
+
+			States.SteadyLight: {
+				Events.MotionDetected: self.onImplicitOn,
+				Events.NoMotionDetected: self.Noop,
+				Events.ButtonOn: self.Noop,
+				Events.ButtonOff: self.onExplicitOff,
+				Events.TimerExpired: self.onImplicitOff
 			}
 		}
 
@@ -82,6 +106,7 @@ class FSM:
 		self.button_id = button_id
 		self.button_command = button_command
 		self.nextImplicitOnStart = datetime.datetime.now()
+		self.timer = 0
 
 	def changeState(self, event):
 		state = self.currentState
@@ -94,28 +119,35 @@ class FSM:
 	def onImplicitOnOrImplicitOffTimeOfDay(self):
 		if datetime.datetime.now().hour > 7 and datetime.datetime.now().hour < 23:
 			if self.context.lum < 15:
-				self.currentState = States.ImplicitOn
-				command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
+				self.onImplicitOn()
 
 	def onImplicitOnOrExplicitOffTimeOfDay(self):
 		if datetime.datetime.now() >= self.nextImplicitOnStart and datetime.datetime.now().hour < 23:
 			if self.context.lum < 15:
-				self.currentState = States.ImplicitOn
-				command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
+				self.onImplicitOn()
 
 	def onExplicitOn(self):
 		self.currentState = States.ExplicitOn
-		command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
 
 	def onImplicitOff(self):
-		self.currentState = States.ImplicitOff
-		command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
+		if self.currentState != States.ExplicitOn:
+			self.currentState = States.ImplicitOff
+			command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
+		else:
+			self.currentState = States.ImplicitOff
+
 
 	def onExplicitOff(self):
 		self.currentState = States.ExplicitOff
-		command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
+		#command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
 		dt = datetime.datetime.now() + datetime.timedelta(days=1)
 		self.nextImplicitOnStart = dt.replace(hour=7, minute=0, second=0, microsecond=0)
+		logging.log_info(self.context.id, "Explicit off, next implicit start at " + str(self.nextImplicitOnStart)) 
+
+	def onImplicitOn(self):
+		self.timer = 600
+		command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
+		self.currentState = States.SteadyLight
 
 class Context:
 	def __init__(self):
@@ -131,6 +163,7 @@ def on_init(id):
 	events.register_context(id, context)
 	events.register_device_events(id)
 	context.id = id
+	events.register_timer_events(id, 1000, "on_timer_event")
 	
 	return True
 
@@ -139,19 +172,26 @@ def on_device_event(context, device_id):
 		#device_name = resolver.name_from_id(device_id)
 		logging.log_debug(context.id, "ON_DEVICE_EVENT: device_id = " + str(device_id))
 
-		if device_id == 263 or device_id == 26:
+		if device_id == 263 or device_id == 27:
 			events.register_data_events(context.id, device_id)
 
 def on_data_event(context, type, node_id, instance_id, command_id, dataHolder):
 		if context:
 			logging.log_debug(context.id, "Type: {}, node_id: {}, instance: {}, command: {}, data: {}".format(type, node_id, instance_id, command_id, dataHolder))
-			if node_id == 26:
+			if node_id == 27:
 				if command_id == 113:
 					updateMotionSensorState(context, node_id, command_id, dataHolder)
 				elif command_id == 49:
 					updateSensorEnvironment(context, node_id, command_id, dataHolder)
 			elif node_id == 263:
 				updateVirtualButtonState(context, node_id, command_id, dataHolder)
+
+def on_timer_event(context):
+	#logging.log_debug(context.id, "on_timer_event: count = " + str(context.fsm.timer))
+	context.fsm.timer -= 1
+	if context.fsm.timer == 0:
+		logging.log_debug(context.id, "on_timer_event: timer expired")
+		context.fsm.changeState(Events.TimerExpired)
 
 def updateMotionSensorState(context, node_id, command_id, dataHolder):
 	val = json.loads(command.get_value(context.id, node_id, 0, command_id, "7.event"))
@@ -170,8 +210,9 @@ def updateSensorEnvironment(context, node_id, command_id, dataHolder):
 	context.lum = lumval['device_data']['val']
 
 def updateVirtualButtonState(context, node_id, command_id, dataHolder):
-	val = json.loads(command.get_value(context.id, node_id, 0, command_id))
-	if val['device_data']['level']:
+	#val = json.loads(command.get_value(context.id, node_id, 0, command_id))
+	val = json.loads(dataHolder)
+	if val['level']:
 		context.fsm.changeState(Events.ButtonOn)
 	else:
 		context.fsm.changeState(Events.ButtonOff)
