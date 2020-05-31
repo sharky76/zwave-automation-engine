@@ -133,6 +133,8 @@ void show_vdev_full_helper(vdev_t* vdev, void* arg)
             }
         }
     }
+    
+    stack_free(instances_list);
 }
 
 void show_vdev_method_helper(vdev_command_t* method, void* arg)

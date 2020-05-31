@@ -50,14 +50,6 @@ DECLARE_LOGGER(PythonManager)
 void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* data, void* context);
 void    python_manager_on_data_event(event_pump_t* pump, int event_id, void* data, void* context);
 
-typedef struct module_entry_t
-{
-    char* name;
-    int   module_id;
-    PyObject* module;
-    PyObject* context;
-} module_entry_t;
-
 void module_entry_free(void* arg)
 {
     module_entry_t* entry = (module_entry_t*)arg;
@@ -160,6 +152,8 @@ void python_manager_init(const char* python_dir)
                 }
             }
         }
+
+        closedir(dp);
     }
 }
 
@@ -172,6 +166,16 @@ void python_manager_stop()
     event_dispatcher_unregister_handler(pump, EventLogEvent, python_manager_on_data_event, NULL);
     event_dispatcher_unregister_handler(pump, DeviceAddedEvent, python_manager_on_device_event, NULL);
 
+    variant_stack_t* time_list = python_events_modules_for_timer_event();
+    stack_for_each(time_list, timer_entry_variant)
+    {
+        timer_event_entry_t* event_entry = VARIANT_GET_PTR(timer_event_entry_t, timer_entry_variant);
+        event_pump_t* pump = event_dispatcher_get_pump("TIMER_PUMP");
+        pump->stop(pump, event_entry->timer_id);
+        event_dispatcher_unregister_handler(pump, event_entry->timer_id);
+    }
+
+    stack_free(time_list);
     variant_hash_free(registered_module_table);
 }
 
@@ -197,6 +201,18 @@ PyObject** python_manager_get_context(int module_id)
 
     module_entry_t* mod_entry = VARIANT_GET_PTR(module_entry_t, mod_entry_variant);
     return &mod_entry->context;
+}
+
+module_entry_t* python_manager_get_module(int module_id)
+{
+    variant_t* mod_entry_variant = variant_hash_get(registered_module_table, module_id);
+    if(NULL == mod_entry_variant)
+    {
+        return NULL;
+    }
+
+    module_entry_t* mod_entry = VARIANT_GET_PTR(module_entry_t, mod_entry_variant);
+    return mod_entry;
 }
 
 void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* data, void* context)
