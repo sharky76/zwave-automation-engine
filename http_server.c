@@ -58,6 +58,8 @@ void http_request_handle_connect_event(event_pump_t* pump, int fd, void* context
     http_event_context_t* context_data = (http_event_context_t*)context;
     struct sockaddr remote_addr;
     socklen_t addr_len;
+    memset(&remote_addr, 0, sizeof(struct sockaddr));
+    memset(&addr_len, 0, sizeof(socklen_t));
     int session_sock = accept(fd, &remote_addr, &addr_len);
     
     struct sockaddr_in* addr_in = (struct sockaddr_in*)&remote_addr;

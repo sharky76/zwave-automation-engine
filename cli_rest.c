@@ -163,7 +163,6 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                     json_object* cmd_class = json_object_new_object();
                     json_object_object_add(cmd_class, "id", json_object_new_int(vdev_command->command_id));
         
-                    json_object* cmd_value = json_object_new_object();
                     command_class_t* vdev_cmd_class = vdev_manager_get_command_class(vdev_desc->node_id);
                     
                     if(NULL != vdev_cmd_class)
@@ -183,6 +182,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             json_object_object_add(cmd_class, "instance", json_object_new_int(instance_id));
                             if(vdev_command->nargs != 0 || !vdev_command->is_get)
                             {
+                                json_object_put(cmd_class);
                                 continue;
                             }
                             LOG_DEBUG(CLI, "Calling command %s on device %s, node_id: %d, instance_id: %d, command_id: %d",
@@ -191,11 +191,13 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             if(NULL == value)
                             {
                                 LOG_ERROR(CLI, "Unable to call method %s on VDEV: device not found", vdev_command->name);
+                                json_object_put(cmd_class);
                                 continue;
                             }
 
                             char* string_value;
                             variant_to_string(value, &string_value);
+                            json_object* cmd_value = json_object_new_object();
             
                             if(NULL == vdev_command->data_holder)
                             {

@@ -152,6 +152,8 @@ void python_manager_init(const char* python_dir)
                 }
             }
         }
+
+        closedir(dp);
     }
 }
 

@@ -44,7 +44,9 @@ static PyObject* set_boolean(PyObject *self, PyObject *args)
         command_class = vdev_manager_get_command_class(record->nodeId);
     }
 
-    variant_t* ret = command_class_exec(command_class, "Set", record, variant_create_bool(value));
+    variant_t* var = variant_create_bool(value);
+    variant_t* ret = command_class_exec(command_class, "Set", record, var);
+    variant_free(var);
     variant_free(ret);
 
     Py_RETURN_NONE;
