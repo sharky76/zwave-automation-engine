@@ -959,11 +959,8 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
                         }
                         variant_free(ret);
                     }
-
-                    json_object_put(response_obj);
                 }
             }
-    
         }
         else // VDEV 
         {
@@ -982,8 +979,6 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
 
             if(NULL != vdev)
             {
-                json_object* cmd_classes_array = json_object_new_array();
-            
                 stack_for_each(vdev->supported_method_list, vdev_command_variant)
                 {
                     vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
@@ -1068,6 +1063,8 @@ bool    cmd_set_sensor_command_class_data(vty_t* vty, variant_stack_t* params)
                 }
             }
         }
+
+        json_object_put(response_obj);
     }
 }
 
