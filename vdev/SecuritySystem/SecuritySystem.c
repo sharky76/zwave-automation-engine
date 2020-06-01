@@ -38,11 +38,11 @@ void    device_start()
 {
     LOG_INFO(DT_SECURITY_SYSTEM, "Starting Security System device");
     char name_buf[32] = {0};
-    snprintf(name_buf, 31, "%s.%d.%d", "SecurityController", 0, COMMAND_CLASS_SECURITY_SYSTEM);
+    snprintf(name_buf, 31, "%s.%d.%d", "SecuritySystem", 0, COMMAND_CLASS_SECURITY_SYSTEM);
     resolver_add_entry(VDEV, name_buf, DT_SECURITY_SYSTEM, 0, COMMAND_CLASS_SECURITY_SYSTEM);
 
     memset(name_buf, 0, sizeof(name_buf));
-    snprintf(name_buf, 31, "%s.%d.%d", "SecurityController", 0, COMMAND_CLASS_MODEL_INFO);
+    snprintf(name_buf, 31, "%s.%d.%d", "SecuritySystem", 0, COMMAND_CLASS_MODEL_INFO);
     resolver_add_entry(VDEV, name_buf, DT_SECURITY_SYSTEM, 0, COMMAND_CLASS_MODEL_INFO);
     LOG_INFO(DT_SECURITY_SYSTEM, "Security System device started");
 }

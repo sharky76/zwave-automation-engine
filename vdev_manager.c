@@ -243,8 +243,6 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
         return NULL;
     }
 
-    //free(vdev_record);
-
     stack_for_each(vdev->supported_method_list, vdev_method_variant)
     {
         vdev_command_t* cmd = (vdev_command_t*)variant_get_ptr(vdev_method_variant);
@@ -252,9 +250,10 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
         // commands with the same name. In that case cmd->command_id must be non-null and unique
         // for this command
 
-        if(strcmp(cmd->name, method) == 0 && (vdev_record->commandId == INVALID_INSTANCE || cmd->command_id == vdev_record->commandId))
+        if(strcmp(cmd->name, method) == 0 && 
+            ((!cmd->is_command_class && vdev_record->commandId == INVALID_INSTANCE) || 
+             (cmd->is_command_class && cmd->command_id == vdev_record->commandId)))
         {
-            //return cmd->command_impl(args);
             return cmd->command_impl(vdev_record, args);
         }
     }
@@ -262,61 +261,3 @@ variant_t*   vdev_call_method(const char* method, device_record_t* vdev_record, 
     return NULL;
 }
 
-/*void                vdev_manager_on_event(event_t* event)
-{
-    switch(event->data->type)
-    {
-    case DT_SENSOR_EVENT_DATA:
-        {
-            // Forward sensor event to all services
-            hash_iterator_t* it = variant_hash_begin(vdev_table);
-    
-            while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
-            {
-                vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_iterator_value(it));
-                stack_for_each(vdev->event_subscriptions, event_subscription_variant)
-                {
-                    event_subscription_t* es = VARIANT_GET_PTR(event_subscription_t, event_subscription_variant);
-                    if(strcmp(es->source, SENSOR_EVENT_SOURCE) == 0)
-                    {
-                        sensor_event_data_t* event_data = (sensor_event_data_t*)event->data;
-                        LOG_DEBUG(VDevManager, "Forward sensor event from: %s to virtual device: %s", event_data->device_name, vdev->name);
-                        es->on_event(SENSOR_EVENT_SOURCE, event);
-                    }
-                }
-            }
-
-            free(it);
-        }
-        break;
-    case DT_SERVICE_EVENT_DATA:
-        {
-            service_t* calling_service = service_manager_get_class_by_id(event->source_id);
-    
-            if(NULL != calling_service)
-            {
-                hash_iterator_t* it = variant_hash_begin(vdev_table);
-    
-                while(!variant_hash_iterator_is_end(variant_hash_iterator_next(it)))
-                {
-                    vdev_t* vdev = (vdev_t*)variant_get_ptr(variant_hash_iterator_value(it));
-            
-                    stack_for_each(vdev->event_subscriptions, event_subscription_variant)
-                    {
-                        event_subscription_t* es = VARIANT_GET_PTR(event_subscription_t, event_subscription_variant);
-                        if(strcmp(es->source, calling_service->service_name) == 0)
-                        {
-                            LOG_DEBUG(VDevManager, "Forward event from: %s to virtual device: %s", calling_service->service_name, vdev->name);
-                            es->on_event(calling_service->service_name, event);
-                        }
-                    }
-                }
-
-                free(it);
-            }
-        }
-        break;
-    default:
-        break;
-    }
-}*/
