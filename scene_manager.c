@@ -130,6 +130,11 @@ void    scene_manager_on_vdev_event(event_pump_t* pump, int event_id, void* data
         }
 
     }
+    else
+    {
+        LOG_ERROR(Scene, "Virtual device ID %d not found", event_data->vdev_id);
+    }
+    
 }
 
 void    scene_manager_on_sensor_event(event_pump_t* pump, int event_id, void* data, void* context)

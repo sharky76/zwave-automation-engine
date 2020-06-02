@@ -24,7 +24,7 @@ typedef struct device_record_t device_record_t;
 
 typedef struct vdev_event_data_t
 {
-    uint8_t  vdev_id;
+    uint16_t vdev_id;
     uint8_t  instance_id;
     uint8_t  event_id;
     void*    data;
