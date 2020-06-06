@@ -162,6 +162,7 @@ void on_timer_event_callback(event_pump_t* pump, int timer_id, void* arg)
         PyObject* pArgs = PyTuple_New(1);
         PyObject* pContext = mod_entry->context;
         PyTuple_SetItem(pArgs, 0, pContext);
+        Py_INCREF(pContext);
 
         PyObject* pRetValue = PyObject_CallObject(pFunc, pArgs);
         if(NULL == pRetValue)
@@ -174,6 +175,7 @@ void on_timer_event_callback(event_pump_t* pump, int timer_id, void* arg)
             Py_DECREF(pRetValue);
         }
 
+        Py_DECREF(pArgs);
         Py_DECREF(pFunc);
     }
 }

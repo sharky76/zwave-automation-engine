@@ -142,7 +142,6 @@ void python_manager_init(const char* python_dir)
                         Py_DECREF(pRetValue);
                     }
                     
-                    Py_DECREF(pValue);
                     Py_DECREF(pArgs);
                     Py_DECREF(pFunc);
                 }

@@ -341,6 +341,7 @@ char*   vty_read(vty_t* vty)
                     vty_clear_buffer(vty);
                     cli_assemble_line(cmd_stack, 0, vty->buffer, BUFSIZE);
                 }
+                variant_free(incomplete_cmd);
                 stack_free(cmd_stack);
                 vty_redisplay(vty, vty->buffer);
             }
@@ -618,7 +619,11 @@ void    vty_redisplay(vty_t* vty, const char* new_buffer)
     
         if(NULL != new_buffer)
         {
-            strncpy(vty->buffer, new_buffer, BUFSIZE-1);
+            if(new_buffer != vty->buffer)
+            {
+                strncpy(vty->buffer, new_buffer, BUFSIZE-1);
+            }
+
             vty->buf_size = strlen(vty->buffer);
             vty->cursor_pos = vty->buf_size;
             vty_write(vty, vty->buffer);
