@@ -75,6 +75,7 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params);
 bool    cmd_line_filter(vty_t* vty, variant_stack_t* params);
 void    show_command_class_helper(command_class_t* command_class, void* arg);
 bool    cmd_shutdown(vty_t* vty, variant_stack_t* params);
+bool    cmd_logout(vty_t* vty, variant_stack_t* params);
 
 cli_command_t root_command_list[] = {
     {"controller inclusion start", cmd_controller_inclusion_mode, "Start inclusion mode"},
@@ -104,6 +105,7 @@ cli_command_t root_command_list[] = {
     {"more",                 cmd_pager,                 "Pager"},
     {"grep LINE",            cmd_line_filter,           "Line filter"},
     {"end",                  cmd_exit_node,             "End configuration session"},
+    {"logout",               cmd_logout,                "Logout"},
     {"exit",                 cmd_quit,                  "Exit the session"},
     {"quit",                 cmd_shutdown,              "Exit the application"},
     {NULL,                   NULL,                          NULL}
@@ -260,7 +262,7 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 
             int status = 0;
             // Wait for pipe to process all input
-            pid_t pid = waitpid((pid_t)(-1), &status, 0);
+            pid_t pid = waitpid((pid_t)(pid), &status, 0);
 
             // Recover
             cli_set_vty(vty);
@@ -652,7 +654,7 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
                     break;
             }
 
-            event_dispatcher_register_handler(socket_pump, fd, on_pager_command_event, &vty_nonblock_write_event, &ctx);
+            event_dispatcher_register_handler(socket_pump, fd, &on_pager_command_event, &vty_nonblock_write_event, &ctx);
             
             while(!ctx.keypressed)
             {
@@ -671,7 +673,7 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
                 }
             }
 
-            wait_dispatcher->free(wait_dispatcher);
+            event_dispatcher_free(wait_dispatcher);
         }
 
     } while(ch[0] != (char)EOF && n > 0 && !is_quit);
@@ -921,6 +923,19 @@ bool    cmd_set_history(vty_t* vty, variant_stack_t* params)
     history_size = variant_get_int(stack_peek_at(params, 1));
     
     vty_set_history_size(vty, history_size);
+}
+
+bool    cmd_logout(vty_t* vty, variant_stack_t* params)
+{
+    cli_node_t* auth_node = cli_find_node("auth-user");
+    if(auth_node != NULL)
+    {
+        char prompt[256] = {0};
+        strncpy(prompt, auth_node->prompt, 255);
+        vty_set_prompt(vty, prompt);
+        vty_set_history_enabled(vty, false);
+        vty->current_node = auth_node;
+    }
 }
 
 bool    cmd_quit(vty_t* vty, variant_stack_t* params)

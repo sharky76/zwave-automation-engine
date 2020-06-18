@@ -16,7 +16,7 @@
 DECLARE_LOGGER(HomebridgeManager)
 
 int homebridge_start();
-void homebridge_stopped_handler(int sig);
+void homebridge_stopped_handler(int sig, siginfo_t* info, void* arg);
 
 pid_t   homebridge_pid;
 int     homebridge_fd = -1;
@@ -60,9 +60,9 @@ int homebridge_start()
     {
         // parent
         struct sigaction sa;
-        sa.sa_handler = &homebridge_stopped_handler;
+        sa.sa_sigaction = &homebridge_stopped_handler;
         sigemptyset(&sa.sa_mask);
-        sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+        sa.sa_flags = SA_SIGINFO | SA_RESTART | SA_NOCLDSTOP;
         if (sigaction(SIGCHLD, &sa, 0) == -1) 
         {
             perror(0);
@@ -107,8 +107,13 @@ int homebridge_start()
     }
 }
 
-void homebridge_stopped_handler(int sig)
+void homebridge_stopped_handler(int sig, siginfo_t* info, void* arg)
 {
+  if(info->si_pid != homebridge_pid)
+  {
+      return;
+  }
+
   int saved_errno = errno;
   int status = 0;
   pid_t pid = waitpid(homebridge_pid, &status, WNOHANG);

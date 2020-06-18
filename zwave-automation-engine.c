@@ -324,7 +324,6 @@ int main (int argc, char *argv[])
     {
         LOG_INFO(General, "Zway API initialized");
         event_log_init();
-        //event_manager_init();
         event_dispatcher_init();
         resolver_init();
         cli_init();

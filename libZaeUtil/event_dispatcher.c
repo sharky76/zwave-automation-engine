@@ -210,6 +210,11 @@ event_dispatcher_t* event_dispatcher_new()
     return dispatcher;
 }
 
+void event_dispatcher_free(event_dispatcher_t* dispatcher)
+{
+    _event_dispatcher_free(dispatcher);
+}
+
 typedef struct event_wait_context_t
 {
     void* event_data;

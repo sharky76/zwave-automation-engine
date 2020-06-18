@@ -25,7 +25,7 @@ CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-ra
 	-lpthread -lcurl -ljson-c 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
-	$(OUTDIR)/event.o $(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
+	$(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
 	$(OUTDIR)/event_pump.o $(OUTDIR)/lcp.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/service.o $(OUTDIR)/service_args.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
@@ -34,7 +34,7 @@ COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
-	$(OUTDIR)/event.o $(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
+	$(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
 	$(OUTDIR)/event_pump.o $(OUTDIR)/lcp.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/service.o $(OUTDIR)/service_args.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
@@ -84,7 +84,7 @@ CFG_LIB=-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-ra
 	-lpthread -lcurl -ljson-c 
 CFG_OBJ=
 COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
-	$(OUTDIR)/event.o $(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
+	$(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
 	$(OUTDIR)/event_pump.o $(OUTDIR)/lcp.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/service.o $(OUTDIR)/service_args.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
@@ -93,7 +93,7 @@ COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
-	$(OUTDIR)/event.o $(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
+	$(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
 	$(OUTDIR)/event_pump.o $(OUTDIR)/lcp.o $(OUTDIR)/logger.o \
 	$(OUTDIR)/resolver.o $(OUTDIR)/service.o $(OUTDIR)/service_args.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \

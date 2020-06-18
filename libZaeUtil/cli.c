@@ -967,3 +967,17 @@ bool    cli_exec(cli_node_t* node, vty_t* vty, char* line)
     return retVal;
 }
 
+cli_node_t* cli_find_node(const char* name)
+{
+    stack_for_each(cli_node_list, cli_node_variant)
+    {
+        cli_node_t* node = (cli_node_t*)variant_get_ptr(cli_node_variant);
+
+        if(strstr(node->name, name) == node->name)
+        {
+            return node;
+        }
+    }
+
+    return NULL;
+}
