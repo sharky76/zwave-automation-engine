@@ -453,6 +453,14 @@ void    vty_add_history(vty_t* vty)
     vty->history_index = HISTORY_START;
 }
 
+void vty_clear_history(vty_t* vty)
+{
+    if(!vty->history_enabled) return;
+
+    stack_empty(vty->history);
+    vty->history_index = HISTORY_START;
+}
+
 const char*    vty_get_history(vty_t* vty, bool direction) // true - to newest, false - to oldest
 {
     const char* hist_item = NULL;

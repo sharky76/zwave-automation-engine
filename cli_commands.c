@@ -68,6 +68,7 @@ bool    cmd_show_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_save_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_copy_running_config(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_history(vty_t* vty, variant_stack_t* params);
+bool    cmd_clear_history(vty_t* vty, variant_stack_t* params);
 bool    cmd_quit(vty_t* vty, variant_stack_t* params);
 bool    cmd_eval_expression(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_history(vty_t* vty, variant_stack_t* params);
@@ -100,6 +101,7 @@ cli_command_t root_command_list[] = {
     {"copy running-config file WORD", cmd_copy_running_config, "Save running config into custom location"},
     {"list history",                       cmd_show_history,    "List command history"},
     {"show history",                       cmd_show_history,    "Show command history size"},
+    {"clear history",                       cmd_clear_history,  "Clear command history"},
     {"history INT",                        cmd_set_history, "Set command history size"},
     {"eval LINE",            cmd_eval_expression,       "Evaluate expression"},
     {"more",                 cmd_pager,                 "Pager"},
@@ -916,6 +918,11 @@ bool    cmd_show_history(vty_t* vty, variant_stack_t* params)
     {
         vty_write(vty, "history %d%s", vty->history_size, VTY_NEWLINE(vty));
     }
+}
+
+bool    cmd_clear_history(vty_t* vty, variant_stack_t* params)
+{
+    vty_clear_history(vty);
 }
 
 bool    cmd_set_history(vty_t* vty, variant_stack_t* params)

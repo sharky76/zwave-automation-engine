@@ -154,7 +154,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
 
 void logger_log(logger_handle_t* handle, int id, LogLevel level, const char* format, ...)
 {
-    pthread_mutex_lock(&handle->logger_lock);
+    if(pthread_mutex_trylock(&handle->logger_lock)) return;
     // First check if the service id is enabled
     variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, id);
 
@@ -175,7 +175,7 @@ void logger_log(logger_handle_t* handle, int id, LogLevel level, const char* for
 
 void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const char* func, const char* format, ...)
 {
-    pthread_mutex_lock(&handle->logger_lock);
+    if(pthread_mutex_trylock(&handle->logger_lock)) return;
     // First check if the service id is enabled
     variant_t* service_variant = variant_hash_get(logger_handle->logger_service_table, id);
 

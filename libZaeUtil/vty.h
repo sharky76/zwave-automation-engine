@@ -97,6 +97,7 @@ bool    vty_flush(vty_t* vty);
 void    vty_set_error(vty_t* vty, bool is_error);
 bool    vty_is_error(vty_t* vty);
 void    vty_add_history(vty_t* vty);
+void    vty_clear_history(vty_t* vty);
 const char*   vty_get_history(vty_t* vty, bool direction); // true - to newest, false - to oldest
 void    vty_set_history_size(vty_t* vty, int size);
 void    vty_set_history_enabled(vty_t* vty, bool is_enabled);
