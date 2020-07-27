@@ -50,6 +50,7 @@ bool    cmd_controller_exclusion_mode(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_reset(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_factory_reset(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params);
+bool    cmd_controller_ping(vty_t* vty, variant_stack_t* params);
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params);
 bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params);
@@ -86,6 +87,7 @@ cli_command_t root_command_list[] = {
     {"controller reset",          cmd_controller_reset,          "Reset zwave controller"},
     {"controller factory-reset",     cmd_controller_factory_reset,          "Reset zwave controller to factory defaults"},
     {"controller remove-failed node-id INT", cmd_controller_remove_failed_node, "Remove failed node from the controller"},
+    {"controller ping node-id INT", cmd_controller_ping, "Ping node and mark as failed if unreachable"},
     {"controller learn-mode start|stop|start-nwi",            cmd_controller_set_learn_mode, "Start learn mode"},
     {"controller save-config",                                cmd_controller_config_save, "Save controller configuration"},
     {"controller restore-config",                             cmd_controller_config_restore, "Restore controller configuration"},
@@ -264,7 +266,7 @@ bool    cli_command_exec_custom_node(cli_node_t* node, vty_t* vty, char* line)
 
             int status = 0;
             // Wait for pipe to process all input
-            pid_t pid = waitpid((pid_t)(pid), &status, 0);
+            waitpid((pid_t)(pid), &status, 0);
 
             // Recover
             cli_set_vty(vty);
@@ -544,6 +546,12 @@ bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params)
 {
     ZWBYTE node_id = variant_get_int(stack_peek_at(params, 3));
     ZWError err = zway_fc_remove_failed_node(zway, node_id, NULL, NULL, NULL);
+}
+
+bool    cmd_controller_ping(vty_t* vty, variant_stack_t* params)
+{
+    ZWBYTE node_id = variant_get_int(stack_peek_at(params, 3));
+    ZWError err = zway_device_send_nop(zway, node_id, NULL, NULL, NULL);
 }
 
 bool    cmd_show_controller_queue(vty_t* vty, variant_stack_t* params)

@@ -144,6 +144,8 @@ void    vty_display_banner(vty_t* vty)
 
 bool    vty_write(vty_t* vty, const char* format, ...)
 {
+    if(!vty || !vty->write_buffer) return false;
+    
     va_list args;
     va_start(args, format);
     
