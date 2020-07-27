@@ -162,7 +162,7 @@ void socket_pump_poll(event_pump_t* pump, struct timespec* ts)
                 }
             }
             
-            if(data->event_callbacks[i].remove_pending_flag /*&& !(data->fds[i].events & POLLOUT)*/)
+            if(data->event_callbacks[i].remove_pending_flag)
             {
                 socket_purge_sockets(pump, i);
             }

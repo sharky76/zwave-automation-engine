@@ -47,23 +47,38 @@ void telnet_naws_negotiation_start(vty_t* vty)
     int socket = vty->data->desc.socket;
     char width[2];
     char height[2];
-    int n = recv(socket, &width, 2, 0);
-    n = recv(socket, &height, 2, 0);
+    if(byte_buffer_read_len(vty->read_buffer) < 4) 
+    {
+        // read more data
+        byte_buffer_adjust_read_pos(vty->read_buffer, -2);
+        return;
+    }
+
+    char* rptr = byte_buffer_get_read_ptr(vty->read_buffer);
+    memcpy(width, rptr, 2);
+    memcpy(height, rptr+2, 2);
+
+    //int n = recv(socket, &width, 2, 0);
+    //n = recv(socket, &height, 2, 0);
 
     memcpy(&vty->term_width, width, 2);
     vty->term_width = ntohs(vty->term_width);
     memcpy(&vty->term_height, height, 2);
     vty->term_height = ntohs(vty->term_height);
+
+    byte_buffer_adjust_read_pos(vty->read_buffer, 4);
 }
 
 void telnet_subnegotiation_start(vty_t* vty)
 {
     int socket = vty->data->desc.socket;
     char ch;
-    int n = recv(socket, &ch, 1, 0);
-    switch(ch)
+    //int n = recv(socket, &ch, 1, 0);
+    char* rptr = byte_buffer_get_read_ptr(vty->read_buffer);
+    switch(*rptr)
     {
     case TELOPT_NAWS:
+        byte_buffer_adjust_read_pos(vty->read_buffer, 1);
         telnet_naws_negotiation_start(vty);
         break;
     default:
@@ -87,27 +102,67 @@ int     socket_read_cb(vty_t* vty, char* str)
     int socket = vty->data->desc.socket;
     //*str = calloc(1, sizeof(char));
     //TODO: Replace with socket_read
-    int n = recv(socket, str, 1, 0);
-    if(vty->iac_started || *str == IAC)
+    //int n = recv(socket, str, 1, 0);
+    int ret = socket_recv(vty_get_pump(vty), socket, vty->read_buffer);
+
+    if(-1 == ret)
     {
-        //printf("NAWS received");
+        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
+        return ret;
+    }
+    else if(0 == ret)
+    {
+        return ret;
+    }
+
+    char* IAC_PTR = byte_buffer_get_read_ptr(vty->read_buffer);
+    if(vty->iac_started || *IAC_PTR == IAC)
+    {
+        printf("NAWS received");
         vty->iac_started = true;
+        byte_buffer_adjust_read_pos(vty->read_buffer, 1);
         
-        switch(*str)
-        {
-        case SB:
-            telnet_subnegotiation_start(vty);
-            break;
-        case SE:
-            vty->iac_started = false;
-            n = recv(socket, str, 1, 0);
-            break;
-        default:
-            break;
+        
+        while(vty->iac_started)
+        {       
+            char* SUB_PTR = byte_buffer_get_read_ptr(vty->read_buffer);
+            
+            switch(*SUB_PTR)
+            {
+            case SB:
+                printf("telnet_subnegotiation_start");
+                byte_buffer_adjust_read_pos(vty->read_buffer, 1);
+                telnet_subnegotiation_start(vty);
+                break;
+            case SE:
+                vty->iac_started = false;
+                //n = recv(socket, str, 1, 0);
+                byte_buffer_adjust_read_pos(vty->read_buffer, 1);
+                byte_buffer_pack(vty->read_buffer);
+                break;
+            case DO:
+            case DONT:
+            case WONT:
+            case WILL:
+                byte_buffer_adjust_read_pos(vty->read_buffer, 2);
+                break;
+
+            default:
+                break;;
+            }
+
+            if(vty->iac_started)
+            {
+                IAC_PTR = byte_buffer_get_read_ptr(vty->read_buffer);
+                {
+                    byte_buffer_adjust_read_pos(vty->read_buffer, 1);
+                }
+            }
         }
     }
     //printf("RECV: %d %c (0x%x)\n", n, *str, *str);
-    return n;
+    byte_buffer_adjust_write_pos(vty->read_buffer, 0);
+    return byte_buffer_read_len(vty->read_buffer);
 
 }
 

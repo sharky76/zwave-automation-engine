@@ -120,12 +120,15 @@ bool    file_write_cb(vty_t* vty)
 
 int   file_read_cb(vty_t* vty, char* str)
 {
-    char ch = 0;
+    //char ch = 0;
             
     //*str = malloc(sizeof(char));
-    *str = fgetc(vty->data->desc.file);
+    //*str = fgetc(vty->data->desc.file);
+    char ch = fgetc(vty->data->desc.file);
+    byte_buffer_append(vty->read_buffer, (const char*)&ch, 1);
+    byte_buffer_adjust_write_pos(vty->read_buffer, 0);
 
-    if(*str == (char)EOF)
+    if(ch == (char)EOF)
     {
         return -1;
     }
