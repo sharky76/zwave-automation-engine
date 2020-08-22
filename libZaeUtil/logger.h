@@ -55,6 +55,7 @@ extern logger_handle_t* logger_handle;
 void logger_init();
 void logger_register_target(vty_t* vty);
 void logger_unregister_target(vty_t* vty);
+void logger_add_target_service(vty_t* vty, int serviceId);
 
 void logger_register_service(int* serviceId, const char* name);
 void logger_register_service_with_id(int serviceId, const char* name);

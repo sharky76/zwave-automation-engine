@@ -47,6 +47,7 @@
 ZWay zway;
 
 DECLARE_LOGGER(General)
+vty_io_data_t eventlog_vty_data;
 
 /* For sigsetjmp() & siglongjmp(). */
 sigjmp_buf jmpbuf;
@@ -150,14 +151,25 @@ void signal_init()
   main_signal_set(SIGHUP, sighup);
 }
 
-char* null_function(const char *ignore, int key)
+void setup_event_log(const char *filename)
 {
-    return NULL;
+    USING_LOGGER(EventLog);
+    char event_log_path[512] = {0};
+    snprintf(event_log_path, 511, "%s/%s", global_config.config_location, filename);
+
+    eventlog_vty_data.desc.file = fopen(event_log_path, "w");
+
+    setbuf(eventlog_vty_data.desc.file, NULL);
+
+    vty_t* file_vty = vty_io_create(VTY_FILE, &eventlog_vty_data);
+    logger_register_target(file_vty);
+    logger_add_target_service(file_vty, EventLog);
+    logger_set_online(file_vty, true);
 }
 
 void print_help()
 {
-    printf("-c <config_file>\n-u <user>\n-d daemonize\n");
+    printf("-c <config_file>\n-u <user>\n-d daemonize\n-l <filename> Write event log\n");
 }
 
 typedef struct stdin_event_context_t
@@ -205,9 +217,10 @@ int main (int argc, char *argv[])
     bool is_daemon = false;
     char* config_file = NULL;
     char* setuid_name = NULL;
+    char* eventlog_name = NULL;
     int c;
 
-    while((c = getopt(argc, argv, "dhc:u:")) != -1)
+    while((c = getopt(argc, argv, "dhc:u:l:")) != -1)
     {
         switch(c)
         {
@@ -219,6 +232,9 @@ int main (int argc, char *argv[])
             break;
         case 'u':
             setuid_name = optarg;
+            break;
+        case 'l':
+            eventlog_name = optarg;
             break;
         case 'h':
             print_help();
@@ -281,8 +297,6 @@ int main (int argc, char *argv[])
 
     logger_init();
     logging_modules_init();
-
-    
 
     LOG_INFO(General, "Initializing engine...");
 
@@ -353,7 +367,10 @@ int main (int argc, char *argv[])
             // Ok, zway is started, now lets do local initialization
 
             // Then, load automation scripts descriptor files
-            
+            if(NULL != eventlog_name)
+            {
+                setup_event_log(eventlog_name);
+            }
 
             zway_discover(zway);
 

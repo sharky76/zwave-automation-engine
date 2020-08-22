@@ -8,6 +8,7 @@
 #include "hash.h"
 #include "vty.h"
 #include <pthread.h>
+#include "vector.h"
 
 #define MAX_LOG_ENTRY_LEN   512
 
@@ -15,7 +16,15 @@ typedef struct logger_vty_t
 {
     vty_t* vty;
     bool   is_online;
+    vector_t* services;
 } logger_vty_t;
+
+void delete_logger_vty(void* arg)
+{
+    logger_vty_t* logger_vty = (logger_vty_t*)arg;
+    vector_free(logger_vty->services);
+    free(logger_vty);
+}
 
 typedef struct logger_log_entry_t
 {
@@ -66,8 +75,9 @@ void logger_register_target(vty_t* vty)
     logger_vty_t* new_vty = malloc(sizeof(logger_vty_t));
     new_vty->vty = vty;
     new_vty->is_online = false;
+    new_vty->services = vector_create();
     stack_lock(logger_handle->registered_targets);
-    stack_push_back(logger_handle->registered_targets, variant_create_ptr(DT_PTR, new_vty, NULL));
+    stack_push_back(logger_handle->registered_targets, variant_create_ptr(DT_PTR, new_vty, delete_logger_vty));
     stack_unlock(logger_handle->registered_targets);
 }
 
@@ -85,6 +95,26 @@ void logger_unregister_target(vty_t* vty)
         }
     }
     stack_unlock(logger_handle->registered_targets);
+}
+
+void logger_add_target_service(vty_t* vty, int serviceId)
+{
+    stack_lock(logger_handle->registered_targets);
+    stack_for_each(logger_handle->registered_targets, log_target_variant)
+    {
+        logger_vty_t* target_vty = VARIANT_GET_PTR(logger_vty_t, log_target_variant);
+        if(target_vty->vty == vty)
+        {
+            vector_push_back(target_vty->services, variant_create_int32(DT_INT32, serviceId));
+        }
+    }
+    stack_unlock(logger_handle->registered_targets);
+}
+
+bool service_matcher(variant_t* service_var, void* arg)
+{
+    int service_id = (int)arg;
+    return variant_get_int(service_var) == service_id;
 }
 
 void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel level, const char* format, va_list args)
@@ -145,7 +175,10 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
 
             if(logger_vty->is_online)
             {
-                vty_write(logger_vty->vty, "%s", buf);
+                if(vector_is_empty(logger_vty->services) || vector_is_exists(logger_vty->services, service_matcher, (void*)service->service_id))
+                {
+                    vty_write(logger_vty->vty, "%s", buf);
+                }
             }
         }
         stack_unlock(logger_handle->registered_targets);
