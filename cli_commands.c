@@ -318,9 +318,8 @@ void    cli_commands_handle_connect_event(event_pump_t* pump, int fd, void* cont
     vty_t* vty_sock = vty_io_create(VTY_SOCKET, vty_data); 
     vty_set_pump(vty_sock, pump);
 
-    socket_configure_terminal(vty_sock);
-
     event_dispatcher_register_handler(pump, session_sock, &cli_commands_handle_data_read_event, &vty_nonblock_write_event, (void*)vty_sock);
+    socket_configure_terminal(vty_sock);
 
     //stack_push_back(client_socket_list, variant_create_ptr(DT_PTR, vty_sock, variant_delete_none));
     logger_register_target(vty_sock);
@@ -618,7 +617,7 @@ void on_pager_command_event(event_pump_t* pump, int fd, void* context)
 bool    cmd_pager(vty_t* vty, variant_stack_t* params)
 {
     int rows = 0;
-    char* ch = vty->input;
+    char* ch;
     int n = 0;
     bool is_quit = false;
 
@@ -631,14 +630,17 @@ bool    cmd_pager(vty_t* vty, variant_stack_t* params)
                 memset(ch, 0, 1);
             }
 
-            n = vty->read_cb(vty, ch);
+            n = vty->read_cb(vty);
+            ch = byte_buffer_get_read_ptr(vty->read_buffer);
             while(ch[0] != 0xa && ch[0] != 0xd && ch[0] != (char)EOF)
             {
+                byte_buffer_adjust_read_pos(vty->read_buffer, 1);
                 vty_write(vty->stored_vty, "%c", *ch);
                 memset(ch, 0, n);
-                n = vty->read_cb(vty, ch);
+                n = vty->read_cb(vty);
+                ch = byte_buffer_get_read_ptr(vty->read_buffer);
             }
-            
+            byte_buffer_reset(vty->read_buffer);
             vty_write(vty->stored_vty, "%s", VTY_NEWLINE(vty->stored_vty));
         }
         while(++rows < vty->term_height && ch[0] != (char)EOF && n > 0);
@@ -697,24 +699,23 @@ bool    cmd_line_filter(vty_t* vty, variant_stack_t* params)
     cli_assemble_line(params, 1, expression, 511);
 
     char buf[512] = {0};
-    char* ch = vty->input;
+    char* ch = NULL;
     int n = 0;
 
     do
     {
-        if(0 != *ch)
-        {
-            *ch = 0;
-        }
-
-        n = vty->read_cb(vty, ch);
+        n = vty->read_cb(vty);
+        ch = byte_buffer_get_read_ptr(vty->read_buffer);
         while(ch[0] != 0xa && ch[0] != 0xd && ch[0] != (char)EOF)
         {
+            byte_buffer_adjust_read_pos(vty->read_buffer, n);
             strcat(buf, ch);
             memset(ch, 0, n);
-            n = vty->read_cb(vty, ch);
+            n = vty->read_cb(vty);
+            ch = byte_buffer_get_read_ptr(vty->read_buffer);
         }
-        
+        byte_buffer_reset(vty->read_buffer);
+
         if(strstr(buf, expression) != NULL)
         {
             vty_write(vty->stored_vty, "%s%s", buf, VTY_NEWLINE(vty->stored_vty));

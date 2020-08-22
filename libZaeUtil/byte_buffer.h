@@ -4,6 +4,7 @@ typedef struct byte_buffer_t byte_buffer_t;
 
 byte_buffer_t* byte_buffer_init(int size);
 void           byte_buffer_free(byte_buffer_t* buffer);
+void           byte_buffer_reset(byte_buffer_t* buffer);
 void           byte_buffer_grow(byte_buffer_t* buffer, int required_len);
 void           byte_buffer_append(byte_buffer_t* buffer, const char* data, int len);
 void           byte_buffer_pack(byte_buffer_t* buffer);

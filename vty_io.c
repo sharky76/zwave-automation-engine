@@ -14,17 +14,17 @@
 #include "socket.h"
 
 bool    file_write_cb(vty_t* vty);
-int     file_read_cb(vty_t* vty, char* str);
+int     file_read_cb(vty_t* vty);
 void    file_close_cb(vty_io_data_t* vty_data);
 
 bool    std_write_cb(vty_t* vty);
-int     std_read_cb(vty_t* vty, char* str);
+int     std_read_cb(vty_t* vty);
 void    std_erase_cb(vty_t* vty);
 void    std_erase_line_cb(vty_t* vty);
 void    std_cursor_left_cb(vty_t* vty);
 void    std_cursor_right_cb(vty_t* vty);
 
-int     http_read_cb(vty_t* vty, char* str);
+int     http_read_cb(vty_t* vty);
 bool    http_write_cb(vty_t* vty);
 bool    http_flush_cb(vty_t* vty);
 void    http_free_priv_cb(vty_t* vty);
@@ -118,14 +118,15 @@ bool    file_write_cb(vty_t* vty)
     return n == 1;
 }
 
-int   file_read_cb(vty_t* vty, char* str)
+int   file_read_cb(vty_t* vty)
 {
     char ch = 0;
             
     //*str = malloc(sizeof(char));
-    *str = fgetc(vty->data->desc.file);
+    ch = fgetc(vty->data->desc.file);
+    byte_buffer_append(vty->read_buffer, &ch, 1);
 
-    if(*str == (char)EOF)
+    if(ch == (char)EOF)
     {
         return -1;
     }
@@ -153,11 +154,13 @@ bool    std_write_cb(vty_t* vty)
     return n != -1;
 }
 
-int   std_read_cb(vty_t* vty, char* str)
+int   std_read_cb(vty_t* vty)
 {
     //*str = calloc(1, sizeof(char));
-
-    return read(fileno(vty->data->desc.io_pair[IN]), str, 1);
+    char ch;
+    int n = read(fileno(vty->data->desc.io_pair[IN]), &ch, 1);
+    byte_buffer_append(vty->read_buffer, &ch, 1);
+    return 1;
 }
 
 void std_erase_cb(vty_t* vty)
@@ -180,7 +183,7 @@ void    std_cursor_right_cb(vty_t* vty)
     vty_write(vty, "\33[1C");
 }
 
-int   http_read_cb(vty_t* vty, char* str)
+int   http_read_cb(vty_t* vty)
 {
     int socket = vty->data->desc.socket;
     http_vty_priv_t* http_priv = (http_vty_priv_t*)vty->priv;
@@ -194,7 +197,7 @@ int   http_read_cb(vty_t* vty, char* str)
 
     if(ret > 0)
     {
-        int resp_len = http_server_read_request(http_priv, str);
+        int resp_len = http_server_read_request(http_priv, vty->read_buffer);
         
         if(0 != resp_len && http_priv->resp_code == HTTP_RESP_OK)
         {

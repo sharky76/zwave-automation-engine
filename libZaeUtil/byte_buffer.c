@@ -26,6 +26,11 @@ void           byte_buffer_free(byte_buffer_t* buffer)
     free(buffer);
 }
 
+void           byte_buffer_reset(byte_buffer_t* buffer)
+{
+    buffer->read_pos = buffer->write_pos = 0;
+}
+
 void           byte_buffer_grow(byte_buffer_t* buffer, int required_len)
 {
     int adj_len = required_len - byte_buffer_spare_len(buffer);

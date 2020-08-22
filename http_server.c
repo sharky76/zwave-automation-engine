@@ -33,7 +33,7 @@
 DECLARE_LOGGER(HTTPServer)
 
 char*       request_get_data(const char* request);
-int       request_create_command(const char* req_url, char* buffer);
+int       request_create_command(const char* req_url, byte_buffer_t* buffer);
 int         header_find_value(const char* name, struct phr_header* headers, int header_size);
 
 typedef struct http_event_context_t
@@ -82,7 +82,7 @@ void http_request_handle_connect_event(event_pump_t* pump, int fd, void* context
     event_dispatcher_register_handler(pump, session_sock, context_data->private_event_handler, &vty_nonblock_write_event, (void*)vty_sock);
 }
 
-int http_server_read_request(http_vty_priv_t* http_priv, char* buffer)
+int http_server_read_request(http_vty_priv_t* http_priv, byte_buffer_t* buffer)
 {
     int j, file_fd;
 	long i, ret, len;
@@ -311,44 +311,46 @@ void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* 
     http_priv->headers_size--;
 }
 
-int       request_create_command(const char* req_url, char* buffer)
+int       request_create_command(const char* req_url, byte_buffer_t* buffer)
 {
     //char* command = strdup(req_url);
-    strcpy(buffer, req_url);
+    char command_buffer[2048] = {0};
+    strcpy(command_buffer, req_url);
 
     for(int i = 0; i < strlen(req_url); i++) 
     { 
 		if(req_url[i] == '/') 
         { 
-			buffer[i] = ' ';
+			command_buffer[i] = ' ';
 		}
 	}
 
     // expression spaces will be encoded as %20 - we need to revert them back to ' '
     // we will try to do in-place conversion...
-    int body_len = strlen(buffer);
+    int body_len = strlen(command_buffer);
     int string_index = 0;
     for(int i = 0; i < body_len; i++,string_index++) 
     {
         if(i+2 < body_len)
         {
-            if(buffer[i] == '%' && buffer[i+1] == '2' && buffer[i+2] == '0')
+            if(command_buffer[i] == '%' && command_buffer[i+1] == '2' && command_buffer[i+2] == '0')
             {
                 // forward i to past-%20 place
                 i += 2;
-                buffer[i] = ' ';
+                command_buffer[i] = ' ';
             }
         }
 
         if(i != string_index)
         {
-            buffer[string_index] = buffer[i];
+            command_buffer[string_index] = command_buffer[i];
         }
     }
 
-    buffer[string_index] = '\0';
+    command_buffer[string_index] = '\0';
+    byte_buffer_append(buffer, command_buffer, strlen(command_buffer));
 
-    return strlen(buffer);
+    return byte_buffer_read_len(buffer);
 }
 
 char*       request_get_data(const char* request)

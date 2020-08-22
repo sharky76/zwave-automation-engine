@@ -70,7 +70,7 @@ typedef struct http_vty_priv_t
 void   http_server_create(int port, void (*on_read)(event_pump_t*,int, void*));
 void http_request_handle_connect_event(event_pump_t* pump, int fd, void* context);
 void*  http_server_create_context(void (*http_event_read_handler)(event_pump_t* pump,int, void*));
-int http_server_read_request(http_vty_priv_t* http_priv, char* buffer);
+int http_server_read_request(http_vty_priv_t* http_priv, byte_buffer_t* buffer);
 
 void   http_server_prepare_response_headers(http_vty_priv_t* http_priv, int content_length);
 
