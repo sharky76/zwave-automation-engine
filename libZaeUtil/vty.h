@@ -38,7 +38,7 @@ typedef struct vty_t
 {
     vty_type type;
     bool    (*write_cb)(struct vty_t*);
-    int     (*read_cb)(struct vty_t*, char* str);
+    int     (*read_cb)(struct vty_t*);
     bool    (*flush_cb)(struct vty_t*);
     void    (*erase_char_cb)(struct vty_t*); // erase last char
     void    (*erase_line_cb)(struct vty_t*);
@@ -52,7 +52,6 @@ typedef struct vty_t
     bool    multi_line;
     char    multiline_stop_char;
     char*   buffer;
-    char*   input;
     int     cursor_pos;
     char*   banner;
     int     buf_size;
@@ -70,8 +69,8 @@ typedef struct vty_t
     bool    shutdown;
     bool    is_authenticated;
     bool    in_use;
-    int16_t term_width;
-    int16_t term_height;
+    uint16_t term_width;
+    uint16_t term_height;
     bool    is_interactive;
     void*   priv;
     struct vty_t*  stored_vty;
@@ -104,6 +103,7 @@ void    vty_set_history_enabled(vty_t* vty, bool is_enabled);
 void    vty_insert_char(vty_t* vty, char ch);
 void    vty_append_char(vty_t* vty, char ch);
 void    vty_append_string(vty_t* vty, const char* format, ...);
+void    vty_append_size_string(vty_t* vty, int size, const char* format, ...);
 void    vty_erase_char(vty_t* vty);
 void    vty_redisplay(vty_t* vty, const char* new_buffer);
 void    vty_clear_buffer(vty_t* vty);

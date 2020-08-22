@@ -22,6 +22,7 @@ DECLARE_LOGGER(EventLog)
 
 void event_log_entry_to_string(variant_t* entry_var, char** string)
 {
+    *string = calloc(256, sizeof(char));
     event_log_entry_t* e = VARIANT_GET_PTR(event_log_entry_t, entry_var);
     sprintf(*string, "[%s] %s (%d.%d.%d) %s", 
                     resolver_name_from_node_id(e->node_id),
@@ -57,12 +58,12 @@ void    event_log_add_event(event_log_entry_t* event_entry)
     event_entry->timestamp = time(NULL);
     variant_t* entry_variant = variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &delete_event_log_entry);
     stack_push_front(event_log_handle.event_log_list, entry_variant);
-    char* event_buf = calloc(256, sizeof(char));
+    char* event_buf;
     if(variant_to_string(entry_variant, &event_buf))
     {
         LOG_INFO(EventLog, event_buf);
+        free(event_buf);
     }
-    free(event_buf);
 
     event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
     event_pump_send_event(pump, EventLogEvent, (void*)event_entry, NULL);
@@ -93,7 +94,7 @@ variant_stack_t* event_log_get_tail(int lines)
 
     stack_for_each_range(event_log_handle.event_log_list, 0, lines, event_entry_var)
     {
-        stack_push_back(result_list, variant_clone(event_entry_var));
+        stack_push_front(result_list, variant_clone(event_entry_var));
     }
 
     return result_list;
