@@ -9,6 +9,7 @@
 #include <math.h>
 #include <logger.h>
 #include "vdev_manager.h"
+#include "vector_utils.h"
 
 /*
 While there are tokens to be read:

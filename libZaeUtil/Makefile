@@ -31,7 +31,7 @@ COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/timer_pump.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
 	$(OUTDIR)/vty.o $(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o \
-	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o
+	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o $(OUTDIR)/vector_utils.o
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
@@ -40,7 +40,7 @@ ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/timer_pump.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
 	$(OUTDIR)/vty.o $(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o \
-	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o \
+	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o $(OUTDIR)/vector_utils.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 
@@ -70,7 +70,25 @@ clean:
 	$(RM) -f $(OBJ)
 
 # Clean this project and all dependencies
-cleanall: clean
+cleanall: clean testclean
+
+TESTOUTDIR=$(OUTDIR)/test
+TESTS=$(wildcard test/*.c)
+TESTOBJS = $(patsubst %.c, $(OUTDIR)/%, $(TESTS))
+TEST_COMPILE=/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-gcc -g -Wl,-Rlibs/ "-D_GNU_SOURCE" -O2 -fPIC -std=c99 -L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf -L$(OUTDIR)/ -L../../../z-way-devel/lib -lzway -lzcommons -lpthread -lxml2 -lz -lm -lcrypto -larchive -llzma -lnettle -lacl -lattr -llzo2 -lbz2 -lcurl -ljson-c -ldl -lZaeUtil -lpthread -lcurl -ljson-c -o $@ $(CFG_INC) $<
+
+test: $(info Building tests [${TESTS}] -> [${TESTOBJS}]) all $(TESTOUTDIR) testclean $(TESTOBJS)
+
+$(TESTOBJS):
+	$(TEST_COMPILE) $(patsubst Debug/test/%, test/%.c, $@)
+	-scp $@ osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
+	
+$(TESTOUTDIR):
+	$(MKDIR) -p "$(TESTOUTDIR)"
+
+testclean: 
+	$(RM) -f $(TESTOBJS)
+
 endif
 
 #
@@ -90,7 +108,7 @@ COMMON_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/timer_pump.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
 	$(OUTDIR)/vty.o $(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o \
-	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o
+	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o $(OUTDIR)/vector_utils.o
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/event_dispatcher.o $(OUTDIR)/event_log.o \
@@ -99,7 +117,7 @@ ALL_OBJ=$(OUTDIR)/base64.o $(OUTDIR)/cli.o $(OUTDIR)/curl_util.o \
 	$(OUTDIR)/socket.o $(OUTDIR)/socket_pump.o $(OUTDIR)/stack.o \
 	$(OUTDIR)/timer_pump.o $(OUTDIR)/variant.o $(OUTDIR)/vdev.o \
 	$(OUTDIR)/vty.o $(OUTDIR)/zway_json.o $(OUTDIR)/crc32.o \
-	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o \
+	$(OUTDIR)/hash.o $(OUTDIR)/byte_buffer.o $(OUTDIR)/vector.o $(OUTDIR)/vector_utils.o \
 	-L/home/alex/pidev/pitools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/libc/lib/arm-linux-gnueabihf \
 	-lpthread -lcurl -ljson-c 
 
@@ -130,4 +148,5 @@ clean:
 
 # Clean this project and all dependencies
 cleanall: clean
+
 endif

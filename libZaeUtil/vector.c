@@ -64,6 +64,15 @@ void vector_push_front(vector_t* vector, variant_t* value)
     {
         vector->last = vector->first;
     }
+    else if(vector->last->prev == NULL)
+    {
+        vector->last->prev = new_item;
+    }
+    
+    if(0 < vector->count)
+    {
+        new_item->next->prev = new_item;
+    }
 
     vector->count++;
 }
