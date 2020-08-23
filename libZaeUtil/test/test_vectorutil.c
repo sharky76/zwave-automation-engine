@@ -9,7 +9,6 @@ void main()
     vector_t* new_vec = vector_from_string(c, '.');
 
     printf("vector count = %d\n", new_vec->count);
-    EXPECT_EQ(variant_get_string(vector_pop_front(new_vec)), "12");
 
     for(int i = 0; i < 3; i++)
     {

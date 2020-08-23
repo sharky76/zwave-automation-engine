@@ -40,8 +40,7 @@ void vector_push_back(vector_t* vector, variant_t* value)
     
     if(0 == vector->count)
     {
-        vector->last = new_item;
-        vector->first = vector->last;
+        vector->first = vector->last = new_item;
     }
     else
     {
@@ -55,26 +54,20 @@ void vector_push_back(vector_t* vector, variant_t* value)
 
 void vector_push_front(vector_t* vector, variant_t* value)
 {
-    vector_item_t* new_item = (vector_item_t*)calloc(1, sizeof(vector_item_t));
-    new_item->next = vector->first;
-    vector->first = new_item;
-    new_item->value = value;
-    
     if(0 == vector->count)
     {
-        vector->last = vector->first;
+        vector_push_back(vector, value);
     }
-    else if(vector->last->prev == NULL)
+    else
     {
-        vector->last->prev = new_item;
-    }
-    
-    if(0 < vector->count)
-    {
-        new_item->next->prev = new_item;
-    }
+        vector_item_t* new_item = (vector_item_t*)calloc(1, sizeof(vector_item_t));
+        new_item->next = vector->first;
+        vector->first->prev = new_item;
+        vector->first = new_item;
+        new_item->value = value;
 
-    vector->count++;
+        vector->count++;
+    }
 }
 
 variant_t* vector_pop_front(vector_t* vector)
