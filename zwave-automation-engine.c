@@ -366,7 +366,6 @@ int main (int argc, char *argv[])
         {
             // Ok, zway is started, now lets do local initialization
 
-            // Then, load automation scripts descriptor files
             if(NULL != eventlog_name)
             {
                 setup_event_log(eventlog_name);

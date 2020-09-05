@@ -5,6 +5,7 @@ bool    socket_write_cb(vty_t* vty);
 int     socket_read_cb(vty_t* vty);
 bool    socket_flush_cb(vty_t* vty);
 void    socket_erase_cb(vty_t* vty);
+void    socket_delete_cb(vty_t* vty);
 void    socket_erase_line_cb(vty_t* vty);
 void    socket_cursor_left_cb(vty_t* vty);
 void    socket_cursor_right_cb(vty_t* vty);

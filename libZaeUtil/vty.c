@@ -15,6 +15,7 @@ USING_LOGGER(General)
 #define HISTORY_START -1
 #define KEY_TAB 0x09
 #define KEY_BACKSPACE 0x7f
+#define KEY_DEL 0x7e
 #define KEY_ESC 0x1b
 #define KEY_BRACKET 0x5b
 #define KEY_UP_ARROW 0x41
@@ -86,11 +87,6 @@ void vty_free(vty_t *vty)
     LOG_DEBUG(General, "Deleting VTY %p", vty);
     logger_unregister_target(vty);
 
-    /*if(NULL != vty->flush_cb)
-    {
-        vty->flush_cb(vty);
-    }*/
-
     if (vty->data->close_cb)
     {
         vty->data->close_cb(vty->data);
@@ -107,7 +103,7 @@ void vty_free(vty_t *vty)
     stack_free(vty->history);
     stack_free(vty->completions);
     byte_buffer_free(vty->write_buffer);
-    //byte_buffer_free(vty->read_buffer);
+    byte_buffer_free(vty->read_buffer);
     free(vty);
 }
 
@@ -197,6 +193,8 @@ char *vty_read(vty_t *vty)
     {
         char* ch = byte_buffer_get_read_ptr(vty->read_buffer);
 
+        //printf("vty.c: read char: %s (int: %d)\n", ch, (int)*ch);
+
         if (vty->iac_started)
         {
             /* do nothing */
@@ -255,89 +253,80 @@ char *vty_read(vty_t *vty)
         }
         else if (ch[0] == KEY_TAB) // tab
         {
-            if (!vty->command_completion_started)
+            vty_set_completions(vty);
+
+            if (NULL != vty->completions)
             {
-                vty_set_completions(vty);
-
-                //printf("Show 1 completiing for %s\r\n", vty->buffer);
-
-                if (NULL != vty->completions)
+                if (vty->completions->count == 1)
                 {
-                    if (vty->completions->count == 1)
-                    {
-                        variant_stack_t *cmd_stack = create_cmd_vec(vty->buffer);
-                        variant_t *incomplete_cmd = stack_pop_back(cmd_stack);
-                        variant_t *complete_cmd = stack_pop_front(vty->completions);
+                    variant_stack_t *cmd_stack = create_cmd_vec(vty->buffer);
+                    variant_t *incomplete_cmd = stack_pop_back(cmd_stack);
+                    variant_t *complete_cmd = stack_pop_front(vty->completions);
 
-                        // Redisplay the completed command
-                        for (int i = 0; i < strlen(variant_get_string(incomplete_cmd)); i++)
+                    // Redisplay the completed command
+                    for (int i = 0; i < strlen(variant_get_string(incomplete_cmd)); i++)
+                    {
+                        vty_erase_char(vty);
+                    }
+
+                    const char *complete_cmd_string = variant_get_string(complete_cmd);
+                    vty_append_string(vty, complete_cmd_string);
+
+                    vty_append_char(vty, ' ');
+                    variant_free(incomplete_cmd);
+                    variant_free(complete_cmd);
+                    stack_free(vty->completions);
+                    vty->completions = NULL;
+                    stack_free(cmd_stack);
+                }
+                else
+                {
+                    int word_count = 0;
+                    vty_write(vty, VTY_NEWLINE(vty));
+
+                    // Display all possible completions...
+                    // and remember the shortest completion for later...
+                    int completion_len = 0;
+                    char *shortest_completion = NULL;
+
+                    stack_for_each(vty->completions, matching_command)
+                    {
+                        vty_write(vty, "%-25s", variant_get_string(matching_command));
+                        if (word_count++ >= 3)
                         {
-                            vty_erase_char(vty);
+                            vty_write(vty, VTY_NEWLINE(vty));
+                            word_count = 0;
                         }
 
-                        const char *complete_cmd_string = variant_get_string(complete_cmd);
-                        vty_append_string(vty, complete_cmd_string);
-
-                        vty_append_char(vty, ' ');
-                        variant_free(incomplete_cmd);
-                        variant_free(complete_cmd);
-                        stack_free(vty->completions);
-                        vty->completions = NULL;
-                        stack_free(cmd_stack);
+                        if (strlen(variant_get_string(matching_command)) < completion_len || completion_len == 0)
+                        {
+                            completion_len = strlen(variant_get_string(matching_command));
+                            shortest_completion = (char *)variant_get_string(matching_command);
+                        }
                     }
-                    else
-                    {
-                        vty->command_completion_started = true;
-                    }
-                }
-            }
-            else
-            {
-                vty->command_completion_started = false;
-                int word_count = 0;
-                vty_write(vty, VTY_NEWLINE(vty));
 
-                // Display all possible completions...
-                // and remember the shortest completion for later...
-                int completion_len = 0;
-                char *shortest_completion = NULL;
-
-                stack_for_each(vty->completions, matching_command)
-                {
-                    vty_write(vty, "%-25s", variant_get_string(matching_command));
-                    if (word_count++ >= 3)
+                    if (word_count > 0)
                     {
                         vty_write(vty, VTY_NEWLINE(vty));
-                        word_count = 0;
                     }
 
-                    if (strlen(variant_get_string(matching_command)) < completion_len || completion_len == 0)
+                    char *longest_prefix = lcp(vty->completions);
+
+                    variant_stack_t *cmd_stack = create_cmd_vec(vty->buffer);
+                    variant_t *incomplete_cmd = stack_pop_back(cmd_stack);
+
+                    if (NULL != longest_prefix)
                     {
-                        completion_len = strlen(variant_get_string(matching_command));
-                        shortest_completion = (char *)variant_get_string(matching_command);
+                        //printf("Longest prefix = %s\n", longest_prefix);
+                        stack_push_back(cmd_stack, variant_create_string(longest_prefix));
+                        vty_clear_buffer(vty);
+                        cli_assemble_line(cmd_stack, 0, vty->buffer, BUFSIZE);
                     }
+                    variant_free(incomplete_cmd);
+                    stack_free(cmd_stack);
+                    vty_redisplay(vty, vty->buffer);
+
                 }
-
-                if (word_count > 0)
-                {
-                    vty_write(vty, VTY_NEWLINE(vty));
-                }
-
-                char *longest_prefix = lcp(vty->completions);
-
-                variant_stack_t *cmd_stack = create_cmd_vec(vty->buffer);
-                variant_t *incomplete_cmd = stack_pop_back(cmd_stack);
-
-                if (NULL != longest_prefix)
-                {
-                    //printf("Longest prefix = %s\n", longest_prefix);
-                    stack_push_back(cmd_stack, variant_create_string(longest_prefix));
-                    vty_clear_buffer(vty);
-                    cli_assemble_line(cmd_stack, 0, vty->buffer, BUFSIZE);
-                }
-                variant_free(incomplete_cmd);
-                stack_free(cmd_stack);
-                vty_redisplay(vty, vty->buffer);
             }
         }
         else if (ch[0] == KEY_BACKSPACE) // backspace
@@ -385,6 +374,11 @@ char *vty_read(vty_t *vty)
                 vty->esc_sequence_started = false;
 
                 //break;
+            }
+            else if (ch[0] == KEY_DEL)
+            {
+                vty_delete_char(vty);
+                vty->esc_sequence_started = false;
             }
         }
         else if (n == 1)
@@ -603,13 +597,9 @@ void vty_erase_char(vty_t *vty)
 
             vty->buf_size--;
             vty->cursor_pos--;
-            int saved_cursor = vty->cursor_pos;
+            vty_save_cursor(vty);
             vty_redisplay(vty, newbuf);
-
-            while (vty->buf_size != 0 && vty->cursor_pos > saved_cursor)
-            {
-                vty_cursor_left(vty);
-            }
+            vty_restore_cursor(vty);
         }
         else
         {
@@ -620,9 +610,33 @@ void vty_erase_char(vty_t *vty)
             if (NULL != vty->erase_char_cb)
             {
                 vty->erase_char_cb(vty);
+                vty_save_cursor(vty);
+                vty_redisplay(vty, vty->buffer);
+                vty_restore_cursor(vty);
             }
         }
     }
+}
+
+void vty_delete_char(vty_t *vty)
+{
+    if(vty->cursor_pos == vty->buf_size) return;
+
+    for(int i = vty->cursor_pos; i < vty->buf_size-1; i++)
+    {
+        vty->buffer[i] = vty->buffer[i+1];
+    }
+
+    vty->buffer[vty->buf_size-1] = 0;
+    vty->buf_size--;
+    if(vty->cursor_pos > vty->buf_size)
+    {
+        vty->cursor_pos = vty->buf_size;
+    }
+
+    vty_save_cursor(vty);
+    vty_redisplay(vty, vty->buffer);
+    vty_restore_cursor(vty);
 }
 
 void vty_redisplay(vty_t *vty, const char *new_buffer)
@@ -655,6 +669,24 @@ void vty_redisplay(vty_t *vty, const char *new_buffer)
             vty->cursor_pos = vty->buf_size;
             vty_write(vty, vty->buffer);
         }
+    }
+}
+
+void vty_save_cursor(vty_t* vty)
+{
+    vty->saved_cursor_pos = vty->cursor_pos;
+}
+
+void vty_restore_cursor(vty_t* vty)
+{
+    while(vty->cursor_pos > vty->saved_cursor_pos)
+    {
+        vty_cursor_left(vty);
+    }
+
+    while(vty->cursor_pos < vty->saved_cursor_pos)
+    {
+        vty_cursor_right(vty);
     }
 }
 

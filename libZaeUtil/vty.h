@@ -40,7 +40,8 @@ typedef struct vty_t
     bool    (*write_cb)(struct vty_t*);
     int     (*read_cb)(struct vty_t*);
     bool    (*flush_cb)(struct vty_t*);
-    void    (*erase_char_cb)(struct vty_t*); // erase last char
+    void    (*erase_char_cb)(struct vty_t*); // erase last char (backspace)
+    void    (*delete_char_cb)(struct vty_t*); // delete char under cursor
     void    (*erase_line_cb)(struct vty_t*);
     void    (*show_history_cb)(struct vty_t*);
     void    (*cursor_left_cb)(struct vty_t*);
@@ -53,6 +54,7 @@ typedef struct vty_t
     char    multiline_stop_char;
     char*   buffer;
     int     cursor_pos;
+    int     saved_cursor_pos;
     char*   banner;
     int     buf_size;
     bool    error;
@@ -61,7 +63,6 @@ typedef struct vty_t
     int     history_index;  // 0 - most recent entry
     bool    history_enabled;
     cli_node_t* current_node;
-    bool    command_completion_started;
     bool    esc_sequence_started;
     bool    iac_started;
     variant_stack_t* completions;
@@ -105,6 +106,7 @@ void    vty_append_char(vty_t* vty, char ch);
 void    vty_append_string(vty_t* vty, const char* format, ...);
 void    vty_append_size_string(vty_t* vty, int size, const char* format, ...);
 void    vty_erase_char(vty_t* vty);
+void    vty_delete_char(vty_t* vty);
 void    vty_redisplay(vty_t* vty, const char* new_buffer);
 void    vty_clear_buffer(vty_t* vty);
 void    vty_show_history(vty_t* vty);
@@ -124,4 +126,6 @@ bool    vty_in_use(vty_t* vty);
 void    vty_store_vty(vty_t* vty, vty_t* stored_vty);
 void    vty_nonblock_write_event(event_pump_t* pump, int fd, void* context);
 void    vty_set_pump(vty_t* vty, event_pump_t* pump);
+void    vty_save_cursor(vty_t* vty);
+void    vty_restore_cursor(vty_t* vty);
 event_pump_t* vty_get_pump(vty_t* vty);

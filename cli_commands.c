@@ -56,6 +56,7 @@ bool    cmd_list_command_classes(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_config_save(vty_t* vty, variant_stack_t* params);
 bool    cmd_controller_config_restore(vty_t* vty, variant_stack_t* params);
+bool    cmd_controller_set_suc_node(vty_t* vty, variant_stack_t* params);
 
 bool    cmd_help(vty_t* vty, variant_stack_t* params);
 bool    cmd_set_banner(vty_t* vty, variant_stack_t* params);
@@ -91,6 +92,10 @@ cli_command_t root_command_list[] = {
     {"controller learn-mode start|stop|start-nwi",            cmd_controller_set_learn_mode, "Start learn mode"},
     {"controller save-config",                                cmd_controller_config_save, "Save controller configuration"},
     {"controller restore-config",                             cmd_controller_config_restore, "Restore controller configuration"},
+    {"controller suc node-id INT", cmd_controller_set_suc_node, "Set SUC node"},
+    {"controller suc node-id INT enable-sis", cmd_controller_set_suc_node, "Set SUC and SIS node"},
+    {"no controller suc node-id INT", cmd_controller_set_suc_node, "Disable SUC node"},
+
     //{"controller learn-mode stop",            cmd_controller_set_learn_mode, "Stop learn mode"},
     {"show controller queue",        cmd_show_controller_queue,   "Display the contents of controller job queue"},
     {"list command-class",          cmd_list_command_classes,    "List all supported command classes"},
@@ -478,6 +483,29 @@ bool    cmd_controller_exclusion_mode(vty_t* vty, variant_stack_t* params)
     }
 
     return (err == 0);
+}
+
+bool    cmd_controller_set_suc_node(vty_t* vty, variant_stack_t* params)
+{
+    bool enable_suc = true;
+    bool enable_sis = false;
+    uint8_t nodeId = 0;
+
+    if(strcmp(variant_get_string(stack_peek_at(params, 0)), "no") == 0)
+    {
+        enable_suc = false;
+        nodeId = variant_get_int(stack_peek_at(params, 4));
+    }
+    else 
+    {
+        if(params->count == 5 && strcmp(variant_get_string(stack_peek_at(params, 4)), "enable-sis") == 0)
+        {
+            enable_sis = true;
+        }
+        nodeId = variant_get_int(stack_peek_at(params, 3));
+    }
+
+    zway_fc_set_suc_node_id(zway, nodeId, enable_suc, enable_sis, NULL, NULL, NULL);
 }
 
 bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params)

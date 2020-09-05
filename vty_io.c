@@ -20,6 +20,7 @@ void    file_close_cb(vty_io_data_t* vty_data);
 bool    std_write_cb(vty_t* vty);
 int     std_read_cb(vty_t* vty);
 void    std_erase_cb(vty_t* vty);
+void    std_delete_cb(vty_t* vty);
 void    std_erase_line_cb(vty_t* vty);
 void    std_cursor_left_cb(vty_t* vty);
 void    std_cursor_right_cb(vty_t* vty);
@@ -43,20 +44,16 @@ void    vty_io_config(vty_t* vty)
     switch(vty->type)
     {
     case VTY_FILE:
-        //rl_instream = vty->data->desc.file;
-        //rl_outstream = vty->data->desc.file;
         vty->write_cb = file_write_cb;
         vty->read_cb = file_read_cb;
         vty->is_interactive = false;
         vty->data->close_cb = file_close_cb;
-
-        //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_STD:
-        //rl_callback_handler_install (vty->prompt, cb_linehandler);
         vty->write_cb = std_write_cb;
         vty->read_cb = std_read_cb;
         vty->erase_char_cb = std_erase_cb;
+        vty->delete_char_cb = std_delete_cb;
         vty->erase_line_cb = std_erase_line_cb;
         vty->cursor_left_cb = std_cursor_left_cb;
         vty->cursor_right_cb = std_cursor_right_cb;
@@ -67,7 +64,6 @@ void    vty_io_config(vty_t* vty)
 
         vty->term_height = w.ws_row;
         vty->term_width = w.ws_col;
-        //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     case VTY_HTTP:
         vty->write_cb = NULL;
@@ -77,7 +73,6 @@ void    vty_io_config(vty_t* vty)
         http_vty_priv_t* http_priv = calloc(1, sizeof(http_vty_priv_t));
         http_priv->request = calloc(1, sizeof(http_request_t));
         http_priv->request->buffer = byte_buffer_init(HTTP_REQUEST_BUFSIZE);
-        //http_priv->response = byte_buffer_init(HTTP_REQUEST_BUFSIZE);
         http_priv->resp_code = HTTP_RESP_OK;
         http_priv->response_header = byte_buffer_init(HTTP_RESPONSE_HEADERS_SIZE);
         vty->priv = http_priv;
@@ -90,16 +85,11 @@ void    vty_io_config(vty_t* vty)
         vty->read_cb = socket_read_cb;
         vty->flush_cb = socket_flush_cb;
         vty->erase_char_cb = socket_erase_cb;
+        vty->delete_char_cb = socket_delete_cb;
         vty->erase_line_cb = socket_erase_line_cb;
         vty->cursor_left_cb = socket_cursor_left_cb;
         vty->cursor_right_cb = socket_cursor_right_cb;
         vty->data->close_cb = socket_close_cb;
-
-        //char iac_sga_buf[3] = {255, 251, 3};
-        
-        //socket_write_cb(vty, cmd_will_cr, 3);
-        
-        //vty->buffer = calloc(BUFSIZE, sizeof(char));
         break;
     }
 }
@@ -165,7 +155,12 @@ int   std_read_cb(vty_t* vty)
 
 void std_erase_cb(vty_t* vty)
 {
-    vty_write(vty, "\b \b");
+    vty_write(vty, "\x8");
+}
+
+void std_delete_cb(vty_t* vty)
+{
+    vty_write(vty, "\x7f");
 }
 
 void    std_erase_line_cb(vty_t* vty)
@@ -278,58 +273,6 @@ bool    http_flush_cb(vty_t* vty)
         retVal = true;
     }
 
-
-    /*
-    int ret = socket_send_v(vty_get_pump(vty), socket, iov, 2, byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(http_priv->response));
-    
-    if(-1 == ret)
-    {
-        printf("HTTP send failed, unregestering socket!\n");
-        event_dispatcher_unregister_handler(vty_get_pump(vty), vty->data->desc.socket, &vty_free, (void*)vty);
-    }
-    else if(ret == byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(http_priv->response))
-    {
-        byte_buffer_adjust_read_pos(http_priv->response, byte_buffer_read_len(http_priv->response));
-        byte_buffer_pack(http_priv->response);
-        byte_buffer_adjust_read_pos(http_priv->response_header, byte_buffer_read_len(http_priv->response_header));
-        byte_buffer_pack(http_priv->response_header);
-
-        http_set_response(http_priv, HTTP_RESP_NONE);
-        vty->buf_size = 0;
-        *vty->buffer = 0;
-        retVal = true;
-
-        printf("HTTP send complete\n");
-    }
-    else 
-    {
-        printf("Partial data sent: %d out of %d\n", ret, byte_buffer_read_len(http_priv->response_header) + byte_buffer_read_len(http_priv->response));
-        if(ret >= byte_buffer_read_len(http_priv->response_header))
-        {
-            int remaining = ret - byte_buffer_read_len(http_priv->response_header);
-
-            if(byte_buffer_read_len(http_priv->response_header) > 0)
-            {
-                byte_buffer_adjust_read_pos(http_priv->response_header, byte_buffer_read_len(http_priv->response_header));
-            }
-
-            if(byte_buffer_read_len(http_priv->response) > 0)
-            {
-                byte_buffer_adjust_read_pos(http_priv->response, remaining);
-            }
-
-            http_set_response(http_priv, HTTP_RESP_NONE);
-        }
-        else
-        {
-            byte_buffer_adjust_read_pos(http_priv->response_header, ret);
-        }
-
-        retVal = true;
-    }
-    */
-    
-    
     return retVal;
 }
 

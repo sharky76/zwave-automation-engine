@@ -153,7 +153,12 @@ bool    socket_flush_cb(vty_t* vty)
 
 void    socket_erase_cb(vty_t* vty)
 {
-    vty_write(vty, "\b \b");
+    vty_write(vty, "\x8");
+}
+
+void    socket_delete_cb(vty_t* vty)
+{
+    vty_write(vty, "\x7f");
 }
 
 void    socket_erase_line_cb(vty_t* vty)
