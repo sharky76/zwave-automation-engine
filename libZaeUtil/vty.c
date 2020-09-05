@@ -684,7 +684,7 @@ void vty_restore_cursor(vty_t* vty)
         vty_cursor_left(vty);
     }
 
-    while(vty->cursor_pos < vty->saved_cursor_pos)
+    while(vty->cursor_pos < vty->saved_cursor_pos && vty->cursor_pos < vty->buf_size)
     {
         vty_cursor_right(vty);
     }
