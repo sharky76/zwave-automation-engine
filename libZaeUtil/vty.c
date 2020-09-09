@@ -145,7 +145,7 @@ bool vty_write(vty_t *vty, const char *format, ...)
     va_start(args, format);
 
     byte_buffer_vsnprintf(vty->write_buffer, format, args);
-
+    va_end(args);
     bool retVal = (NULL != vty->write_cb) ? vty->write_cb(vty) : true;
 
     return retVal;
@@ -546,22 +546,9 @@ void vty_append_string(vty_t *vty, const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    /*char buf[BUFSIZE + 1] = {0};
-    int len = vsnprintf(buf, BUFSIZE, format, args);
 
-    if (vty->buf_size + len < BUFSIZE)
-    {
-        strncpy(vty->buffer + vty->buf_size, buf, len);
-        vty->buf_size += len;
-        vty->cursor_pos = vty->buf_size;
-
-        if (vty->echo)
-        {
-            vty_write(vty, buf);
-        }
-    }*/
-
-    vty_append_size_string(vty, BUFSIZE, format, args);
+    vty_append_size_string(vty, BUFSIZE-1, format, args);
+    va_end(args);
 }
 
 void vty_append_size_string(vty_t* vty, int size, const char* format, ...)
@@ -570,6 +557,7 @@ void vty_append_size_string(vty_t* vty, int size, const char* format, ...)
     va_start(args, format);
     char buf[BUFSIZE + 1] = {0};
     int len = vsnprintf(buf, size+1, format, args);
+    va_end(args);
 
     if (vty->buf_size + len < BUFSIZE)
     {

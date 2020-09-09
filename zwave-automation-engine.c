@@ -337,8 +337,8 @@ int main (int argc, char *argv[])
     if(r == NoError)
     {
         LOG_INFO(General, "Zway API initialized");
-        event_log_init();
         event_dispatcher_init();
+        event_log_init();
         resolver_init();
         cli_init();
         service_manager_init(global_config.services_prefix);

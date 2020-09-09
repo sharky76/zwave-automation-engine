@@ -184,7 +184,9 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             json_object_object_add(json_resp, "data_holder", dh_name_obj);
             new_entry->event_data = strdup(json_object_to_json_string_ext(json_resp, JSON_C_TO_STRING_PLAIN));
             json_object_put(json_resp);
-            event_log_add_event(new_entry);
+            //event_log_add_event(new_entry);
+
+            event_pump_send_event(event_data->event_pump, EventLogNewEvent, (void*)new_entry, NULL);
             //free(json_resp);
         }
     }

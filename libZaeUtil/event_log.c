@@ -37,14 +37,26 @@ void delete_event_log_entry(void* arg)
     free(e);
 }
 
+void event_log_on_new_event(event_pump_t* pump, int event_id, void* data, void* context)
+{
+    event_log_entry_t* event_entry = (event_log_entry_t*)data;
+    LOG_DEBUG(EventLog, "Adding new event from pump");
+    event_log_add_event(event_entry);
+}
+
 void    event_log_init()
 {
     event_log_handle.event_log_list = stack_create();
     event_log_handle.limit = 10000;
     variant_register_converter_string(DT_EVENT_LOG_ENTRY, event_log_entry_to_string);
 
+    event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
+    event_dispatcher_register_handler(pump, EventLogNewEvent, event_log_on_new_event, NULL);
+
     LOG_INFO(EventLog, "Event log initialized");
 }
+
+
 
 void    event_log_add_event(event_log_entry_t* event_entry)
 {

@@ -36,6 +36,7 @@ cli_node_t*     sensor_descriptor_node;
 
 cli_command_t   sensor_root_list[] = {
     {"list sensor",                             cmd_sensor_show_nodes,     "List sensors"},
+    {"list sensor node-id INT",                 cmd_sensor_show_nodes, "Show sensor command classes information"},
     {"list sensor brief",                       cmd_sensor_show_node_info, "Show sensor nodes information"},
     {"show sensor name WORD",              cmd_sensor_info,           "Display sensor data"},
     {"show sensor node-id INT",            cmd_sensor_info_noname,           "Display sensor data"},
@@ -119,6 +120,12 @@ bool    cmd_sensor_info_noname(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_sensor_show_nodes(vty_t* vty, variant_stack_t* params)
 {
+    uint8_t node_id = 0;
+    if(params->count == 4)
+    {
+        node_id = variant_get_int(stack_peek_at(params, 3));
+    }
+
     ZWDevicesList node_array;
     node_array = zway_devices_list(zway);
 
@@ -127,7 +134,7 @@ bool    cmd_sensor_show_nodes(vty_t* vty, variant_stack_t* params)
     zdata_acquire_lock(ZDataRoot(zway));
     while(node_array[i])
     {
-        if(node_array[i] != 1)
+        if(node_array[i] != 1 && (node_id == 0 || node_id == node_array[i]))
         {
             ZWBOOL is_failed = TRUE;
             ZDataHolder dh = zway_find_device_data(zway, node_array[i], "isFailed");

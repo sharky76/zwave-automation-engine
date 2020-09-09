@@ -23,6 +23,7 @@ typedef enum
     VdevDataChangeEvent,
     SensorDataChangeEvent,
     DeviceAddedEvent,
-    CommandDataReadyEvent
+    CommandDataReadyEvent,
+    EventLogNewEvent
 } e_events;
 
