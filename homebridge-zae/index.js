@@ -280,7 +280,7 @@ ZAEPlatform.prototype = {
 						.setCharacteristic(Characteristic.Model, deviceDescriptor.command_classes[index].dh.model || 
 																 deviceDescriptor.deviceTypeString || 
 																 deviceDescriptor.name)
-						.setCharacteristic(Characteristic.SerialNumber, serialNumber);
+						.setCharacteristic(Characteristic.SerialNumber, deviceDescriptor.node_id + '-' + serialNumber);
 							
 					this.serviceList.push(service);
 					break;
