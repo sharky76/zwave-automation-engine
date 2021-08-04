@@ -692,12 +692,15 @@ ZAEPlatform.prototype = {
 						dh:6,
 						valueHolder: "event",
 						convert:function(value) { 
-							if(value == 1) {
+							if(value == 3 || value == 1 || value == 9) {
 								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.SECURED);
 								return Characteristic.LockCurrentState.SECURED;
-							} else if (value == 2){
+							} else if (value == 4 || value == 2){
 								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.UNSECURED);
 								return Characteristic.LockCurrentState.UNSECURED;
+							} else if (value == 11) {
+								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.JAMMED);
+								return Characteristic.LockCurrentState.JAMMED;
 							} else {
 								return Characteristic.LockCurrentState.UNKNOWN;
 							}
@@ -885,8 +888,7 @@ ZAEPlatform.prototype = {
 					break;
 					/*case 'LockMechanism':
 						var service = new Service.LockMechanism(this.name);
-						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
-
+						service.subtype = "node"+this.nodeId+"instance"+commandClass.instance+"LockMechanism";
 
 						service.getCharacteristic(Characteristic.LockCurrentState).on('get', this.getSensorValue.bind(
 							{
@@ -896,7 +898,7 @@ ZAEPlatform.prototype = {
 								instance:commandClass.instance,
 								commandClass: 113,
 								convert:function(value) { 
-									if(value == 1) {
+									if(value == 3) {
 										return Characteristic.LockCurrentState.SECURED;
 									} else {
 										return Characteristic.LockCurrentState.UNSECURED;
@@ -914,7 +916,7 @@ ZAEPlatform.prototype = {
 								dh:6,
 								valueHolder: "event",
 								convert:function(value) { 
-									if(value == 1) {
+									if(value == 3) {
 										return Characteristic.LockCurrentState.SECURED;
 									} else {
 										return Characteristic.LockCurrentState.UNSECURED;

@@ -387,6 +387,7 @@ char *vty_read(vty_t *vty)
         }
         else
         {
+            ch[n] = 0;
             vty_append_size_string(vty, n, ch);
             break;
         }
