@@ -635,12 +635,32 @@ ZAEPlatform.prototype = {
 					instance:commandClass.instance,
 					commandClass: commandClass.id,
 					convert:function(value) { 
-						if(value == 255) {
+						if(value == 255 ) {
 							return Characteristic.LockCurrentState.SECURED;
 						} else if(value == 0) {
 							return Characteristic.LockCurrentState.UNSECURED;
 						} else {
-							return Characteristic.LockCurrentState.UNKNOWN;
+							// Need to read event:
+							return "alternative";
+						}
+					},
+					alternativeBindings: {
+						commandClass: 113,
+						dh:6,
+						valueHolder: "event",
+						convert:function(value) { 
+							if(value == 3 || value == 1 || value == 9) {
+								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.SECURED);
+								return Characteristic.LockCurrentState.SECURED;
+							} else if (value == 4 || value == 2 || value == 6){
+								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.UNSECURED);
+								return Characteristic.LockCurrentState.UNSECURED;
+							} else if (value == 11) {
+								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.JAMMED);
+								return Characteristic.LockCurrentState.JAMMED;
+							} else {
+								return Characteristic.LockCurrentState.UNKNOWN;
+							}
 						}
 					}
 				}));
@@ -674,7 +694,7 @@ ZAEPlatform.prototype = {
 					dh:"mode",
 					valueHolder:"mode",
 					convert:function(value) {
-						if(value == 255) {
+						if(value == 255 || value == 1) {
 							return Characteristic.LockCurrentState.SECURED;
 						} else if(value == 0) {
 							return Characteristic.LockCurrentState.UNSECURED;
@@ -695,11 +715,11 @@ ZAEPlatform.prototype = {
 							if(value == 3 || value == 1 || value == 9) {
 								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.SECURED);
 								return Characteristic.LockCurrentState.SECURED;
-							} else if (value == 4 || value == 2){
+							} else if (value == 4 || value == 2 || value == 6){
 								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.UNSECURED);
 								return Characteristic.LockCurrentState.UNSECURED;
 							} else if (value == 11) {
-								service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.JAMMED);
+								//service.getCharacteristic(Characteristic.LockTargetState).updateValue(Characteristic.LockTargetState.JAMMED);
 								return Characteristic.LockCurrentState.JAMMED;
 							} else {
 								return Characteristic.LockCurrentState.UNKNOWN;
@@ -1192,10 +1212,39 @@ ZAEPlatform.prototype = {
 						sensorValue = this.convert(sensorValue);
 					}
 
-					this.accessory.log("Sensor " + this.accessory.nodeId + " CC " + this.commandClass + " value is %s", sensorValue);
-					callback(null, sensorValue);
+					if(sensorValue != "alternative")
+					{
+						this.accessory.log("Sensor " + this.accessory.nodeId + " CC " + this.commandClass + " value is %s", sensorValue);
+						callback(null, sensorValue);
+					}
+					else
+					{
+						this.accessory.getAlternativeSensorValue(this, callback);
+					}
 				}
 			}.bind(this));
+		},
+		getAlternativeSensorValue : function(obj, callback) {
+			var url = 'http://' + obj.accessory.config.zae_host + ':' + obj.accessory.config.zae_port + '/rest/v1/devices/'
+				+ obj.accessory.nodeId + '/' + obj.instance + '/' + obj.alternativeBindings.commandClass + '/' + obj.alternativeBindings.dh;
+				obj.accessory.log("Getting Sensor value: " + url);
+			
+				obj.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {
+				if (error) {
+					obj.accessory.log('HTTP get power function failed: %s', error.message);
+					callback(error);
+				} else {
+					var json = JSON.parse(responseBody);
+
+					var sensorValue = (obj.alternativeBindings.valueHolder)? json.device_data[obj.alternativeBindings.valueHolder] : json.device_data.val;
+					if(typeof obj.alternativeBindings.convert === 'function') {
+						sensorValue = obj.alternativeBindings.convert(sensorValue);
+					}
+
+					obj.accessory.log("Sensor " + obj.accessory.nodeId + " CC " + obj.alternativeBindings.commandClass + " value is %s", sensorValue);
+					callback(null, sensorValue);
+				}
+			}.bind(obj));
 		},
 		getAlarmV1Value: function(callback) {
 			//this.dh = 1;
