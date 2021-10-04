@@ -52,7 +52,7 @@ cli_command_t   sensor_root_list[] = {
 };
 
 cli_command_t sensor_descriptor_command_list[] = {
-    {"command-class INT role MotionSensor|ContactSensor|LeakSensor|OccupancySensor|GarageDoorOpener|Lightbulb|SmokeSensor|LockMechanism|Disabled", cmd_sensor_descriptor_set_role, "Set sensor role"},
+    {"command-class INT role MotionSensor|ContactSensor|LeakSensor|OccupancySensor|GarageDoorOpener|Lightbulb|SmokeSensor|LockMechanism|Outlet|Disabled", cmd_sensor_descriptor_set_role, "Set sensor role"},
     {"name LINE",                                                  cmd_sensor_descriptor_set_name, "Set sensor name"},
     {"instance INT name LINE",                                     cmd_sensor_descriptor_set_instance_name, "Set name for a sensor instance"},
     {"no instance INT name LINE",                                     cmd_sensor_descriptor_remove_instance_name, "Remove name for a sensor instance"},

@@ -80,7 +80,7 @@ void python_manager_init(const char* python_dir)
     PyImport_AppendInittab("logging", &PyInit_logging);
     PyImport_AppendInittab("events", &PyInit_events);
     PyImport_AppendInittab("command", &PyInit_command);
-
+    
 	Py_Initialize();
     LOG_DEBUG(PythonManager, "Interpreter verison: %s", Py_GetVersion());
     PyRun_SimpleString("import sys");

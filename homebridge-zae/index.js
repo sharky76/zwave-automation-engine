@@ -115,7 +115,8 @@ ZAEPlatform.prototype = {
 			ContactSensor: Characteristic.ContactSensorState,
 			MotionSensor: Characteristic.MotionDetected,
 			LeakSensor:Characteristic.LeakDetected,
-			SmokeSensor: Characteristic.SmokeDetected
+			SmokeSensor: Characteristic.SmokeDetected,
+			Outlet: Characteristic.OutletInUse
 		};
 
 		/*this.NotificationForService = {
@@ -140,7 +141,8 @@ ZAEPlatform.prototype = {
 					this.createMultiSensorAccessory(deviceDescriptor.command_classes[index]);
 					break;
 				case 37: // Switch
-					var service = new Service.Switch(this.name)
+					var serviceType = (deviceDescriptor.descriptor.roles && deviceDescriptor.descriptor.roles[37]) || "Switch";
+					var service = new Service[serviceType](this.name)
 					service.getCharacteristic(Characteristic.On)
 						.on('get', this.getBinaryState.bind(
 							{

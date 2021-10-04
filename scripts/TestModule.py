@@ -183,7 +183,7 @@ def on_data_event(context, type, node_id, instance_id, command_id, dataHolder):
 					updateMotionSensorState(context, node_id, command_id, dataHolder)
 				elif command_id == 49:
 					updateSensorEnvironment(context, node_id, command_id, dataHolder)
-			elif node_id == 263:
+			elif node_id == 263 and instance_id == 0:
 				updateVirtualButtonState(context, node_id, command_id, dataHolder)
 
 def on_timer_event(context):

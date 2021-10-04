@@ -29,6 +29,7 @@ variant_t*   command_class_eval_alarm_sensor(const char* method, device_record_t
 variant_t*   command_class_eval_barrier(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_switch_multilevel(const char* method, device_record_t* record, va_list args);
 variant_t*   command_class_eval_door_lock(const char* method, device_record_t* record, va_list args);
+variant_t*   command_class_eval_meter(const char* method, device_record_t* record, va_list args);
 
 typedef struct zway_data_read_ctx_t
 {
@@ -110,6 +111,10 @@ static command_class_t command_class_table[] = {
                         "Set", 1, "Lock mode",
                         NULL, 0, NULL},
                         &command_class_eval_door_lock},
+    {0x32, "Meter", {"Get", 1, "scale id",
+                     "Reset", 0, "",
+                     NULL, 0, NULL},
+                    &command_class_eval_meter},
 
     /* other standard command classes */
     {0, NULL,   {NULL, 0, NULL},   NULL}
@@ -716,6 +721,23 @@ variant_t*   command_class_eval_door_lock(const char* method, device_record_t* r
     return ret_val;
 }
 
+variant_t*   command_class_eval_meter(const char* method, device_record_t* record, va_list args)
+{
+    variant_t* ret_val = NULL;
+
+    if(strcmp(method, "Get") == 0)
+    {
+        variant_t* param = va_arg(args, variant_t*);
+        ZWError err = zway_cc_meter_get(zway, record->nodeId, record->instanceId, variant_get_int(param), NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+    else if(strcmp(method, "Reset") == 0)
+    {
+        ZWError err = zway_cc_meter_reset(zway, record->nodeId, record->instanceId, NULL, NULL, NULL);
+        ret_val = variant_create_bool(err == NoError);
+    }
+    return ret_val;
+}
 
 variant_t*  command_class_exec(command_class_t* cmd_class, const char* cmd_name, device_record_t* record, ...)
 {
