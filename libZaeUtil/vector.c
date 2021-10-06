@@ -126,7 +126,7 @@ variant_t* vector_peek_back(vector_t* vector)
 
 variant_t* vector_peek_at(vector_t* vector, int index)
 {
-    if(0 == vector->count) return NULL;
+    if(index >= vector->count) return NULL;
 
     vector_item_t* item = vector->first;
     int i = 0;
@@ -215,6 +215,20 @@ bool vector_is_exists(vector_t* vector, bool (*match_cb)(variant_t*, void* arg),
     return false;
 }
 
+variant_t* vector_find(vector_t* vector, bool (*match_cb)(variant_t*, void* arg), void* arg)
+{
+    if(0 == vector->count) return NULL;
+
+    vector_item_t* item = vector->first;
+    while(item)
+    {
+        if(match_cb(item->value, arg)) return item->value;
+        item = item->next;
+    }
+
+    return NULL;
+}
+
 bool vector_is_empty(vector_t* vector)
 {
     return vector->count == 0;
@@ -233,4 +247,16 @@ void vector_unlock(vector_t* vector)
 bool vector_trylock(vector_t* vector)
 {
     return pthread_mutex_trylock(&vector->lock) == 0;
+}
+
+void vector_for_each(vector_t* vector, void (*visitor)(variant_t*, void*), void* arg)
+{
+    if(0 == vector->count) return;
+
+    vector_item_t* item = vector->first;
+    while(item)
+    {
+        visitor(item->value, arg);
+        item = item->next;
+    }
 }

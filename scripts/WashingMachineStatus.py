@@ -29,7 +29,7 @@ def on_device_event(context, device_id):
 		logging.log_debug(
 		    context.id, "ON_DEVICE_EVENT: device_id = " + str(device_id))
 
-		if device_id == 32 or device_id == 263:
+		if device_id == 32 or device_id == 264:
 			events.register_data_events(context.id, device_id)
 
 
@@ -40,10 +40,6 @@ def on_data_event(context, type, node_id, instance_id, command_id, dataHolder):
         if node_id == 32:
             if command_id == 50:
                 updatePowerMeter(context, node_id, command_id, dataHolder)
-
-            #elif node_id == 263 and instance_id == 1 and command_id == 37:
-            #    updateVirtualButtonState(
-            #        context, node_id, command_id, dataHolder)
 
 
 def updatePowerMeter(context, node_id, command_id, dataHolder):
@@ -62,14 +58,7 @@ def updatePowerMeter(context, node_id, command_id, dataHolder):
 
 def updateButtonState(context):
     if context.watt == 0 and context.watt_prev > 1:
-        command.set_boolean(context.id, 263, 1, 37, True)
+        command.set_boolean(context.id, 264, 0, 48, True)
     else:
-        command.set_boolean(context.id, 263, 1, 37, False)
+        command.set_boolean(context.id, 264, 0, 48, False)
 
-
-def updateVirtualButtonState(context, node_id, command_id, dataHolder):
-	val = json.loads(dataHolder)
-	if val['level']:
-		command.set_boolean(context.id, 263, 1, 37, True)
-	else:
-		command.set_boolean(context.id, 263, 1, 37, False)

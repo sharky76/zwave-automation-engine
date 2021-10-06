@@ -111,23 +111,19 @@ void show_vdev_full_helper(vdev_t* vdev, void* arg)
     {
         device_record_t* record = VARIANT_GET_PTR(device_record_t, instance_variant);
         int instance = record->instanceId;
-        char* description = record->deviceName;
-        
-        if(NULL != descriptor)
-        {
-            description = descriptor->name[instance];
-        }
         
         stack_for_each(vdev->supported_method_list, vdev_command_variant)
         {
             vdev_command_t* vdev_command = VARIANT_GET_PTR(vdev_command_t, vdev_command_variant);
             if(vdev_command->is_command_class)
             {
+                device_record_t* instance_record = resolver_resolve_id(vdev->vdev_id, instance, vdev_command->command_id);
+
                 vty_write(vty, "%-10d%-20s%-10d%-30s%-13d%s%s", 
                                 vdev->vdev_id, 
                                 vdev->name, 
                                 instance, 
-                                description, 
+                                (NULL == instance_record)? vdev->name : instance_record->deviceName, 
                                 vdev_command->command_id, 
                                 vdev_command->help, VTY_NEWLINE(vty));
             }

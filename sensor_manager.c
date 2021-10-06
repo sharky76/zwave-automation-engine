@@ -7,16 +7,24 @@
 void delete_sensor_descriptor(void* arg)
 {
     sensor_descriptor_t* sensor_desc = (sensor_descriptor_t*)arg;
-
-    for(int i = 0; i < 256; i++)
-    {
-        free(sensor_desc->name[i]);
-    }
-    variant_hash_free(sensor_desc->sensor_roles);
-    variant_hash_free(sensor_desc->alarm_roles);
-    variant_hash_free(sensor_desc->supported_notification_set);
-
+    vector_free(sensor_desc->instances);
     free(sensor_desc);
+}
+
+void delete_sensor_instance(void* arg)
+{
+    sensor_instance_t* instance = (sensor_instance_t*)arg;
+    free(instance->name);
+    variant_hash_free(instance->sensor_roles);
+    variant_hash_free(instance->alarm_roles);
+    free(instance);
+}
+
+bool match_instance(variant_t* value, void* arg)
+{
+    sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, value);
+    int instance_id = (int)arg;
+    return instance->instance_id == instance_id;
 }
 
 hash_table_t*   sensor_descriptor_table;
@@ -25,13 +33,20 @@ sensor_descriptor_t*    sensor_descriptor_new(int node_id)
 {
     sensor_descriptor_t* sensor_desc = malloc(sizeof(sensor_descriptor_t));
     sensor_desc->node_id = node_id;
-    sensor_desc->sensor_roles = variant_hash_init();
-    sensor_desc->alarm_roles = variant_hash_init();
-    sensor_desc->multi_instance = false;
-    memset(sensor_desc->name, 0, sizeof(char*)*256);
-    sensor_desc->supported_notification_set = variant_hash_init();
+    sensor_desc->instances = vector_create();
 
     return sensor_desc;
+}
+
+sensor_instance_t* sensor_instance_new(int instance_id)
+{
+    sensor_instance_t* instance = malloc(sizeof(sensor_instance_t));
+    instance->instance_id = instance_id;
+    instance->sensor_roles = variant_hash_init();
+    instance->alarm_roles = variant_hash_init();
+    instance->name = NULL;
+
+    return instance;
 }
 
 void    sensor_manager_init()
@@ -39,117 +54,73 @@ void    sensor_manager_init()
     sensor_descriptor_table = variant_hash_init();
 }
 
-void    sensor_manager_set_role(int node_id, int command_id, const char* role)
+void    sensor_manager_set_role(int node_id, int instance_id, int command_id, const char* role)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
 
-    if(NULL == sensor_desc_variant)
-    {
-        sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
-        //sensor_desc->role = strdup(role);
-
-        variant_hash_insert(sensor_desc->sensor_roles, 
-                            command_id, 
-                            variant_create_string(strdup(role)));
-
-        variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
-    }
-    else
+    if(NULL != sensor_desc_variant)
     {
         sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
 
-        variant_hash_remove(sensor_desc->sensor_roles, command_id);
-        variant_hash_insert(sensor_desc->sensor_roles, 
-                            command_id, 
-                            variant_create_string(strdup(role)));
+        variant_t* instance_variant = vector_find(sensor_desc->instances, &match_instance, (void*)instance_id);
+        if(NULL != instance_variant)
+        {
+            sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, instance_variant);
+            variant_hash_remove(instance->sensor_roles, command_id);
+            variant_hash_insert(instance->sensor_roles, 
+                                command_id, 
+                                variant_create_string(strdup(role)));
+        }
     }
 }
 
-void    sensor_manager_set_alarm_role(int node_id, int alarm_id, const char* role)
+void    sensor_manager_set_alarm_role(int node_id, int instance_id, int alarm_id, const char* role)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
 
-    if(NULL == sensor_desc_variant)
-    {
-        sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
-        //sensor_desc->role = strdup(role);
-
-        variant_hash_insert(sensor_desc->alarm_roles, 
-                            alarm_id, 
-                            variant_create_string(strdup(role)));
-
-        variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
-    }
-    else
+    if(NULL != sensor_desc_variant)
     {
         sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
+        variant_t* instance_variant = vector_find(sensor_desc->instances, &match_instance, (void*)instance_id);
+        if(NULL != instance_variant)
+        {
+            sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, instance_variant);
 
-        variant_hash_remove(sensor_desc->alarm_roles, alarm_id);
-        variant_hash_insert(sensor_desc->alarm_roles, 
-                            alarm_id, 
-                            variant_create_string(strdup(role)));
+            variant_hash_remove(instance->alarm_roles, alarm_id);
+            variant_hash_insert(instance->alarm_roles, 
+                                alarm_id, 
+                                variant_create_string(strdup(role)));
+        }
     }
-}
-
-void    sensor_manager_set_name(int node_id, const char* name)
-{
-    sensor_manager_set_instance_name(node_id, 0, name);
 }
 
 void    sensor_manager_set_instance_name(int node_id, int instance_id, const char* name)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
 
-    if(NULL == sensor_desc_variant)
-    {
-        sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
-        sensor_desc->name[instance_id] = strdup(name);
-
-        variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
-    }
-    else
+    if(NULL != sensor_desc_variant)
     {
         sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
-        free(sensor_desc->name[instance_id]);
-        sensor_desc->name[instance_id] = strdup(name);
 
-        if(instance_id > 0)
+        variant_t* instance_variant = vector_find(sensor_desc->instances, &match_instance, (void*)instance_id);
+        if(NULL != instance_variant)
         {
-            sensor_desc->multi_instance = true;
+            sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, instance_variant);
+            free(instance->name);
+            instance->name = strdup(name);
         }
     }
 }
 
-void    sensor_manager_remove_instance_name(int node_id, int instance_id, const char* name)
+void    sensor_manager_remove_instance(int node_id, int instance_id)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
     sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
-    free(sensor_desc->name[instance_id]);
-    sensor_desc->name[instance_id] = NULL;
-}
 
-void    sensor_manager_set_notification(int node_id, const char* notification)
-{
-    variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
-
-    if(NULL == sensor_desc_variant)
+    variant_t* instance_variant = vector_find(sensor_desc->instances, &match_instance, (void*)instance_id);
+    if(NULL != instance_variant)
     {
-        sensor_descriptor_t* sensor_desc = sensor_descriptor_new(node_id);
-        variant_hash_insert(sensor_desc->supported_notification_set, 
-                            crc32(0, notification, strlen(notification)), 
-                            variant_create_string(strdup(notification)));
-        variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
-    }
-    else
-    {
-        sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
-
-        uint32_t key = crc32(0, notification, strlen(notification));
-        variant_hash_remove(sensor_desc->supported_notification_set, key);
-
-        variant_hash_insert(sensor_desc->supported_notification_set, 
-                            crc32(0, notification, strlen(notification)), 
-                            variant_create_string(strdup(notification)));
+        vector_remove(sensor_desc->instances, instance_variant);
     }
 }
 
@@ -163,6 +134,18 @@ void    sensor_manager_add_descriptor(int node_id)
         variant_hash_insert(sensor_descriptor_table, node_id, variant_create_ptr(DT_PTR, sensor_desc, &delete_sensor_descriptor));
     }
 }
+
+void    sensor_manager_add_instance(int node_id, int instance_id)
+{
+    sensor_descriptor_t* desc = sensor_manager_get_descriptor(node_id);
+
+    if(NULL != desc)
+    {
+        sensor_instance_t* instance = sensor_instance_new(instance_id);
+        vector_push_back(desc->instances, variant_create_ptr(DT_PTR, instance, &delete_sensor_instance));
+    }
+}
+
 
 void    sensor_manager_remove_descriptor(int node_id)
 {
@@ -181,6 +164,23 @@ sensor_descriptor_t*   sensor_manager_get_descriptor(int node_id)
 
     return NULL;
 }
+
+sensor_instance_t* sensor_manager_get_instance(int node_id, int instance_id)
+{
+    sensor_descriptor_t* sensor_desc = sensor_manager_get_descriptor(node_id);
+
+    if(NULL != sensor_desc)
+    {
+        variant_t* instance = vector_peek_at(sensor_desc->instances, instance_id);
+        if(NULL != instance)
+        {
+            return VARIANT_GET_PTR(sensor_instance_t, instance);
+        }
+    }
+
+    return NULL;
+}
+
 
 typedef struct
 {
@@ -206,13 +206,6 @@ void    sensor_manager_for_each(void (*visitor)(sensor_descriptor_t*, void*), vo
     variant_hash_for_each(sensor_descriptor_table, call_sensor_visitor, &sensor_data);
 }
 
-void serialize_sensor_notification(char* notification, void* arg)
-{
-    struct json_object* notification_array = (struct json_object*)arg;
-
-    json_object_array_add(notification_array, json_object_new_string(notification));
-}
-
 void serialize_sensor_roles(hash_node_data_t* node_data, void* arg)
 {
     struct json_object* role_object = (struct json_object*)arg;
@@ -222,51 +215,62 @@ void serialize_sensor_roles(hash_node_data_t* node_data, void* arg)
     json_object_object_add(role_object, command_id_buf, json_object_new_string(variant_get_string(node_data->data)));
 }
 
-struct json_object*    sensor_manager_serialize(int node_id)
+void serialize_instance(variant_t* value, void* arg)
 {
-    struct json_object* result = json_object_new_object();
+    sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, value);
+
+    struct json_object* instance_obj = (struct json_object*)arg;
+    //struct json_object* result = json_object_new_object();
+
+    //struct json_object* instance_obj = json_object_new_object();
+    json_object_object_add(instance_obj, "id", json_object_new_int(instance->instance_id));
+    
+    if(NULL != instance->name)
+    {
+        json_object_object_add(instance_obj, "name", json_object_new_string(instance->name));
+    }
+
+    struct json_object* role_object = json_object_new_object();
+    variant_hash_for_each(instance->sensor_roles, serialize_sensor_roles, role_object);
+    json_object_object_add(instance_obj, "roles", role_object);
+
+    struct json_object* alarm_object = json_object_new_object();
+    variant_hash_for_each(instance->alarm_roles, serialize_sensor_roles, alarm_object);
+    json_object_object_add(instance_obj, "alarmRoles", alarm_object);
+
+    //json_object_array_add(instances_array, instance_obj);
+
+}
+
+/*struct json_object*    sensor_manager_serialize(int node_id)
+{
+    //struct json_object* result = json_object_new_object();
     sensor_descriptor_t* sensor_desc = sensor_manager_get_descriptor(node_id);
+    struct json_object* instances = json_object_new_array();
 
     if(NULL != sensor_desc)
     {
-        if(NULL != sensor_desc->name[0])
-        {   
-            struct json_object* names = json_object_new_array();
-            for(int i = 0; i < 256; i++)
-            {
-                if(NULL != sensor_desc->name[i])
-                {
-                    json_object_array_add(names, json_object_new_string(sensor_desc->name[i]));
-                }
-            }
+        vector_for_each(sensor_desc->instances, serialize_instance, (void*)instances);
 
-            json_object_object_add(result, "name", names);
-        }
+        //json_object_object_add(result, "instances", instances);
+    }
 
-        if(sensor_desc->sensor_roles->count > 0)
+    return instances;
+}*/
+
+struct json_object*    sensor_manager_serialize_instance(int node_id, int instance_id)
+{
+    sensor_descriptor_t* sensor_desc = sensor_manager_get_descriptor(node_id);
+    struct json_object* instances = json_object_new_object();
+
+    if(NULL != sensor_desc)
+    {
+        variant_t* instance_variant = vector_find(sensor_desc->instances, match_instance, (void*)instance_id);
+        if(NULL != instance_variant)
         {
-            struct json_object* role_object = json_object_new_object();
-            variant_hash_for_each(sensor_desc->sensor_roles, serialize_sensor_roles, role_object);
-
-            json_object_object_add(result, "roles", role_object);
-        }
-
-        if(sensor_desc->alarm_roles->count > 0)
-        {
-            struct json_object* role_object = json_object_new_object();
-            variant_hash_for_each(sensor_desc->alarm_roles, serialize_sensor_roles, role_object);
-
-            json_object_object_add(result, "alarmRoles", role_object);
-        }
-
-        if(sensor_desc->supported_notification_set->count > 0)
-        {
-            struct json_object* notification_array = json_object_new_array();
-            variant_hash_for_each_value(sensor_desc->supported_notification_set, char*, serialize_sensor_notification, notification_array);
-
-            json_object_object_add(result, "notifications", notification_array);
+            serialize_instance(instance_variant, (void*)instances);
         }
     }
 
-    return result;
+    return instances;
 }

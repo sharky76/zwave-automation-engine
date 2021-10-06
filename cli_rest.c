@@ -133,9 +133,14 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
     //variant_stack_t* instances = resolver_get_instances(vdev->vdev_id);
 
     //stack_for_each(instances, instance_variant)
-    for(int instance_id = 0; instance_id < 256; instance_id++)
+    
+    for(int i = 0; i < vdev_desc->instances->count; i++)
+    //for(int instance_id = 0; instance_id < 256; instance_id++)
     {
-        if(NULL != vdev_desc->name[instance_id])
+        variant_t* instance_value = vector_peek_at(vdev_desc->instances, i);
+        sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, instance_value);
+
+        if(NULL != instance->name)
         {
             //device_record_t* record = VARIANT_GET_PTR(device_record_t, instance_variant);
 
@@ -144,12 +149,12 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
             json_object_object_add(new_sensor, "type", json_object_new_string("VDEV"));
             json_object_object_add(new_sensor, "node_id", json_object_new_int(vdev_desc->node_id));
         
-            json_object_object_add(new_sensor, "instance_id", json_object_new_int(instance_id));
+            json_object_object_add(new_sensor, "instance_id", json_object_new_int(instance->instance_id));
         
-            json_object_object_add(new_sensor, "name", json_object_new_string(vdev_desc->name[instance_id]));
+            json_object_object_add(new_sensor, "name", json_object_new_string(instance->name));
             json_object_object_add(new_sensor, "isFailed", json_object_new_boolean(FALSE));
         
-            json_object_object_add(new_sensor, "descriptor", sensor_manager_serialize(vdev_desc->node_id));
+            json_object_object_add(new_sensor, "descriptor", sensor_manager_serialize_instance(vdev_desc->node_id, instance->instance_id));
         
             // Command class enumeration...
             
@@ -168,7 +173,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                     if(NULL != vdev_cmd_class)
                     {
                         // Get device record
-                        device_record_t* device_record = resolver_resolve_id(vdev_desc->node_id, instance_id, vdev_command->command_id);
+                        device_record_t* device_record = resolver_resolve_id(vdev_desc->node_id, instance->instance_id, vdev_command->command_id);
         
         
                         if(NULL == device_record)
@@ -179,7 +184,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
         
                         if(NULL != device_record)
                         {
-                            json_object_object_add(cmd_class, "instance", json_object_new_int(instance_id));
+                            json_object_object_add(cmd_class, "instance", json_object_new_int(instance->instance_id));
                             if(vdev_command->nargs != 0 || !vdev_command->is_get)
                             {
                                 json_object_put(cmd_class);
@@ -297,7 +302,7 @@ bool    cmd_get_sensors(vty_t* vty, variant_stack_t* params)
             //     json_object_object_add(new_sensor, "role", json_object_new_string(sensor_role));
             // }
 
-            json_object_object_add(new_sensor, "descriptor", sensor_manager_serialize(node_array[i]));
+            json_object_object_add(new_sensor, "descriptor", sensor_manager_serialize_instance(node_array[i], 0));
 
             json_object* command_class_array = json_object_new_array();
             json_object_object_add(new_sensor, "command_classes", command_class_array);

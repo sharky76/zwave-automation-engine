@@ -30,7 +30,10 @@ void       vector_remove_at(vector_t* vector, int index);
 
 bool       vector_is_exists(vector_t* vector, bool (*match_cb)(variant_t*, void* arg), void* arg);
 bool       vector_is_empty(vector_t* vector);
+variant_t* vector_find(vector_t* vector, bool (*match_cb)(variant_t*, void* arg), void* arg);
 
 void       vector_lock(vector_t* vector);
 void       vector_unlock(vector_t* vector);
 bool       vector_trylock(vector_t* vector);      
+
+void vector_for_each(vector_t* vector, void (*visitor)(variant_t*, void*), void* arg);

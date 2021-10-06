@@ -98,6 +98,7 @@ deps:
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/Button/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/Sensor/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd scripts/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
@@ -121,6 +122,8 @@ cleanall: clean
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/Button/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/Sensor/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif
 
 #
@@ -206,6 +209,8 @@ deps:
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/Button/;$(MAKE) -f Makefile CFG=$(CFG))
+	@(cd vdev/Sensor/;$(MAKE) -f Makefile CFG=$(CFG))
 	@(cd scripts/;$(MAKE) -f Makefile CFG=$(CFG))
 
 # Rebuild this project
@@ -229,4 +234,6 @@ cleanall: clean
 	@(cd vdev/SurveillanceStation/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd vdev/SecuritySystem/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 	@(cd vdev/BlinkCamera/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/Button/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
+	@(cd vdev/Sensor/;$(MAKE) -f Makefile cleanall CFG=$(CFG))
 endif
