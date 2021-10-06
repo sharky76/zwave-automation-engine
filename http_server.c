@@ -200,7 +200,7 @@ int http_server_read_request(http_vty_priv_t* http_priv, byte_buffer_t* buffer)
     }
 
     // Browsers really like to get favicon.ico - tell them to fuck off
-    if(strstr(http_priv->request->method, "favicon.ico") != 0)
+    if(strstr(http_priv->request->path, "favicon.ico") != 0)
     {
         http_set_response(http_priv, NOTFOUND);
         //http_server_prepare_response_headers(http_priv);

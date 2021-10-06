@@ -1168,7 +1168,7 @@ ZAEPlatform.prototype = {
 			
 			this.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {
 				if (error) {
-					this.accessory.log('HTTP get power function failed: %s', error.message);
+					this.accessory.log('HTTP get bonary state function failed: %s', error.message);
 					callback(error);
 				} else {
 					var json = JSON.parse(responseBody);
@@ -1204,7 +1204,7 @@ ZAEPlatform.prototype = {
 			
 			this.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {
 				if (error) {
-					this.accessory.log('HTTP get power function failed: %s', error.message);
+					this.accessory.log('HTTP get sensor value function failed: %s', error.message);
 					callback(error);
 				} else {
 					var json = JSON.parse(responseBody);
@@ -1233,7 +1233,7 @@ ZAEPlatform.prototype = {
 			
 				obj.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {
 				if (error) {
-					obj.accessory.log('HTTP get power function failed: %s', error.message);
+					obj.accessory.log('HTTP get sensor value function failed: %s', error.message);
 					callback(error);
 				} else {
 					var json = JSON.parse(responseBody);
@@ -1257,7 +1257,7 @@ ZAEPlatform.prototype = {
 			
 			this.accessory.platform.httpRequest(url, "", "GET", "", "", true, function(error, response, responseBody) {
 				if (error) {
-					this.accessory.log('HTTP get power function failed: %s', error.message);
+					this.accessory.log('HTTP get alarm function failed: %s', error.message);
 					callback(error);
 				} else {
 					var json = JSON.parse(responseBody);

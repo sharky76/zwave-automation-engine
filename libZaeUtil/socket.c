@@ -79,6 +79,10 @@ int socket_recv(event_pump_t* pump, int fd, byte_buffer_t* buffer)
             return -1;
         }
     }
+    else if(ret == 0)
+    {
+        return -1;
+    }
 
     byte_buffer_adjust_write_pos(buffer, ret);
 

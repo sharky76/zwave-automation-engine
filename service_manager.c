@@ -244,6 +244,8 @@ void service_manager_on_command_activation_event_new(event_pump_t* pump, int eve
         {
             LOG_ERROR(ServiceManager, "Error parsing command %s", cmd);
         }
+
+        stack_free(compiled);
     }
     else
     {
