@@ -67,7 +67,7 @@ int socket_recv(event_pump_t* pump, int fd, byte_buffer_t* buffer)
     int spare_len = byte_buffer_spare_len(buffer);
     int ret = recv(fd, byte_buffer_get_write_ptr(buffer), spare_len, MSG_DONTWAIT);
 
-    if(ret < 0)
+    if(ret <= 0)
     {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
         {
@@ -78,10 +78,6 @@ int socket_recv(event_pump_t* pump, int fd, byte_buffer_t* buffer)
             //event_dispatcher_unregister_handler(pump, fd, &socket_stop_callback, &fd)
             return -1;
         }
-    }
-    else if(ret == 0)
-    {
-        return -1;
     }
 
     byte_buffer_adjust_write_pos(buffer, ret);

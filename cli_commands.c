@@ -404,13 +404,13 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
         void* event_data;
         if(event_dispatcher_wait(DeviceAddedEvent, 260*1000, &event_data))
         {
-            vty_write(vty, "%% Discovered new device with ID: %d%s", (int)event_data, VTY_NEWLINE(vty));
+            //vty_write(vty, "%% Discovered new device with ID: %d%s", (int)event_data, VTY_NEWLINE(vty));
             LOG_INFO(CLI, "Discovered new device with ID: %d", (int)event_data);
             zway_controller_add_node_to_network(zway, FALSE);
         }
         else
         {
-            vty_write(vty, "%% No new device discovered%s", VTY_NEWLINE(vty));
+            LOG_INFO(CLI, "No new device discovered", (int)event_data);
         }
         
     }
