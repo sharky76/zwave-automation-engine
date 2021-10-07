@@ -29,7 +29,7 @@ def on_device_event(context, device_id):
 		logging.log_debug(
 		    context.id, "ON_DEVICE_EVENT: device_id = " + str(device_id))
 
-		if device_id == 32 or device_id == 264:
+		if device_id == 24 or device_id == 264:
 			events.register_data_events(context.id, device_id)
 
 
@@ -37,7 +37,7 @@ def on_data_event(context, type, node_id, instance_id, command_id, dataHolder):
     if context:
         #logging.log_debug(context.id, "Type: {}, node_id: {}, instance: {}, command: {}, data: {}".format(
         #    type, node_id, instance_id, command_id, dataHolder))
-        if node_id == 32:
+        if node_id == 24:
             if command_id == 50:
                 updatePowerMeter(context, node_id, command_id, dataHolder)
 
@@ -57,7 +57,7 @@ def updatePowerMeter(context, node_id, command_id, dataHolder):
         context.kwh = val['val']
 
 def updateButtonState(context):
-    if context.watt == 0 and context.watt_prev > 1:
+    if context.watt < 2 and context.watt_prev > 2:
         command.set_boolean(context.id, 264, 0, 48, True)
     else:
         command.set_boolean(context.id, 264, 0, 48, False)
