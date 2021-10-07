@@ -391,38 +391,6 @@ void    cli_commands_handle_http_data_event(event_pump_t* pump, int fd, void* co
     }
 }
 
-
-/*void    controller_inclusion_wait_handler(variant_t* event_data, void* context)
-{
-    vty_t* vty = (vty_t*)context;
-
-    if(NULL == event_data)
-    {
-        vty_write(vty, "%% No new device discovered%s", VTY_NEWLINE(vty));
-    }
-    else
-    {
-        vty_write(vty, "%% Discovered new device with ID: %d%s", variant_get_int(event_data), VTY_NEWLINE(vty));
-        variant_free(event_data);
-    }
-
-    zway_controller_add_node_to_network(zway, FALSE);
-}*/
-typedef struct context_t
-{
-    void* event_data;
-    bool is_found;
-    event_dispatcher_t* d;
-} context_t;
-
-void    controller_inclusion_wait_handler(event_pump_t* pump, int event_id, void* event_data, void* context)
-{
-    context_t* ctx = (context_t*)context;
-    ctx->event_data = event_data;
-    ctx->is_found = true;
-    event_dispatcher_detach();
-}
-
 bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
 {
     const char* mode = variant_get_string(stack_peek_at(params, 2));
@@ -433,18 +401,11 @@ bool    cmd_controller_inclusion_mode(vty_t* vty, variant_stack_t* params)
         err = zway_controller_add_node_to_network(zway, TRUE);
         vty_write(vty, "%% Inclusion started%s", VTY_NEWLINE(vty));
         USING_LOGGER(DeviceCallback)
-        //event_wait_async("DeviceAddedEvent", 260, controller_inclusion_wait_handler, (void*)vty);
-        
-        /*event_dispatcher_t* d = event_dispatcher_new();
-        context_t ctx = {.is_found = false, .d = d};
-        event_dispatcher_register_handler(d->get_pump(d, "EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
-        event_dispatcher_exec(d, 260*1000);
-        event_dispatcher_unregister_handler(d->get_pump(d, "EVENT_PUMP"), DeviceAddedEvent, controller_inclusion_wait_handler, (void*)&ctx);
-        */
-       void* event_data;
+        void* event_data;
         if(event_dispatcher_wait(DeviceAddedEvent, 260*1000, &event_data))
         {
             vty_write(vty, "%% Discovered new device with ID: %d%s", (int)event_data, VTY_NEWLINE(vty));
+            LOG_INFO(CLI, "Discovered new device with ID: %d", (int)event_data);
             zway_controller_add_node_to_network(zway, FALSE);
         }
         else
@@ -556,6 +517,7 @@ bool    cmd_controller_config_save(vty_t* vty, variant_stack_t* params)
             if(1 == fwrite(save_buffer, buffer_len, 1, f))
             {
                 fclose(f);
+                free(save_buffer);
                 return true;
             }
         }
@@ -566,7 +528,32 @@ bool    cmd_controller_config_save(vty_t* vty, variant_stack_t* params)
 
 bool    cmd_controller_config_restore(vty_t* vty, variant_stack_t* params)
 {
+    char config_loc[512] = {0};
+    snprintf(config_loc, 511, "%s/controller-backup.tgz", global_config.config_location);
+    byte_buffer_t* buffer = byte_buffer_init(128000);
 
+    FILE* f = fopen(config_loc, "r");
+    if(NULL != f)
+    {
+        char buf[512];
+        int n = fread(buf, 1, 511, f);
+        while(n == 511)
+        {
+            byte_buffer_append(buffer, buf, n);
+            n = fread(buf, 1, 511, f);
+        }
+
+        byte_buffer_append(buffer, buf, n);
+    }
+
+    ZWError err = zway_controller_config_restore(zway, byte_buffer_get_read_ptr(buffer), byte_buffer_read_len(buffer), true);
+    if(err != 0)
+    {
+        LOG_ERROR(CLI, "Controller config restore error: %d", err);
+    }
+
+    byte_buffer_free(buffer);
+    return true;
 }
 
 bool    cmd_controller_remove_failed_node(vty_t* vty, variant_stack_t* params)
