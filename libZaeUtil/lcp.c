@@ -23,7 +23,7 @@ char*   lcp_compare_strings(const char* str1, const char* str2)
     }
 
     int result_index = 0;
-    char* lcp_result = calloc(strlen(str1)+1, sizeof(char*));
+    char* lcp_result = calloc(strlen(str1)+1, sizeof(char));
 
     int n1 = strlen(str1);
     int n2 = strlen(str2);

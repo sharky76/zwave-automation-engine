@@ -116,6 +116,7 @@ void vty_set_prompt(vty_t *vty, const char *format, ...)
     char prompt[256] = {0};
     vsprintf(prompt, format, args);
     vty->prompt = strdup(prompt);
+    va_end(args);
 }
 
 void vty_display_prompt(vty_t *vty)
@@ -164,6 +165,8 @@ void vty_error(vty_t *vty, const char *format, ...)
     strcat(error_format_buf, buf);
     vty_write(vty, error_format_buf);
     free(error_format_buf);
+    va_end(args);
+
 }
 
 char *vty_read(vty_t *vty)

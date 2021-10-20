@@ -54,6 +54,7 @@ variant_t*  service_call_method(const char* service_name, const char* method_nam
             va_list args;
             va_start(args, method_name);
             ret = method->eval_callback(method, args);
+            va_end(args);
             break;
         }
     }
@@ -94,6 +95,8 @@ variant_t*  service_eval_method(service_method_t* method, ...)
     va_list args;
     va_start(args, method);
 
-    return method->eval_callback(method, args);
+    retVal = method->eval_callback(method, args);
+    va_end(args);
+    return retVal;
 }
 

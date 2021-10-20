@@ -80,3 +80,7 @@ util
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
+add_custom_command(TARGET zwave-automation-engine POST_BUILD
+COMMAND scp ${CMAKE_CURRENT_BINARY_DIR}/zwave-automation-engine osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
+)

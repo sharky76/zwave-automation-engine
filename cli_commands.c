@@ -472,7 +472,7 @@ bool    cmd_controller_set_suc_node(vty_t* vty, variant_stack_t* params)
 bool    cmd_controller_set_learn_mode(vty_t* vty, variant_stack_t* params)
 {
     const char* mode = variant_get_string(stack_peek_at(params, 2));
-    ZWError err;
+    ZWError err = 0;
 
     if(strcmp(mode, "start") == 0)
     {
@@ -544,6 +544,7 @@ bool    cmd_controller_config_restore(vty_t* vty, variant_stack_t* params)
         }
 
         byte_buffer_append(buffer, buf, n);
+        fclose(f);
     }
 
     ZWError err = zway_controller_config_restore(zway, byte_buffer_get_read_ptr(buffer), byte_buffer_read_len(buffer), true);

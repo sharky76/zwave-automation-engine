@@ -399,7 +399,7 @@ variant_t*   command_class_eval_binaryswitch(const char* method, device_record_t
     {
         zway_data_read_ctx_t* ctx = malloc(sizeof(zway_data_read_ctx_t));
         ctx->record = record;
-        zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, NULL, NULL, NULL/*zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx*/);
+        zway_cc_switch_binary_get(zway, record->nodeId, record->instanceId, zway_data_read_success_cb, zway_data_read_fail_cb, (void*)ctx);
 
         // Block here...
         if(!event_dispatcher_wait(CommandDataReadyEvent, 2000, NULL))

@@ -33,7 +33,7 @@ void add_to_config_list_visitor(const char* phone, void* arg)
     phone_table_visitor_t* data = (phone_table_visitor_t*)arg;
 
     char buf[128] = {0};
-    snprintf(buf, 1023, "phone-number %s", phone);
+    snprintf(buf, 127, "phone-number %s", phone);
     data->config_list[data->start_index] = strdup(buf);
     data->start_index++;
 }

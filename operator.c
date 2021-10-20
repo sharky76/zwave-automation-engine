@@ -73,6 +73,8 @@ variant_t*   op_equal(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
+
 
     return variant_create_bool(variant_compare(arg1, arg2) == 0);
 }
@@ -84,6 +86,7 @@ variant_t*   op_less(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
 
     return variant_create_bool((variant_compare(arg1, arg2) < 0));
 }
@@ -95,6 +98,7 @@ variant_t*   op_more(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
 
     return variant_create_bool(variant_compare(arg1, arg2) > 0);
 }
@@ -106,6 +110,7 @@ variant_t*   op_and(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
 
     return variant_create_bool(variant_get_bool(arg1) && variant_get_bool(arg2));
 }
@@ -117,6 +122,7 @@ variant_t*   op_or(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
 
     return variant_create_bool(variant_get_bool(arg1) || variant_get_bool(arg2));
 }
@@ -128,6 +134,7 @@ variant_t*   op_plus(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
 
     return variant_add(arg1, arg2);
 }
@@ -139,6 +146,7 @@ variant_t*   op_minus(operator_t* op, ...)
 
     variant_t* arg1 = va_arg(args, variant_t*);
     variant_t* arg2 = va_arg(args, variant_t*);
+    va_end(args);
 
     return variant_subtract(arg1, arg2);
 }
@@ -152,6 +160,8 @@ variant_t*   op_unary_minus(operator_t* op, ...)
     variant_t* arg0 = variant_create_int32(DT_INT32, 0);
     variant_t* result = variant_subtract(arg0, arg1);
     variant_free(arg0);
+    va_end(args);
+
     return result;
 }
 

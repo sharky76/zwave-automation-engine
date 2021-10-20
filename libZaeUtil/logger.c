@@ -197,6 +197,7 @@ void logger_log(logger_handle_t* handle, int id, LogLevel level, const char* for
         va_list args;
         va_start(args, format);
         valogger_log(handle, service, level, format, args);
+        va_end(args);
     }
     else
     {
@@ -224,6 +225,7 @@ void logger_log_with_func(logger_handle_t* handle, int id, LogLevel level, const
         va_list args;
         va_start(args, format);
         valogger_log(handle, service, level, new_format, args);
+        va_end(args);
         free(new_format);
     }
     else
