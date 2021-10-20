@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+get_filename_component(ProjectId ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+string(REPLACE " " "_" ProjectId ${ProjectId})
+
 FILE(GLOB LibZaeUtil *.c)
-add_library(ZaeUtil SHARED
+add_library(${ProjectId} SHARED
 ${LibZaeUtil}
 )
-set_target_properties(ZaeUtil PROPERTIES LINKER_LANGUAGE C)
+set_target_properties(${ProjectId} PROPERTIES LINKER_LANGUAGE C)
+
+add_custom_command(TARGET ${ProjectId} POST_BUILD
+COMMAND scp ${CMAKE_CURRENT_BINARY_DIR}/lib${ProjectId}.so osmc@osmc:/home/osmc/Projects/zwave-automation-engine/
+)

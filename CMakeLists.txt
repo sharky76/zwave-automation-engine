@@ -11,18 +11,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-#SET(CMAKE_C_FLAGS_DEBUG  "-c -x c \"-D_GNU_SOURCE\" -g -O0 -fPIC -std=c99")
-#SET(CMAKE_C_FLAGS_RELEASE  "-c -x c \"-D_GNU_SOURCE\" -O2 -fPIC -std=c99")
-
 message("-- ${CMAKE_BUILD_TYPE}")
 
-IF("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    message("Debug mode")
-    add_compile_options(-c -x c "-D_GNU_SOURCE" -g -fPIC -std=c99)
-ELSEIF( "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    message("Release mode")
-    add_compile_options(-c -x c "-D_GNU_SOURCE" -O2 -fPIC -std=c99)
-ENDIF()
+add_compile_options(-c -x c "-D_GNU_SOURCE" -fPIC -std=c99)
 
 SET(CMAKE_EXE_LINKER_FLAGS_Debug "-g -Wl,-Rlibs/ -Wl,--dynamic-list=${CMAKE_CURRENT_SOURCE_DIR}/exports.txt")
 SET(CMAKE_EXE_LINKER_FLAGS_Release "-Wl,-Rlibs/ -Wl,--dynamic-list=${CMAKE_CURRENT_SOURCE_DIR}/exports.txt")
