@@ -36,7 +36,7 @@ void process_query_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* query_data_array; 
             json_object_object_get_ex(obj, "data", &query_data_array);
@@ -136,13 +136,13 @@ void process_auth_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* sid_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &sid_object))
+            if(1 == json_object_object_get_ex(obj, "data", &sid_object))
             {
                 struct json_object* sid_value;
-                if(TRUE == json_object_object_get_ex(sid_object, "sid", &sid_value))
+                if(1 == json_object_object_get_ex(sid_object, "sid", &sid_value))
                 {
                     free(SS_auth_sid);
                     SS_auth_sid = strdup(json_object_get_string(sid_value));
@@ -201,13 +201,13 @@ void    process_get_info_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* data_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            if(1 == json_object_object_get_ex(obj, "data", &data_object))
             {
                 struct json_object* camera_num;
-                if(TRUE == json_object_object_get_ex(data_object, "cameraNumber", &camera_num))
+                if(1 == json_object_object_get_ex(data_object, "cameraNumber", &camera_num))
                 {
                     SS_camera_count = json_object_get_int(camera_num);
                     //json_object_put(camera_num);
@@ -268,13 +268,13 @@ void process_motion_events_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* data_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            if(1 == json_object_object_get_ex(obj, "data", &data_object))
             {
                 struct json_object* evt_cam_object;
-                if(TRUE == json_object_object_get_ex(data_object, "evt_cam", &evt_cam_object))
+                if(1 == json_object_object_get_ex(data_object, "evt_cam", &evt_cam_object))
                 {
                     json_object_object_foreach(evt_cam_object, key, value)
                     {
@@ -416,14 +416,14 @@ void process_events_info_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             //printf("process_events_info_response - success\n");
             struct json_object* data_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            if(1 == json_object_object_get_ex(obj, "data", &data_object))
             {
                 struct json_object* events_array;
-                if(TRUE == json_object_object_get_ex(data_object, "events", &events_array))
+                if(1 == json_object_object_get_ex(data_object, "events", &events_array))
                 {
                     SS_event_keeper_t* ss_event = (SS_event_keeper_t*)(arg);
                     //stack_empty(ss_event->events_info_stack);
@@ -434,50 +434,50 @@ void process_events_info_response(const json_object* obj, void* arg)
                         SS_event_info_t* ss_event_info = calloc(1, sizeof(SS_event_info_t));
 
                         struct json_object* event_id_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "eventId", &event_id_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "eventId", &event_id_obj))
                         {
                             ss_event_info->event_id = json_object_get_int(event_id_obj);
                             //printf("process_events_info_response - got event id %d\n", ss_event_info->event_id);
                         }
 
                         struct json_object* event_size_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "event_size_bytes", &event_size_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "event_size_bytes", &event_size_obj))
                         {
                             ss_event_info->event_size_bytes = json_object_get_int(event_size_obj);
                         }
 
                         struct json_object* event_path_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "path", &event_path_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "path", &event_path_obj))
                         {
                             ss_event_info->path = strdup(json_object_get_string(event_path_obj));
                         }
 
                         struct json_object* event_snapshot_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "snapshot_medium", &event_snapshot_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "snapshot_medium", &event_snapshot_obj))
                         {
                             ss_event_info->snapshot = strdup(json_object_get_string(event_snapshot_obj));
                         }
                          
                         struct json_object* event_height_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "imgHeight", &event_height_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "imgHeight", &event_height_obj))
                         {
                             ss_event_info->imgHeight = json_object_get_int(event_height_obj);
                         }
 
                         struct json_object* event_width_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "imgWidth", &event_width_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "imgWidth", &event_width_obj))
                         {
                             ss_event_info->imgWidth = json_object_get_int(event_width_obj);
                         }
 
                         struct json_object* event_start_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "startTime", &event_start_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "startTime", &event_start_obj))
                         {
                             ss_event_info->start_time = json_object_get_int(event_start_obj);
                         }
 
                         struct json_object* event_stop_obj;
-                        if(TRUE == json_object_object_get_ex(event_entry, "stopTime", &event_stop_obj))
+                        if(1 == json_object_object_get_ex(event_entry, "stopTime", &event_stop_obj))
                         {
                             ss_event_info->stop_time = json_object_get_int(event_stop_obj);
                         }
@@ -562,13 +562,13 @@ void process_camera_list_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* data_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            if(1 == json_object_object_get_ex(obj, "data", &data_object))
             {
                 struct json_object* camera_array;
-                if(TRUE == json_object_object_get_ex(data_object, "cameras", &camera_array))
+                if(1 == json_object_object_get_ex(data_object, "cameras", &camera_array))
                 {
                     struct json_object* camera_entry;
                     int cam_id;
@@ -577,7 +577,7 @@ void process_camera_list_response(const json_object* obj, void* arg)
                         camera_entry = json_object_array_get_idx(camera_array, i);
                         
                         struct json_object* camera_id_object;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "id", &camera_id_object))
+                        if(1 == json_object_object_get_ex(camera_entry, "id", &camera_id_object))
                         {
                             cam_id = json_object_get_int(camera_id_object);
                             //json_object_put(camera_id_object);
@@ -585,7 +585,7 @@ void process_camera_list_response(const json_object* obj, void* arg)
 
                         const char* snapshot_path;
                         struct json_object* snapthot_path_obj;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "snapshot_path", &snapthot_path_obj))
+                        if(1 == json_object_object_get_ex(camera_entry, "snapshot_path", &snapthot_path_obj))
                         {
                             snapshot_path = json_object_get_string(snapthot_path_obj);
                         }
@@ -595,7 +595,7 @@ void process_camera_list_response(const json_object* obj, void* arg)
                         int max_fps = 0;
                         int max_width = 0;
                         int max_height = 0;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "stm_info", &stm_info_array))
+                        if(1 == json_object_object_get_ex(camera_entry, "stm_info", &stm_info_array))
                         {
                             num_streams = json_object_array_length(stm_info_array);
                             for (int i = 0; i < num_streams; i++)
@@ -628,7 +628,7 @@ void process_camera_list_response(const json_object* obj, void* arg)
                             }
                         }
                         struct json_object* camera_name_object;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "name", &camera_name_object))
+                        if(1 == json_object_object_get_ex(camera_entry, "name", &camera_name_object))
                         {
                             // Add or update camera list table
                             variant_t* cam_entry_variant = variant_hash_get(SS_camera_info_table, cam_id);
@@ -689,19 +689,19 @@ void process_camera_stm_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* data_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            if(1 == json_object_object_get_ex(obj, "data", &data_object))
             {
                 struct json_object* camera_array;
-                if(TRUE == json_object_object_get_ex(data_object, "pathInfos", &camera_array))
+                if(1 == json_object_object_get_ex(data_object, "pathInfos", &camera_array))
                 {
                     // Only one entry at a time...
                     struct json_object* camera_entry = json_object_array_get_idx(camera_array, 0);
                     const char* stm_path;
                     struct json_object* camera_stm_path_object;
-                    if(TRUE == json_object_object_get_ex(camera_entry, "unicastPath", &camera_stm_path_object))
+                    if(1 == json_object_object_get_ex(camera_entry, "unicastPath", &camera_stm_path_object))
                     {
                         stm_path = json_object_get_string(camera_stm_path_object);
 
@@ -741,13 +741,13 @@ void process_camera_info_response(const json_object* obj, void* arg)
     json_object_object_get_ex(obj, "success", &success_response);
     if(NULL != success_response)
     {
-        if(TRUE == json_object_get_boolean(success_response))
+        if(1 == json_object_get_boolean(success_response))
         {
             struct json_object* data_object;
-            if(TRUE == json_object_object_get_ex(obj, "data", &data_object))
+            if(1 == json_object_object_get_ex(obj, "data", &data_object))
             {
                 struct json_object* camera_array;
-                if(TRUE == json_object_object_get_ex(data_object, "cameras", &camera_array))
+                if(1 == json_object_object_get_ex(data_object, "cameras", &camera_array))
                 {
                     variant_t* cam_entry_variant = variant_hash_get(SS_camera_info_table, cam_id);
                     if(NULL != cam_entry_variant)
@@ -756,28 +756,28 @@ void process_camera_info_response(const json_object* obj, void* arg)
 
                         struct json_object* camera_entry = json_object_array_get_idx(camera_array, 0);
                         struct json_object* host_object;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "host", &host_object))
+                        if(1 == json_object_object_get_ex(camera_entry, "host", &host_object))
                         {
                             cam_info->host = strdup(json_object_get_string(host_object));
                         }
 
                         struct json_object* port_object;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "port", &port_object))
+                        if(1 == json_object_object_get_ex(camera_entry, "port", &port_object))
                         {
                             cam_info->port = json_object_get_int(port_object);
                         }
 
                         struct json_object* detail_info;
-                        if(TRUE == json_object_object_get_ex(camera_entry, "detailInfo", &detail_info))
+                        if(1 == json_object_object_get_ex(camera_entry, "detailInfo", &detail_info))
                         {
                             struct json_object* username_object;
-                            if(TRUE == json_object_object_get_ex(detail_info, "camUserName", &username_object))
+                            if(1 == json_object_object_get_ex(detail_info, "camUserName", &username_object))
                             {
                                 cam_info->username = strdup(json_object_get_string(username_object));
                             }
 
                             struct json_object* password_object;
-                            if(TRUE == json_object_object_get_ex(detail_info, "camPassWord", &password_object))
+                            if(1 == json_object_object_get_ex(detail_info, "camPassWord", &password_object))
                             {
                                 cam_info->password = strdup(json_object_get_string(password_object));
                             }

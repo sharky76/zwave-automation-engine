@@ -383,7 +383,7 @@ const char**  sms_data_get_country_code_list()
 {
     const char** country_code_array;
     struct json_object* countries;
-    if(json_object_object_get_ex(sms_carrier_object, "countries", &countries) == TRUE)
+    if(json_object_object_get_ex(sms_carrier_object, "countries", &countries) == 1)
     {
         int length = json_object_object_length(countries);
 
@@ -404,10 +404,10 @@ const char**  sms_data_get_carrier_list(const char* country_code)
 {
     const char** carrier_array;
     struct json_object* carriers;
-    if(json_object_object_get_ex(sms_carrier_object, "sms_carriers", &carriers) == TRUE)
+    if(json_object_object_get_ex(sms_carrier_object, "sms_carriers", &carriers) == 1)
     {
         struct json_object* carriers_by_country;
-        if(json_object_object_get_ex(carriers, country_code, &carriers_by_country) == TRUE)
+        if(json_object_object_get_ex(carriers, country_code, &carriers_by_country) == 1)
         {
             int length = json_object_object_length(carriers_by_country);
             //printf("Carrier list len: %d\n", length);
@@ -430,13 +430,13 @@ const char**  sms_data_get_carrier_list(const char* country_code)
 const char*   sms_data_get_sms_gw(const char* country_code, const char* carrier)
 {
     struct json_object* carriers;
-    if(json_object_object_get_ex(sms_carrier_object, "sms_carriers", &carriers) == TRUE)
+    if(json_object_object_get_ex(sms_carrier_object, "sms_carriers", &carriers) == 1)
     {
         struct json_object* carriers_by_country;
-        if(json_object_object_get_ex(carriers, country_code, &carriers_by_country) == TRUE)
+        if(json_object_object_get_ex(carriers, country_code, &carriers_by_country) == 1)
         {
             struct json_object* sms_gw;
-            if(json_object_object_get_ex(carriers_by_country, carrier, &sms_gw) == TRUE)
+            if(json_object_object_get_ex(carriers_by_country, carrier, &sms_gw) == 1)
             {
                 struct json_object* gw_data;
                 gw_data = json_object_array_get_idx(sms_gw, 1);

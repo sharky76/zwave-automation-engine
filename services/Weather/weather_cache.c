@@ -229,7 +229,7 @@ void    weather_cache_parse_weather_entry(struct json_object* weather_entry_obj,
             {
                 struct json_object* weather_entry_obj = json_object_array_get_idx(value, i);
                 struct json_object* weather_value;
-                if(json_object_object_get_ex(weather_entry_obj, "main", &weather_value) == TRUE)
+                if(json_object_object_get_ex(weather_entry_obj, "main", &weather_value) == 1)
                 {
                     const char* weather_string = json_object_get_string(weather_value);
                     int old_len = 0;
@@ -254,12 +254,12 @@ void    weather_cache_parse_weather_entry(struct json_object* weather_entry_obj,
         else if(strcmp(key, "main") == 0)
         {
             struct json_object* temp_data;
-            if(json_object_object_get_ex(value, "temp", &temp_data) == TRUE)
+            if(json_object_object_get_ex(value, "temp", &temp_data) == 1)
             {
                 cache_entry->temp = json_object_get_double(temp_data);
             }
             struct json_object* humidity_data;
-            if(json_object_object_get_ex(value, "humidity", &humidity_data) == TRUE)
+            if(json_object_object_get_ex(value, "humidity", &humidity_data) == 1)
             {
                 cache_entry->humidity = json_object_get_int(humidity_data);
             }
@@ -267,7 +267,7 @@ void    weather_cache_parse_weather_entry(struct json_object* weather_entry_obj,
         else if(strcmp(key, "wind") == 0)
         {
             struct json_object* wind_data;
-            if(json_object_object_get_ex(value, "speed", &wind_data) == TRUE)
+            if(json_object_object_get_ex(value, "speed", &wind_data) == 1)
             {
                 cache_entry->windspeed = json_object_get_double(wind_data);
             }
@@ -275,13 +275,13 @@ void    weather_cache_parse_weather_entry(struct json_object* weather_entry_obj,
         else if(strcmp(key, "sys") == 0)
         {
             struct json_object* sunrise_data;
-            if(json_object_object_get_ex(value, "sunrise", &sunrise_data) == TRUE)
+            if(json_object_object_get_ex(value, "sunrise", &sunrise_data) == 1)
             {
                 cache_entry->sunrise = json_object_get_int(sunrise_data);
             }
 
             struct json_object* sunset_data;
-            if(json_object_object_get_ex(value, "sunset", &sunset_data) == TRUE)
+            if(json_object_object_get_ex(value, "sunset", &sunset_data) == 1)
             {
                 cache_entry->sunset = json_object_get_int(sunset_data);
             }

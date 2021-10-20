@@ -209,7 +209,7 @@ int http_server_read_request(http_vty_priv_t* http_priv, byte_buffer_t* buffer)
 
     char* request_body = calloc(http_priv->request->method_len + http_priv->request->path_len + 2, sizeof(char));
     strncat(request_body, http_priv->request->method, http_priv->request->method_len);
-    strncat(request_body, " ", 1);
+    strcat(request_body, " ");
     strncat(request_body, http_priv->request->path, http_priv->request->path_len);
 
     int command_len = request_create_command(request_body, buffer);
