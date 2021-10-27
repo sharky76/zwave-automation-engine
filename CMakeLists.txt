@@ -45,6 +45,23 @@ add_subdirectory(homebridge-zae)
 FILE(GLOB AllSrc *.c BuiltinServices/*.c)
 add_executable(zwave-automation-engine ${AllSrc})
 
+add_dependencies(zwave-automation-engine 
+Cron
+DateTime
+IFTTT
+Mail
+SMS
+Timer
+Weather
+BlinkCamera
+Button 
+SecuritySystem
+Sensor
+SurveillanceStation
+homebridge-zae
+scripts
+)
+
 target_link_libraries(zwave-automation-engine 
 ZaeUtil
 zway
@@ -67,6 +84,8 @@ python3.7m
 pthread
 util
 )
+
+set_target_properties(zwave-automation-engine  PROPERTIES LINK_FLAGS "-Wl,-Rlibs/ -Wl,--dynamic-list=${CMAKE_CURRENT_SOURCE_DIR}/exports.txt")
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
