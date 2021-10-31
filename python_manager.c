@@ -250,9 +250,10 @@ void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* d
                 Py_DECREF(pRetValue);
             }
 
-            Py_DECREF(pValue);
-            //Py_DECREF(pArgs);
-            Py_DECREF(pFunc);
+            Py_INCREF(mod_entry->context);
+            //Py_XDECREF(pValue);
+            Py_XDECREF(pArgs);
+            Py_XDECREF(pFunc);
         }
     }
 }
@@ -306,16 +307,18 @@ void    python_manager_on_data_event(event_pump_t* pump, int event_id, void* dat
                 }
                 else
                 {
-                    Py_DECREF(pRetValue);
+                    Py_XDECREF(pRetValue);
                 }
             }
 
-            Py_DECREF(devType);
-            Py_DECREF(nodeId);
-            Py_DECREF(instanceId);
-            Py_DECREF(commandId);
-            Py_DECREF(dataHolder);
-            Py_DECREF(pFunc);
+            //Py_XDECREF(devType);
+            //Py_XDECREF(nodeId);
+            //Py_XDECREF(instanceId);
+            //Py_XDECREF(commandId);
+            //Py_XDECREF(dataHolder);
+            Py_INCREF(mod_entry->context);
+            Py_XDECREF(pArgs);
+            Py_XDECREF(pFunc);
         }
     }
 }
