@@ -24,6 +24,7 @@ bool cmd_sensor_remove_descriptor(vty_t* vty, variant_stack_t* params);
 
 bool cmd_enter_sensor_instance_node(vty_t* vty, variant_stack_t* params);
 bool cmd_sensor_descriptor_set_role(vty_t* vty, variant_stack_t* params);
+bool cmd_sensor_descriptor_remove_role(vty_t* vty, variant_stack_t* params);
 bool cmd_sensor_descriptor_set_notification(vty_t* vty, variant_stack_t* params);
 bool cmd_sensor_descriptor_set_sensor_alarm(vty_t* vty, variant_stack_t* params);
 bool cmd_sensor_descriptor_set_instance_name(vty_t* vty, variant_stack_t* params);
@@ -61,6 +62,7 @@ cli_command_t sensor_descriptor_command_list[] = {
 
 cli_command_t sensor_instance_command_list[] = {
     {"command-class INT role MotionSensor|ContactSensor|LeakSensor|OccupancySensor|GarageDoorOpener|Lightbulb|SmokeSensor|LockMechanism|Outlet|Disabled", cmd_sensor_descriptor_set_role, "Set sensor role"},
+    {"no command-class INT", cmd_sensor_descriptor_remove_role, "Remove sensor role"},
     {"name LINE",                                     cmd_sensor_descriptor_set_instance_name, "Set name for a sensor instance"},
     {"sensor-alarm INT role Tampered|LeakDetected|Smoke|CO|CO2|Heat|LockOperation",  cmd_sensor_descriptor_set_sensor_alarm, "Set sensor alarm notification"},
     {NULL,                   NULL,                          NULL}
@@ -507,6 +509,13 @@ bool cmd_sensor_descriptor_set_role(vty_t* vty, variant_stack_t* params)
     const char* role = variant_get_string(stack_peek_at(params, 3));
 
     sensor_manager_set_role(sensor_descriptor_node->context_data.int_data, sensor_instance_node->context_data.int_data, command_id, role);
+}
+
+bool cmd_sensor_descriptor_remove_role(vty_t* vty, variant_stack_t* params)
+{
+    int command_id = variant_get_int(stack_peek_at(params, 2));
+
+    sensor_manager_remove_role(sensor_descriptor_node->context_data.int_data, sensor_instance_node->context_data.int_data, command_id);
 }
 
 bool cmd_sensor_descriptor_set_instance_name(vty_t* vty, variant_stack_t* params)

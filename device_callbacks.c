@@ -78,10 +78,9 @@ void command_added_callback(const ZWay zway, ZWDeviceChangeType type, ZWBYTE nod
                 {
                     snprintf(default_name, MAX_DEVICE_NAME_LEN-1, "%d.%d.%s", node_id, instance_id, cmd_class->command_name);
                 }
-                else
-                {
-                    snprintf(default_name, MAX_DEVICE_NAME_LEN-1, "%d.%d.%d", node_id, instance_id, command_id);
-                }
+
+                // Default entry is always added
+                snprintf(default_name, MAX_DEVICE_NAME_LEN-1, "%d.%d.%d", node_id, instance_id, command_id);
 
                 LOG_ADVANCED(DeviceCallback, "Adding default name for device: %s", default_name);
                 resolver_add_entry(ZWAVE, default_name, node_id, instance_id, command_id);

@@ -74,6 +74,23 @@ void    sensor_manager_set_role(int node_id, int instance_id, int command_id, co
     }
 }
 
+void    sensor_manager_remove_role(int node_id, int instance_id, int command_id)
+{
+    variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
+
+    if(NULL != sensor_desc_variant)
+    {
+        sensor_descriptor_t* sensor_desc = VARIANT_GET_PTR(sensor_descriptor_t, sensor_desc_variant);
+
+        variant_t* instance_variant = vector_find(sensor_desc->instances, &match_instance, (void*)instance_id);
+        if(NULL != instance_variant)
+        {
+            sensor_instance_t* instance = VARIANT_GET_PTR(sensor_instance_t, instance_variant);
+            variant_hash_remove(instance->sensor_roles, command_id);
+        }
+    }
+}
+
 void    sensor_manager_set_alarm_role(int node_id, int instance_id, int alarm_id, const char* role)
 {
     variant_t* sensor_desc_variant = variant_hash_get(sensor_descriptor_table, node_id);
