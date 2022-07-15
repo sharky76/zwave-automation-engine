@@ -67,7 +67,7 @@ void python_manager_init(const char* python_dir)
     LOG_ADVANCED(PythonManager, "Initializing python manager...");
 
     event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
-    event_dispatcher_register_handler(pump, EventLogEvent, python_manager_on_data_event, NULL);
+    event_dispatcher_register_handler(pump, EventLogNewEvent, python_manager_on_data_event, NULL);
     event_dispatcher_register_handler(pump, DeviceAddedEvent, python_manager_on_device_event, NULL);
 
     registered_module_table = variant_hash_init();
@@ -162,7 +162,7 @@ void python_manager_stop()
 
     Py_Finalize();
     event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
-    event_dispatcher_unregister_handler(pump, EventLogEvent, python_manager_on_data_event, NULL);
+    event_dispatcher_unregister_handler(pump, EventLogNewEvent, python_manager_on_data_event, NULL);
     event_dispatcher_unregister_handler(pump, DeviceAddedEvent, python_manager_on_device_event, NULL);
 
     variant_stack_t* time_list = python_events_modules_for_timer_event();
@@ -260,7 +260,7 @@ void    python_manager_on_device_event(event_pump_t* pump, int event_id, void* d
 
 void    python_manager_on_data_event(event_pump_t* pump, int event_id, void* data, void* context)
 {
-    event_log_entry_t* event_log_entry = (event_log_entry_t*)data;
+    event_entry_t* event_log_entry = (event_entry_t*)data;
 
     const variant_stack_t* mod_id_list = python_events_modules_for_data_event(event_log_entry->node_id);
     if(NULL == mod_id_list) return;

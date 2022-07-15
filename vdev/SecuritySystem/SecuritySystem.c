@@ -87,13 +87,13 @@ variant_t*  update_security_system_state(device_record_t* record, va_list args)
     snprintf(json_buf, 255, "{\"data_holder\":\"level\",\"level\":%d}",
              SS_State);
 
-    event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
+    event_entry_t* new_entry = new_event_entry();
     new_entry->node_id = DT_SECURITY_SYSTEM;
     new_entry->instance_id = 0;
     new_entry->command_id = COMMAND_CLASS_SECURITY_SYSTEM;
     new_entry->device_type = VDEV;
     new_entry->event_data = strdup(json_buf);
-    event_log_add_event(new_entry);
+    event_send(new_entry, NULL);
 
     return variant_create_bool(true);
 }

@@ -15,11 +15,22 @@ typedef struct event_t
     variant_t*  data;
 } event_t;
 
+typedef struct event_entry_t
+{
+    int event_id; // autoincrement
+    int node_id;
+    int instance_id;
+    int command_id;
+    int device_type;
+    char* event_data; 
+    time_t   timestamp;
+} event_entry_t;
+
 typedef enum
 {
     SceneActivationEvent,
     CommandActivationEvent,
-    EventLogEvent,
+    //EventLogEvent,
     VdevDataChangeEvent,
     SensorDataChangeEvent,
     DeviceAddedEvent,
@@ -27,3 +38,5 @@ typedef enum
     EventLogNewEvent
 } e_events;
 
+event_entry_t* new_event_entry();
+void event_send(event_entry_t* event, void* context);

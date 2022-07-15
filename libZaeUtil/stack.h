@@ -20,6 +20,12 @@ typedef struct variant_stack_t
     stack_item_t*   tail;
 } variant_stack_t;
 
+typedef struct stack_iterator_t
+{
+    struct stack_item_t*   head;
+    variant_t* data;
+} stack_iterator_t;
+
 /*#define stack_for_each(_stack, _value)  \
 int __i__##_value;  \
 variant_t* _value = stack_peek_at(_stack, 0);  \
@@ -75,4 +81,8 @@ void            stack_unlock(variant_stack_t* stack);
 bool            stack_trylock(variant_stack_t* stack);            
 variant_stack_t* stack_splice(variant_stack_t* stack, unsigned int start, unsigned int end);
 
-
+stack_iterator_t* stack_iterator_begin(variant_stack_t* stack);
+stack_iterator_t* stack_iterator_next(stack_iterator_t* iterator);
+variant_t*        stack_iterator_data(stack_iterator_t* iterator);
+bool              stack_iterator_is_end(stack_iterator_t* iterator);
+void              stack_iterator_free(stack_iterator_t* iterator);

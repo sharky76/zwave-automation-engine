@@ -92,13 +92,13 @@ void update_camera_motion_detected_state(int instance, bool state)
         snprintf(json_buf, 255, "{\"data_holder\":\"1\",\"level\":%s}",
                  (entry->camera_motion_detected_event)? "true" : "false");
     
-        event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
+        event_entry_t* new_entry = new_event_entry();
         new_entry->node_id = DT_BLINK_CAMERA;
         new_entry->instance_id = instance;
         new_entry->command_id = 48;
         new_entry->device_type = VDEV;
         new_entry->event_data = strdup(json_buf);
-        event_log_add_event(new_entry);
+        event_send(new_entry, NULL);
     
         // Notify system about security state change
         vdev_post_event(VdevDataChangeEvent, DT_BLINK_CAMERA, 48, instance);

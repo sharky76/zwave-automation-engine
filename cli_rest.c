@@ -1091,19 +1091,20 @@ bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
         }
     }
 
-    variant_stack_t* event_list = event_log_get_tail(num_lines-1);
-
+    stack_iterator_t* it = stack_iterator_begin(event_log_get_list());
     json_object* json_resp = json_object_new_object();
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
 
-    stack_for_each(event_list, event_entry_variant)
+    while(num_lines > 0 && !stack_iterator_is_end(it))
     {
-        event_log_entry_t* event_entry = VARIANT_GET_PTR(event_log_entry_t, event_entry_variant);
+        variant_t* event_entry_variant = stack_iterator_data(it);
+        event_entry_t* event_entry = VARIANT_GET_PTR(event_entry_t, event_entry_variant);
         const char* resolver_name = resolver_name_from_id(event_entry->node_id, event_entry->instance_id, event_entry->command_id);
         if(NULL != resolver_name)
         {
             json_object* event_entry_data = json_object_new_object();
             json_object_object_add(event_entry_data, "name", json_object_new_string(resolver_name));
+            json_object_object_add(event_entry_data, "device_name", json_object_new_string(resolver_name_from_node_id(event_entry->node_id)));
             json_object_object_add(event_entry_data, "node_id", json_object_new_int(event_entry->node_id));
             json_object_object_add(event_entry_data, "instance_id", json_object_new_int(event_entry->instance_id));
             json_object_object_add(event_entry_data, "command_id", json_object_new_int(event_entry->command_id));
@@ -1119,7 +1120,11 @@ bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
             http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
             break;
         }
+
+        it = stack_iterator_next(it);
+        num_lines--;
     }
+    stack_iterator_free(it);
 
     http_set_content_type((http_vty_priv_t*)vty->priv, CONTENT_TYPE_JSON);
     http_set_cache_control((http_vty_priv_t*)vty->priv, false, 0);
@@ -1138,7 +1143,7 @@ void    sse_event_handler(event_pump_t* pump, int id, void* data, void* context)
 {
     vty_t* vty = (vty_t*)context;
 
-    event_log_entry_t* e = (event_log_entry_t*)data;
+    event_entry_t* e = (event_entry_t*)data;
     
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_NONE);
 
@@ -1159,7 +1164,7 @@ void    sse_event_handler(event_pump_t* pump, int id, void* data, void* context)
     if(!vty_flush(vty))
     {
         event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
-        event_dispatcher_unregister_handler(pump, EventLogEvent, sse_event_handler, (void*)vty);
+        event_dispatcher_unregister_handler(pump, EventLogNewEvent, sse_event_handler, (void*)vty);
     }
 }
 
@@ -1195,7 +1200,7 @@ bool    cmd_subscribe_sse(vty_t* vty, variant_stack_t* params)
             vty_set_in_use(vty, true); // Mark this VTY as "in use" so it will not be deleted
             
             event_pump_t* pump = event_dispatcher_get_pump("EVENT_PUMP");
-            event_dispatcher_register_handler(pump, EventLogEvent, sse_event_handler, (void*)vty);
+            event_dispatcher_register_handler(pump, EventLogNewEvent, sse_event_handler, (void*)vty);
         }
 
         free(accept_type);

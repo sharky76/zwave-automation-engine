@@ -101,13 +101,13 @@ void  publish_sensor_state(sensor_entry_t* entry)
         snprintf(json_buf, 255, "{\"data_holder\":\"1\",\"level\":%d}",
                 entry->state);
 
-        event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
+        event_entry_t* new_entry = new_event_entry();
         new_entry->node_id = DT_SENSOR;
         new_entry->instance_id = entry->instance;
         new_entry->command_id = 0x30;
         new_entry->device_type = VDEV;
         new_entry->event_data = strdup(json_buf);
-        event_log_add_event(new_entry);
+        event_send(new_entry, NULL);
     }
     else
     {

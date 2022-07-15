@@ -328,4 +328,39 @@ variant_stack_t* stack_splice(variant_stack_t* stack, unsigned int start, unsign
     return result_stack;
 }
 
+stack_iterator_t* stack_iterator_begin(variant_stack_t* stack)
+{
+    stack_iterator_t* it = malloc(sizeof(stack_iterator_t));
+    it->head = stack->head;
+    if(it->head != NULL)
+    {
+        it->data = stack->head->data;
+    }
 
+    return it;
+};
+
+stack_iterator_t* stack_iterator_next(stack_iterator_t* iterator)
+{
+    iterator->head = iterator->head->next;
+    if(iterator->head != NULL)
+    {
+        iterator->data = iterator->head->data;
+    }
+    return iterator;
+}
+
+variant_t*        stack_iterator_data(stack_iterator_t* iterator)
+{
+    return iterator->data;
+}
+
+bool              stack_iterator_is_end(stack_iterator_t* iterator)
+{
+    return iterator->head == NULL;
+}
+
+void              stack_iterator_free(stack_iterator_t* iterator)
+{
+    free(iterator);
+}

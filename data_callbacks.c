@@ -13,6 +13,7 @@
 #include "command_class.h"
 #include "event_log.h"
 #include "zway_json.h"
+#include "event.h"
 
 extern ZWay zway;
 extern hash_table_t*   data_holder_event_table;
@@ -172,7 +173,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             
             event_pump_send_event(event_data->event_pump, SensorDataChangeEvent, (void*)event_data, NULL);
 
-            event_log_entry_t* new_entry = calloc(1, sizeof(event_log_entry_t));
+            event_entry_t* new_entry = new_event_entry();
             new_entry->node_id = event_data->node_id;
             new_entry->instance_id = event_data->instance_id;
             new_entry->command_id = event_data->command_id;
@@ -184,10 +185,8 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             json_object_object_add(json_resp, "data_holder", dh_name_obj);
             new_entry->event_data = strdup(json_object_to_json_string_ext(json_resp, JSON_C_TO_STRING_PLAIN));
             json_object_put(json_resp);
-            //event_log_add_event(new_entry);
 
             event_pump_send_event(event_data->event_pump, EventLogNewEvent, (void*)new_entry, NULL);
-            //free(json_resp);
         }
     }
 }

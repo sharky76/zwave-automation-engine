@@ -46,7 +46,7 @@ static PyObject* register_data_events(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    LOG_ADVANCED(PythonManager, "Registering module \"%s\" with EventLogEvent for device %d", python_manager_name_from_id(module_id), device_id);
+    LOG_ADVANCED(PythonManager, "Registering module \"%s\" with EventLogNewEvent for device %d", python_manager_name_from_id(module_id), device_id);
     
     variant_t* module_variant = variant_hash_get(data_events_module_table, device_id);
     if(NULL == module_variant)
@@ -112,7 +112,7 @@ static PyObject* register_context(PyObject *self, PyObject *args)
 
 static PyMethodDef EventsMethods[] = {
     {"register_device_events", register_device_events, METH_VARARGS, "Register to receive Device Added / Device Removed events"},
-    {"register_data_events", register_data_events, METH_VARARGS, "Register to receive EventLogEvent events"},
+    {"register_data_events", register_data_events, METH_VARARGS, "Register to receive EventLogNewEvent events"},
     {"register_timer_events", register_timer_events, METH_VARARGS, "Register to receive timer events every X msec"},
     {"register_context", register_context, METH_VARARGS, "Register context object to pass to event callbacks"},
     {NULL, NULL, 0, NULL}
