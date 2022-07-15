@@ -75,20 +75,20 @@ class FSM:
         self.button_id = button_id
         self.button_command = button_command
 
-        def changeState(self, event):
-            state = self.currentState
-            self.stateTransitions[self.currentState][event][0]()
-            self.currentState = self.stateTransitions[self.currentState][event][1]
-            logging.log_info(self.context.id, "Switched state from " + str(state) + " on event " + str(event) + " to " + str(self.currentState))
+    def changeState(self, event):
+        state = self.currentState
+        self.stateTransitions[self.currentState][event][0]()
+        self.currentState = self.stateTransitions[self.currentState][event][1]
+        logging.log_info(self.context.id, "Switched state from " + str(state) + " on event " + str(event) + " to " + str(self.currentState))
 
-        def MachineAlertOff(self):
-            command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
+    def MachineAlertOff(self):
+        command.set_boolean(self.context.id, self.button_id, 0, self.button_command, False)
 
-        def MachineAlertOn(self):
-            command.set_boolean(context.id, self.button_id, 0, self.button_command, True)
+    def MachineAlertOn(self):
+        command.set_boolean(self.context.id, self.button_id, 0, self.button_command, True)
 
-        def Noop(self):
-            pass
+    def Noop(self):
+        pass
 
 
 class Context:

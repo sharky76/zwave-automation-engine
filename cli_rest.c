@@ -1095,34 +1095,33 @@ bool    cmd_get_events(vty_t* vty, variant_stack_t* params)
     json_object* json_resp = json_object_new_object();
     http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_OK);
 
-    while(num_lines > 0 && !stack_iterator_is_end(it))
+    while(num_lines-- > 0 && !stack_iterator_is_end(it))
     {
         variant_t* event_entry_variant = stack_iterator_data(it);
         event_entry_t* event_entry = VARIANT_GET_PTR(event_entry_t, event_entry_variant);
         const char* resolver_name = resolver_name_from_id(event_entry->node_id, event_entry->instance_id, event_entry->command_id);
+        json_object* event_entry_data = json_object_new_object();
+
         if(NULL != resolver_name)
         {
-            json_object* event_entry_data = json_object_new_object();
             json_object_object_add(event_entry_data, "name", json_object_new_string(resolver_name));
-            json_object_object_add(event_entry_data, "device_name", json_object_new_string(resolver_name_from_node_id(event_entry->node_id)));
-            json_object_object_add(event_entry_data, "node_id", json_object_new_int(event_entry->node_id));
-            json_object_object_add(event_entry_data, "instance_id", json_object_new_int(event_entry->instance_id));
-            json_object_object_add(event_entry_data, "command_id", json_object_new_int(event_entry->command_id));
-            json_object_object_add(event_entry_data, "event", json_object_new_string(event_entry->event_data));
-
-            struct tm* ptime = localtime(&event_entry->timestamp);
-            char time_str[15] = {0};
-            strftime(time_str, sizeof(time_str), "%H:%M:%S", ptime);
-            json_object_object_add(json_resp, time_str, event_entry_data);
         }
         else
         {
-            http_set_response((http_vty_priv_t*)vty->priv, HTTP_RESP_USER_ERR);
-            break;
+            json_object_object_add(event_entry_data, "name", json_object_new_string("N/A"));
         }
+        json_object_object_add(event_entry_data, "device_name", json_object_new_string(resolver_name_from_node_id(event_entry->node_id)));
+        json_object_object_add(event_entry_data, "node_id", json_object_new_int(event_entry->node_id));
+        json_object_object_add(event_entry_data, "instance_id", json_object_new_int(event_entry->instance_id));
+        json_object_object_add(event_entry_data, "command_id", json_object_new_int(event_entry->command_id));
+        json_object_object_add(event_entry_data, "event", json_object_new_string(event_entry->event_data));
+
+        struct tm* ptime = localtime(&event_entry->timestamp);
+        char time_str[15] = {0};
+        strftime(time_str, sizeof(time_str), "%H:%M:%S", ptime);
+        json_object_object_add(json_resp, time_str, event_entry_data);
 
         it = stack_iterator_next(it);
-        num_lines--;
     }
     stack_iterator_free(it);
 
