@@ -23,14 +23,14 @@ variant_t*  add_impl(struct service_method_t* method, va_list args)
     variant_t* command_class_variant = va_arg(args, variant_t*);
     variant_t* event_string_variant = va_arg(args, variant_t*);
 
-    event_entry_t* new_entry = new_event_entry();
+    event_entry_t* new_entry = event_create();
     new_entry->node_id = variant_get_int(node_id_variant);
     new_entry->instance_id = variant_get_int(instance_id_variant);
     new_entry->command_id = variant_get_int(command_class_variant);
 
     variant_to_string(event_string_variant, &new_entry->event_data);
 
-    event_send(new_entry, NULL);
+    event_send(new_entry);
     return variant_create_bool(true);
 }
 

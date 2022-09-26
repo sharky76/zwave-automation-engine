@@ -15,7 +15,7 @@
  * 
  * @return char* 
  */
-char*   lcp_compare_strings(const char* str1, const char* str2)
+char*   lcp_compare_strings(const char* str1, const char* str2, char* result)
 {
     if(NULL == str1 || NULL == str2)
     {
@@ -23,20 +23,22 @@ char*   lcp_compare_strings(const char* str1, const char* str2)
     }
 
     int result_index = 0;
-    char* lcp_result = calloc(strlen(str1)+1, sizeof(char));
-
     int n1 = strlen(str1);
     int n2 = strlen(str2);
+
+    //char* lcp_result = calloc(n1+1, sizeof(char));
  
-    for (int i=0, j=0; i <= n1-1 && j <= n2-1; i++,j++)
+    for (int i=0, j=0; i < n1 && j < n2; i++,j++)
     {
         if (str1[i] != str2[j])
             break;
-        lcp_result[result_index++] = str1[i];
+        result[result_index++] = str1[i];
     }
 
+    result[result_index] = 0;
+
     //printf("LCP result of %s and %s is %s\n", str1, str2, lcp_result);
-    return lcp_result;
+    return result;
 }
 
 
@@ -58,36 +60,23 @@ char* lcp(variant_stack_t* string_list)
         return NULL;
     }
 
-    //printf("LCP start with list size: %d\n", string_list->count);
-
     if(string_list->count == 1)
     {
-        //printf("LCP Single value: %s\n", variant_get_string(stack_peek_at(string_list, 0)));
         return strdup(variant_get_string(stack_peek_at(string_list, 0)));
     }
+    
+    stack_iterator_t* it = stack_iterator_begin(string_list);
+    const char* prefix = variant_get_string(stack_iterator_data(it));
+    it = stack_iterator_next(it);
+    char result[512];
+    memcpy(result, prefix, strlen(prefix));
 
-    int mid = string_list->count / 2;
-
-    //printf("LCP first stack from %d to %d\n", 0, mid);
-    variant_stack_t* st1 = stack_splice(string_list, 0, mid);
-    //printf("LCP first stack size: %d\n", st1->count);
-    char* str1 = lcp(st1);
-    stack_free(st1);
-
-    //printf("LCP second stack from %d to %d\n", mid, string_list->count);
-
-    variant_stack_t* st2 = stack_splice(string_list, mid, string_list->count);
-
-    //printf("LCP second stack size: %d\n", st2->count);
-
-    char* str2 = lcp(st2);
-    stack_free(st2);
-
-
-    //printf("Str1: %s, Str2: %s\n", str1, str2);
-
-    char* result = lcp_compare_strings(str1, str2);
-    free(str1);
-    free(str2);
-    return result;
+    while(!stack_iterator_is_end(it))
+    {
+        const char* next = variant_get_string(stack_iterator_data(it));
+        lcp_compare_strings(result, next, result);
+        it = stack_iterator_next(it);
+    }
+    
+    return strdup(result);
 }

@@ -173,7 +173,7 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             
             event_pump_send_event(event_data->event_pump, SensorDataChangeEvent, (void*)event_data, NULL);
 
-            event_entry_t* new_entry = new_event_entry();
+            event_entry_t* new_entry = event_create();
             new_entry->node_id = event_data->node_id;
             new_entry->instance_id = event_data->instance_id;
             new_entry->command_id = event_data->command_id;
@@ -186,7 +186,8 @@ void value_change_event_callback(ZDataRootObject rootObject, ZWDataChangeType ch
             new_entry->event_data = strdup(json_object_to_json_string_ext(json_resp, JSON_C_TO_STRING_PLAIN));
             json_object_put(json_resp);
 
-            event_pump_send_event(event_data->event_pump, EventLogNewEvent, (void*)new_entry, NULL);
+            //event_pump_send_event(event_data->event_pump, EventLogNewEvent, (void*)new_entry, NULL);
+            event_send(new_entry);
         }
     }
 }

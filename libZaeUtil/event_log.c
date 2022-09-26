@@ -32,12 +32,12 @@ void event_entry_to_string(variant_t* entry_var, char** string)
                     e->node_id, e->instance_id, e->command_id, e->event_data);
 }
 
-void delete_event_log_entry(void* arg)
+/*void delete_event_log_entry(void* arg)
 {
     event_entry_t* e = (event_entry_t*)arg;
     free(e->event_data);
     free(e);
-}
+}*/
 
 void event_log_on_new_event(event_pump_t* pump, int event_id, void* data, void* context)
 {
@@ -68,14 +68,14 @@ void    event_log_add_event(event_entry_t* event_entry)
         variant_free(e);
     }
 
-    variant_t* entry_variant = variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &delete_event_log_entry);
-    stack_push_front(event_log_handle.event_log_list, entry_variant);
+    variant_t* entry_variant = variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &variant_delete_none);
     char* event_buf;
     if(variant_to_string(entry_variant, &event_buf))
     {
         LOG_INFO(EventLog, event_buf);
-        free(event_buf);
+        stack_push_front(event_log_handle.event_log_list, variant_create_string(entry_variant));
     }
+    variant_free(entry_variant);
 }
 
 void    event_log_set_limit(int limit)

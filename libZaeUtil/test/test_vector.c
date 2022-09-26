@@ -21,6 +21,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -44,6 +45,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -69,6 +71,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -93,6 +96,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -114,6 +118,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -136,6 +141,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -158,6 +164,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {
@@ -180,6 +187,7 @@ void main()
         if(NULL != value)
         {
             printf("Val: %d\n", variant_get_int(value));
+            variant_free(value);
         }
         else
         {

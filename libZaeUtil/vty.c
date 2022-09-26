@@ -256,7 +256,14 @@ char *vty_read(vty_t *vty)
         }
         else if (ch[0] == KEY_TAB) // tab
         {
+            //printf("vty_set_completions with buffer: %s and size %d, cursor pos = %d\n", vty->buffer, vty->buf_size, vty->cursor_pos);
             vty_set_completions(vty);
+            if (NULL == vty->completions)
+            {
+                vty_cursor_end(vty);
+                vty_erase_char(vty);
+                vty_set_completions(vty);
+            }
 
             if (NULL != vty->completions)
             {
@@ -267,10 +274,14 @@ char *vty_read(vty_t *vty)
                     variant_t *complete_cmd = stack_pop_front(vty->completions);
 
                     // Redisplay the completed command
+                    //printf("cursor pos = %d incomplete_cmd = %s\n", vty->buf_size, variant_get_string(incomplete_cmd));
+                    
                     for (int i = 0; i < strlen(variant_get_string(incomplete_cmd)); i++)
                     {
                         vty_erase_char(vty);
                     }
+
+                    vty_cursor_end(vty);
 
                     const char *complete_cmd_string = variant_get_string(complete_cmd);
                     vty_append_string(vty, complete_cmd_string);
@@ -538,11 +549,7 @@ void vty_insert_char(vty_t *vty, char ch)
 
 void vty_append_char(vty_t *vty, char ch)
 {
-    while (vty->cursor_pos < vty->buf_size)
-    {
-        vty_cursor_right(vty);
-    }
-
+    vty_cursor_end(vty);
     vty_insert_char(vty, ch);
 }
 
@@ -614,13 +621,13 @@ void vty_delete_char(vty_t *vty)
 {
     if(vty->cursor_pos == vty->buf_size) return;
 
-    for(int i = vty->cursor_pos; i < vty->buf_size-1; i++)
+    for(int i = vty->cursor_pos; i < vty->buf_size; i++)
     {
         vty->buffer[i] = vty->buffer[i+1];
     }
 
-    vty->buffer[vty->buf_size-1] = 0;
     vty->buf_size--;
+    vty->buffer[vty->buf_size] = 0;
     if(vty->cursor_pos > vty->buf_size)
     {
         vty->cursor_pos = vty->buf_size;
@@ -727,6 +734,14 @@ void vty_cursor_right(vty_t *vty)
         }
 
         vty->cursor_pos++;
+    }
+}
+
+void vty_cursor_end(vty_t* vty)
+{
+    while (vty->cursor_pos < vty->buf_size)
+    {
+        vty_cursor_right(vty);
     }
 }
 

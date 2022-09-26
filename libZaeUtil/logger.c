@@ -30,13 +30,12 @@ typedef struct logger_log_entry_t
 {
     logger_service_t*   service;
     LogLevel            level;
-    char*               line;
+    char                line[1024];
 } logger_log_entry_t;
 
 void    delete_logger_log_entry(void* arg)
 {
     logger_log_entry_t* entry = (logger_log_entry_t*)arg;
-    free(entry->line);
     free(entry);
 };
 
@@ -156,14 +155,10 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
         strncat(log_format_buffer, format, MAX_LOG_ENTRY_LEN-len_so_far-2);
         strcat(log_format_buffer, "\r\n");
 
-        char buf[1024] = {0};
-        vsnprintf(buf, 1023, log_format_buffer, args);
-
         logger_log_entry_t* new_entry = calloc(1, sizeof(logger_log_entry_t));
         new_entry->service = service;
         new_entry->level = level;
-        new_entry->line = strdup(buf);
-
+        vsnprintf(new_entry->line, 1023, log_format_buffer, args);
 
         logger_add_buffer(new_entry);
         //handle->do_log(handle, buf);
@@ -177,7 +172,7 @@ void valogger_log(logger_handle_t* handle, logger_service_t* service, LogLevel l
             {
                 if(vector_is_empty(logger_vty->services) || vector_is_exists(logger_vty->services, service_matcher, (void*)service->service_id))
                 {
-                    vty_write(logger_vty->vty, "%s", buf);
+                    vty_write(logger_vty->vty, "%s", new_entry->line);
                 }
             }
         }
@@ -245,7 +240,6 @@ void    logger_add_buffer(logger_log_entry_t* entry)
 
     if(logger_handle->log_buffer_size > 0)
     {
-
         stack_push_back(logger_handle->log_buffer, variant_create_ptr(DT_PTR, entry, &delete_logger_log_entry));
     }
 }

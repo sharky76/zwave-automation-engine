@@ -153,7 +153,6 @@ void signal_init()
 
 void setup_event_log(const char *filename)
 {
-    USING_LOGGER(EventLog);
     char event_log_path[512] = {0};
     snprintf(event_log_path, 511, "%s/%s", global_config.config_location, filename);
 
@@ -163,7 +162,6 @@ void setup_event_log(const char *filename)
 
     vty_t* file_vty = vty_io_create(VTY_FILE, &eventlog_vty_data);
     logger_register_target(file_vty);
-    logger_add_target_service(file_vty, EventLog);
     logger_set_online(file_vty, true);
 }
 
@@ -295,6 +293,8 @@ int main (int argc, char *argv[])
         umask(027);  
     }
 
+    variant_init_pool();
+    event_pool_init();
     logger_init();
     logging_modules_init();
 

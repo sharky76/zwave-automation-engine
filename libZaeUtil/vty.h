@@ -128,4 +128,5 @@ void    vty_nonblock_write_event(event_pump_t* pump, int fd, void* context);
 void    vty_set_pump(vty_t* vty, event_pump_t* pump);
 void    vty_save_cursor(vty_t* vty);
 void    vty_restore_cursor(vty_t* vty);
+void    vty_cursor_end(vty_t* vty);
 event_pump_t* vty_get_pump(vty_t* vty);

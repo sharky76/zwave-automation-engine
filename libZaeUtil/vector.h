@@ -3,6 +3,7 @@
 #include <sys/param.h>
 #include <pthread.h>
 #include "variant.h"
+#include "allocator.h"
 
 typedef struct vector_item_t vector_item_t;
 
@@ -11,6 +12,7 @@ typedef struct vector_t
     vector_item_t* first;
     vector_item_t* last;
     int count;
+    pool_t* pool;
     pthread_mutex_t lock;
 } vector_t;
 
