@@ -132,6 +132,7 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
     stack_push_back(timer_config_list, variant_create_ptr(DT_TIMER, timer, &timer_delete_timer));
 
     variant_t* scene_variant = variant_create_string(scene_name);
+    scene_variant->delete_cb = NULL;
     variant_t* ret = NULL;
 
     switch(timer->event_id)
@@ -143,7 +144,7 @@ bool    cmd_timer_set_interval(vty_t* vty, variant_stack_t* params)
         ret = service_call_method("Timer", "IntervalInvoke", scene_variant, stack_peek_at(params, 1));
         break;
     }
-    free(scene_variant);
+    variant_free(scene_variant);
     variant_free(ret);
 }
 

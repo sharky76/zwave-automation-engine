@@ -293,8 +293,6 @@ int main (int argc, char *argv[])
         umask(027);  
     }
 
-    variant_init_pool();
-    event_pool_init();
     logger_init();
     logging_modules_init();
 

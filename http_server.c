@@ -226,28 +226,28 @@ void  http_server_prepare_response_headers(http_vty_priv_t* http_priv, int conte
             http_set_header(http_priv, "Access-Control-Allow-Origin", "*");
             http_set_header(http_priv, "Access-Control-Allow-Methods", "GET,POST,PUT");
             byte_buffer_adjust_write_pos(http_priv->response_header, 
-                sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "HTTP/1.1 200 OK\nServer: zae/0.1\n%s", 
+                sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "HTTP/1.1 200 OK\r\nServer: zae/0.1\r\n%s", 
                     (http_priv->headers_size == 0)? "" : http_priv->headers)); /* Header + a blank line */
             if(http_priv->can_cache)
             {
-                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Cache-Control: public, max-age=%d\n", http_priv->cache_age));
+                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Cache-Control: public, max-age=%d\r\n", http_priv->cache_age));
             }
             else
             {
-                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Cache-Control: no-cache\n"));
+                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Cache-Control: no-cache\r\n"));
             }
 
             if(NULL != http_priv->content_type)
             {
-                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Content-Type: %s\n", http_priv->content_type));
+                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Content-Type: %s\r\n", http_priv->content_type));
             }
 
             if(content_length > 0)
             {
-                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Content-Length: %ld\n", content_length));
+                byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "Content-Length: %ld\r\n", content_length));
             }
 
-            byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "\n"));
+            byte_buffer_adjust_write_pos(http_priv->response_header, sprintf(byte_buffer_get_write_ptr(http_priv->response_header), "\r\n"));
 
             break;
         case HTTP_RESP_SERVER_ERR:
@@ -302,10 +302,10 @@ void  http_set_cache_control(http_vty_priv_t* http_priv, bool is_set, int max_ag
 
 void  http_set_header(http_vty_priv_t* http_priv, const char* name, const char* value)
 {
-    int header_size = strlen(name) + strlen(value) + 4;
+    int header_size = strlen(name) + strlen(value) + 5;
     http_priv->headers = realloc(http_priv->headers, http_priv->headers_size + header_size);
 
-    sprintf(http_priv->headers + http_priv->headers_size, "%s: %s\n", name, value);
+    sprintf(http_priv->headers + http_priv->headers_size, "%s: %s\r\n", name, value);
     http_priv->headers_size += header_size;
     http_priv->headers[http_priv->headers_size-1] = 0;
     http_priv->headers_size--;

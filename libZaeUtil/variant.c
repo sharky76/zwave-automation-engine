@@ -5,12 +5,10 @@
 #include <string.h>
 #include "stack.h"
 #include "hash.h"
-#include "allocator.h"
 #include <json-c/json.h>
 
 
 static int  auto_inc_data_type = DT_USER+1;
-static pool_t* variant_allocator_pool = NULL;
 
 typedef struct variant_converter_t
 {
@@ -112,15 +110,9 @@ int variant_compare_ptr(const variant_t* v, const variant_t* other)
         (v->storage.ptr_data > other->storage.ptr_data);
 }
 
-void        variant_init_pool()
-{
-    variant_allocator_pool = const_allocator_init(sizeof(variant_t), 40);
-}
-
 variant_t*  variant_create(VariantDataType type, void* data)
 {
-    //variant_t* new_variant = (variant_t*)calloc(1, sizeof(variant_t));
-    variant_t* new_variant = (variant_t*)const_allocator_new(variant_allocator_pool);
+    variant_t* new_variant = (variant_t*)calloc(1, sizeof(variant_t));
     new_variant->type = type;
     new_variant->delete_cb = NULL;
     new_variant->compare_cb = NULL;
@@ -133,7 +125,7 @@ variant_t*  variant_create(VariantDataType type, void* data)
         new_variant->compare_cb = &variant_compare_bool;
         break;
     case DT_INT8:
-        new_variant->storage.byte_data = data;
+        new_variant->storage.byte_data = (int8_t)data;
         new_variant->compare_cb = &variant_compare_byte;
         break;
     case DT_FLOAT:
@@ -217,7 +209,7 @@ variant_t*  variant_create_variant(int type, variant_t* variant)
 
 variant_t*  variant_create_float(double data)
 {
-    variant_t* new_variant = variant_create(DT_FLOAT, data);
+    variant_t* new_variant = variant_create(DT_FLOAT, (void*)&data);
     return new_variant;
 }
 
@@ -245,8 +237,7 @@ void        variant_free(variant_t* variant)
             variant->delete_cb(variant->storage.ptr_data);
         }
     
-        const_allocator_delete(variant);
-        //free(variant);
+        free(variant);
     }
 }
 

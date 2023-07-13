@@ -80,7 +80,7 @@ bz2
 curl
 json-c
 dl
-python3.7m
+python3.9
 pthread
 util
 )

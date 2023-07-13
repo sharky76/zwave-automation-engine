@@ -24,13 +24,13 @@ void*   allocator_new(pool_t* pool, uint32_t size)
     uint32_t adjusted_size = size + sizeof(chunk_descriptor_t);
 
 #if defined ARCH_ARM
-    asm volatile("clz %1, r3"
+    __asm__ volatile("clz %1, r3"
         : "=r" (bucket)
         : "r" (adjusted_size)
         );
     bucket = sizeof(size)*8 - (bucket+1);
 #elif defined ARCH_X86
-    asm volatile("bsr %1, %0"
+    __asm__ volatile("bsr %1, %0"
         : "=r" (bucket)
         : "r" (adjusted_size)
         );
@@ -132,61 +132,38 @@ pool_t* const_allocator_init(int size, int count)
     pool_t* pool = calloc(1, sizeof(pool_t));
     pool->chunk_size = size + sizeof(chunk_descriptor_t);
     pool->pool_size = pool->free_size = pool->chunk_size * count;
-    pool->count = count;
     pool->pool = calloc(count, pool->pool_size);
-    pool->free = pool->pool;
+
+    pool->first = (chunk_descriptor_t*)pool->pool;
+    chunk_descriptor_t* chunk = pool->first;
+
+    for(int i = 0; i < count; i++)
+    {
+        chunk->next = pool->first + pool->chunk_size*i;
+        chunk = chunk->next;
+        chunk->next = NULL;
+    }
+
+    return pool;
 }
 
 void*   const_allocator_new(pool_t* pool)
 {
-    chunk_descriptor_t* chunk = NULL;
-    pool_t* work_pool = pool;
-
-    while(work_pool)
-    {    
-        if(work_pool->chunk_size > work_pool->free_size && work_pool->first == NULL) 
-        {
-            work_pool = work_pool->next;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    if(work_pool == NULL)
+    chunk_descriptor_t* victim = pool->first;
+    if(NULL != victim)
     {
-        pool_t* new_pool = const_allocator_init(pool->chunk_size - sizeof(chunk_descriptor_t), pool->count);
-        new_pool->next = pool->next;
-        pool->next = new_pool;
-        work_pool = new_pool;
+        pool->free_size -= pool->chunk_size;
+        pool->first = victim->next;
+        victim->pool = pool;
     }
 
-    // We will land here with either new pool or pool with available chunk
-    if(work_pool->first != NULL)
-    {
-        chunk = (chunk_descriptor_t*)work_pool->first;
-        work_pool->first = chunk->next;
-    }
-    else
-    {
-        chunk = (chunk_descriptor_t*)work_pool->free;
-        chunk->pool = work_pool;
-        work_pool->free = (void*)work_pool->free + work_pool->chunk_size;
-    }
-
-    work_pool->free_size -= work_pool->chunk_size;
-
-    return DATA(chunk);
+    return (victim == NULL)? NULL : DATA(victim);
 }
 
 void    const_allocator_delete(void* victim)
 {
-    chunk_descriptor_t* chunk = DESCRIPTOR(victim);
-
-    // Return chunk directly to its bucket
-    pool_t* pool = chunk->pool;
-    chunk->next = pool->first;
-    pool->first = chunk;
-    pool->free_size += pool->chunk_size;
+    chunk_descriptor_t* desc = DESCRIPTOR(victim);
+    desc->next = desc->pool->first;
+    desc->pool->first = desc;
+    desc->pool->free_size += desc->pool->chunk_size;
 }

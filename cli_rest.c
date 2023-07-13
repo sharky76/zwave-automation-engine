@@ -195,7 +195,7 @@ void vdev_enumerate(vdev_t* vdev, void* arg)
                             variant_t* value = command_class_exec(vdev_cmd_class, vdev_command->name, device_record);
                             if(NULL == value)
                             {
-                                LOG_ERROR(CLI, "Unable to call method %s on VDEV: device not found", vdev_command->name);
+                                LOG_ERROR(CLI, "Unable to call method %s on VDEV: device not found: %s", vdev_command->name);
                                 json_object_put(cmd_class);
                                 continue;
                             }

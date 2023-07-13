@@ -18,7 +18,7 @@ DECLARE_LOGGER(HomebridgeManager)
 int homebridge_start();
 void homebridge_stopped_handler(int sig, siginfo_t *info, void *arg);
 
-pid_t homebridge_pid;
+pid_t homebridge_pid = -1;
 int homebridge_fd = -1;
 static bool can_start_homebridge = false;
 static bool homebridge_restart_on_crash = false;
@@ -136,7 +136,11 @@ void homebridge_manager_stop()
     homebridge_restart_on_crash = false;
     event_pump_t *pump = event_dispatcher_get_pump("SOCKET_PUMP");
     event_dispatcher_unregister_handler(pump, homebridge_fd, NULL, NULL);
-    kill(homebridge_pid, SIGINT);
+    
+    if(homebridge_pid != -1)
+    {
+        kill(homebridge_pid, SIGINT);
+    }
     homebridge_fd = -1;
 }
 

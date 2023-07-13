@@ -171,7 +171,7 @@ void timer_pump_start_timer(event_pump_t* pump, ...)
             timer_event_data->last_poll_time = (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
             timer_event_data->current_timeout = timer_event_data->timeout_msec;
 
-            LOG_DEBUG(EventPump, "Started timer: %d", timer_event_data->timer_id);
+            LOG_ADVANCED(EventPump, "Started timer: %d", timer_event_data->timer_id);
             break;
         }
     }
@@ -194,6 +194,7 @@ void timer_pump_stop_timer(event_pump_t* pump, ...)
         if(timer_event_data->timer_id == handler_id)
         {
             timer_event_data->is_started = false;
+            LOG_ADVANCED(EventPump, "Stopped timer: %d", timer_event_data->timer_id);
             break;
         }
     }

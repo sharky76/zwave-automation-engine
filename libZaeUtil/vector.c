@@ -16,7 +16,6 @@ vector_t* vector_create()
     new_vector->first = NULL;
     new_vector->last = NULL;
     pthread_mutex_init(&new_vector->lock, NULL);
-    new_vector->pool = const_allocator_init(sizeof(vector_item_t), 20);
 
     return new_vector;
 }
@@ -30,14 +29,12 @@ void vector_free(vector_t* vector)
         variant_free(value);
     }
 
-    allocator_destroy(vector->pool);
     free(vector);
 }
 
 void vector_push_back(vector_t* vector, variant_t* value)
 {
-    //vector_item_t* new_item = (vector_item_t*)calloc(1, sizeof(vector_item_t));
-    vector_item_t* new_item = (vector_item_t*)const_allocator_new(vector->pool);
+    vector_item_t* new_item = (vector_item_t*)calloc(1, sizeof(vector_item_t));
 
     new_item->value = value; 
     
@@ -63,8 +60,7 @@ void vector_push_front(vector_t* vector, variant_t* value)
     }
     else
     {
-        //vector_item_t* new_item = (vector_item_t*)calloc(1, sizeof(vector_item_t));
-        vector_item_t* new_item = (vector_item_t*)const_allocator_new(vector->pool);
+        vector_item_t* new_item = (vector_item_t*)calloc(1, sizeof(vector_item_t));
         new_item->next = vector->first;
         vector->first->prev = new_item;
         vector->first = new_item;
@@ -88,8 +84,7 @@ variant_t* vector_pop_front(vector_t* vector)
     }
 
     variant_t* value = new_item->value;
-    //free(new_item);
-    const_allocator_delete(new_item);
+    free(new_item);
     return value;
 }
 
@@ -111,8 +106,7 @@ variant_t* vector_pop_back(vector_t* vector)
     }
 
     variant_t* value = new_item->value;
-    //free(new_item);
-    const_allocator_delete(new_item);
+    free(new_item);
     return value;
 }
 
@@ -161,8 +155,7 @@ void  vector_remove(vector_t* vector, variant_t* value)
             item->prev->next = item->next;
             item->next->prev = item->prev;
             variant_free(item->value);
-            //free(item);
-            const_allocator_delete(item);
+            free(item);
             vector->count--;
         }
         else if(!item->next)
@@ -194,8 +187,7 @@ void  vector_remove_at(vector_t* vector, int index)
             item->prev->next = item->next;
             item->next->prev = item->prev;
             variant_free(item->value);
-            //free(item);
-            const_allocator_delete(item);
+            free(item);
             vector->count--;
         }
         else if(!item->next)

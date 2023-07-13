@@ -70,10 +70,11 @@ void    event_log_add_event(event_entry_t* event_entry)
 
     variant_t* entry_variant = variant_create_ptr(DT_EVENT_LOG_ENTRY, event_entry, &variant_delete_none);
     char* event_buf;
+
     if(variant_to_string(entry_variant, &event_buf))
     {
         LOG_INFO(EventLog, event_buf);
-        stack_push_front(event_log_handle.event_log_list, variant_create_string(entry_variant));
+        stack_push_front(event_log_handle.event_log_list, variant_create_string(event_buf));
     }
     variant_free(entry_variant);
 }

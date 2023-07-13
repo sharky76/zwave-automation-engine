@@ -216,6 +216,7 @@ bool cmd_del_scene_condition(vty_t* vty, variant_stack_t* params)
         if(strcmp(condition, variant_get_string(condition_var)) == 0)
         {
             stack_remove(scene->condition_list, condition_var);
+            break;
         }
     }
 }

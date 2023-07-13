@@ -118,6 +118,8 @@ variant_t*  set_camera_motion_detected(device_record_t* record, va_list args)
         {
             LOG_DEBUG(DT_BLINK_CAMERA, "Starting motion threshold timer");
             event_pump_t* timer_pump = event_dispatcher_get_pump("TIMER_PUMP");
+            // Reset motion even after 1 minute
+            entry->timer_id = event_dispatcher_register_handler(timer_pump, 60*1000, true, on_motion_timeout, (void*)entry);
             timer_pump->start(timer_pump, entry->timer_id);
             update_camera_motion_detected_state(entry->instance, variant_get_bool(new_state_variant));
         }

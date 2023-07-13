@@ -23,6 +23,9 @@ SUFFIXES =
 .SUFFIXES: .hpux_make_needs_suffix_list
 
 
+# Produce verbose output by default.
+VERBOSE = 1
+
 # Suppress display of executed commands.
 $(VERBOSE).SILENT:
 
@@ -144,19 +147,46 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-libZaeUtil/CMakeFiles/libZaeUtil.dir/rule:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f CMakeFiles/Makefile2 libZaeUtil/CMakeFiles/libZaeUtil.dir/rule
-.PHONY : libZaeUtil/CMakeFiles/libZaeUtil.dir/rule
+libZaeUtil/CMakeFiles/ZaeUtil.dir/rule:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f CMakeFiles/Makefile2 libZaeUtil/CMakeFiles/ZaeUtil.dir/rule
+.PHONY : libZaeUtil/CMakeFiles/ZaeUtil.dir/rule
 
 # Convenience name for target.
-libZaeUtil: libZaeUtil/CMakeFiles/libZaeUtil.dir/rule
+ZaeUtil: libZaeUtil/CMakeFiles/ZaeUtil.dir/rule
 
-.PHONY : libZaeUtil
+.PHONY : ZaeUtil
 
 # fast build rule for target.
-libZaeUtil/fast:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/build
-.PHONY : libZaeUtil/fast
+ZaeUtil/fast:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/build
+.PHONY : ZaeUtil/fast
+
+allocator.o: allocator.c.o
+
+.PHONY : allocator.o
+
+# target to build an object file
+allocator.c.o:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/allocator.c.o
+.PHONY : allocator.c.o
+
+allocator.i: allocator.c.i
+
+.PHONY : allocator.i
+
+# target to preprocess a source file
+allocator.c.i:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/allocator.c.i
+.PHONY : allocator.c.i
+
+allocator.s: allocator.c.s
+
+.PHONY : allocator.s
+
+# target to generate assembly for a file
+allocator.c.s:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/allocator.c.s
+.PHONY : allocator.c.s
 
 base64.o: base64.c.o
 
@@ -164,7 +194,7 @@ base64.o: base64.c.o
 
 # target to build an object file
 base64.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/base64.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/base64.c.o
 .PHONY : base64.c.o
 
 base64.i: base64.c.i
@@ -173,7 +203,7 @@ base64.i: base64.c.i
 
 # target to preprocess a source file
 base64.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/base64.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/base64.c.i
 .PHONY : base64.c.i
 
 base64.s: base64.c.s
@@ -182,7 +212,7 @@ base64.s: base64.c.s
 
 # target to generate assembly for a file
 base64.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/base64.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/base64.c.s
 .PHONY : base64.c.s
 
 byte_buffer.o: byte_buffer.c.o
@@ -191,7 +221,7 @@ byte_buffer.o: byte_buffer.c.o
 
 # target to build an object file
 byte_buffer.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/byte_buffer.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/byte_buffer.c.o
 .PHONY : byte_buffer.c.o
 
 byte_buffer.i: byte_buffer.c.i
@@ -200,7 +230,7 @@ byte_buffer.i: byte_buffer.c.i
 
 # target to preprocess a source file
 byte_buffer.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/byte_buffer.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/byte_buffer.c.i
 .PHONY : byte_buffer.c.i
 
 byte_buffer.s: byte_buffer.c.s
@@ -209,7 +239,7 @@ byte_buffer.s: byte_buffer.c.s
 
 # target to generate assembly for a file
 byte_buffer.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/byte_buffer.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/byte_buffer.c.s
 .PHONY : byte_buffer.c.s
 
 cli.o: cli.c.o
@@ -218,7 +248,7 @@ cli.o: cli.c.o
 
 # target to build an object file
 cli.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/cli.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/cli.c.o
 .PHONY : cli.c.o
 
 cli.i: cli.c.i
@@ -227,7 +257,7 @@ cli.i: cli.c.i
 
 # target to preprocess a source file
 cli.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/cli.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/cli.c.i
 .PHONY : cli.c.i
 
 cli.s: cli.c.s
@@ -236,7 +266,7 @@ cli.s: cli.c.s
 
 # target to generate assembly for a file
 cli.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/cli.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/cli.c.s
 .PHONY : cli.c.s
 
 crc32.o: crc32.c.o
@@ -245,7 +275,7 @@ crc32.o: crc32.c.o
 
 # target to build an object file
 crc32.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/crc32.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/crc32.c.o
 .PHONY : crc32.c.o
 
 crc32.i: crc32.c.i
@@ -254,7 +284,7 @@ crc32.i: crc32.c.i
 
 # target to preprocess a source file
 crc32.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/crc32.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/crc32.c.i
 .PHONY : crc32.c.i
 
 crc32.s: crc32.c.s
@@ -263,7 +293,7 @@ crc32.s: crc32.c.s
 
 # target to generate assembly for a file
 crc32.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/crc32.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/crc32.c.s
 .PHONY : crc32.c.s
 
 curl_util.o: curl_util.c.o
@@ -272,7 +302,7 @@ curl_util.o: curl_util.c.o
 
 # target to build an object file
 curl_util.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/curl_util.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/curl_util.c.o
 .PHONY : curl_util.c.o
 
 curl_util.i: curl_util.c.i
@@ -281,7 +311,7 @@ curl_util.i: curl_util.c.i
 
 # target to preprocess a source file
 curl_util.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/curl_util.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/curl_util.c.i
 .PHONY : curl_util.c.i
 
 curl_util.s: curl_util.c.s
@@ -290,8 +320,35 @@ curl_util.s: curl_util.c.s
 
 # target to generate assembly for a file
 curl_util.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/curl_util.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/curl_util.c.s
 .PHONY : curl_util.c.s
+
+event.o: event.c.o
+
+.PHONY : event.o
+
+# target to build an object file
+event.c.o:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event.c.o
+.PHONY : event.c.o
+
+event.i: event.c.i
+
+.PHONY : event.i
+
+# target to preprocess a source file
+event.c.i:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event.c.i
+.PHONY : event.c.i
+
+event.s: event.c.s
+
+.PHONY : event.s
+
+# target to generate assembly for a file
+event.c.s:
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event.c.s
+.PHONY : event.c.s
 
 event_dispatcher.o: event_dispatcher.c.o
 
@@ -299,7 +356,7 @@ event_dispatcher.o: event_dispatcher.c.o
 
 # target to build an object file
 event_dispatcher.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_dispatcher.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_dispatcher.c.o
 .PHONY : event_dispatcher.c.o
 
 event_dispatcher.i: event_dispatcher.c.i
@@ -308,7 +365,7 @@ event_dispatcher.i: event_dispatcher.c.i
 
 # target to preprocess a source file
 event_dispatcher.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_dispatcher.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_dispatcher.c.i
 .PHONY : event_dispatcher.c.i
 
 event_dispatcher.s: event_dispatcher.c.s
@@ -317,7 +374,7 @@ event_dispatcher.s: event_dispatcher.c.s
 
 # target to generate assembly for a file
 event_dispatcher.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_dispatcher.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_dispatcher.c.s
 .PHONY : event_dispatcher.c.s
 
 event_log.o: event_log.c.o
@@ -326,7 +383,7 @@ event_log.o: event_log.c.o
 
 # target to build an object file
 event_log.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_log.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_log.c.o
 .PHONY : event_log.c.o
 
 event_log.i: event_log.c.i
@@ -335,7 +392,7 @@ event_log.i: event_log.c.i
 
 # target to preprocess a source file
 event_log.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_log.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_log.c.i
 .PHONY : event_log.c.i
 
 event_log.s: event_log.c.s
@@ -344,7 +401,7 @@ event_log.s: event_log.c.s
 
 # target to generate assembly for a file
 event_log.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_log.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_log.c.s
 .PHONY : event_log.c.s
 
 event_pump.o: event_pump.c.o
@@ -353,7 +410,7 @@ event_pump.o: event_pump.c.o
 
 # target to build an object file
 event_pump.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_pump.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_pump.c.o
 .PHONY : event_pump.c.o
 
 event_pump.i: event_pump.c.i
@@ -362,7 +419,7 @@ event_pump.i: event_pump.c.i
 
 # target to preprocess a source file
 event_pump.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_pump.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_pump.c.i
 .PHONY : event_pump.c.i
 
 event_pump.s: event_pump.c.s
@@ -371,7 +428,7 @@ event_pump.s: event_pump.c.s
 
 # target to generate assembly for a file
 event_pump.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/event_pump.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/event_pump.c.s
 .PHONY : event_pump.c.s
 
 hash.o: hash.c.o
@@ -380,7 +437,7 @@ hash.o: hash.c.o
 
 # target to build an object file
 hash.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/hash.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/hash.c.o
 .PHONY : hash.c.o
 
 hash.i: hash.c.i
@@ -389,7 +446,7 @@ hash.i: hash.c.i
 
 # target to preprocess a source file
 hash.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/hash.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/hash.c.i
 .PHONY : hash.c.i
 
 hash.s: hash.c.s
@@ -398,7 +455,7 @@ hash.s: hash.c.s
 
 # target to generate assembly for a file
 hash.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/hash.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/hash.c.s
 .PHONY : hash.c.s
 
 lcp.o: lcp.c.o
@@ -407,7 +464,7 @@ lcp.o: lcp.c.o
 
 # target to build an object file
 lcp.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/lcp.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/lcp.c.o
 .PHONY : lcp.c.o
 
 lcp.i: lcp.c.i
@@ -416,7 +473,7 @@ lcp.i: lcp.c.i
 
 # target to preprocess a source file
 lcp.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/lcp.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/lcp.c.i
 .PHONY : lcp.c.i
 
 lcp.s: lcp.c.s
@@ -425,7 +482,7 @@ lcp.s: lcp.c.s
 
 # target to generate assembly for a file
 lcp.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/lcp.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/lcp.c.s
 .PHONY : lcp.c.s
 
 logger.o: logger.c.o
@@ -434,7 +491,7 @@ logger.o: logger.c.o
 
 # target to build an object file
 logger.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/logger.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/logger.c.o
 .PHONY : logger.c.o
 
 logger.i: logger.c.i
@@ -443,7 +500,7 @@ logger.i: logger.c.i
 
 # target to preprocess a source file
 logger.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/logger.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/logger.c.i
 .PHONY : logger.c.i
 
 logger.s: logger.c.s
@@ -452,7 +509,7 @@ logger.s: logger.c.s
 
 # target to generate assembly for a file
 logger.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/logger.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/logger.c.s
 .PHONY : logger.c.s
 
 resolver.o: resolver.c.o
@@ -461,7 +518,7 @@ resolver.o: resolver.c.o
 
 # target to build an object file
 resolver.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/resolver.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/resolver.c.o
 .PHONY : resolver.c.o
 
 resolver.i: resolver.c.i
@@ -470,7 +527,7 @@ resolver.i: resolver.c.i
 
 # target to preprocess a source file
 resolver.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/resolver.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/resolver.c.i
 .PHONY : resolver.c.i
 
 resolver.s: resolver.c.s
@@ -479,7 +536,7 @@ resolver.s: resolver.c.s
 
 # target to generate assembly for a file
 resolver.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/resolver.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/resolver.c.s
 .PHONY : resolver.c.s
 
 service.o: service.c.o
@@ -488,7 +545,7 @@ service.o: service.c.o
 
 # target to build an object file
 service.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/service.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/service.c.o
 .PHONY : service.c.o
 
 service.i: service.c.i
@@ -497,7 +554,7 @@ service.i: service.c.i
 
 # target to preprocess a source file
 service.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/service.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/service.c.i
 .PHONY : service.c.i
 
 service.s: service.c.s
@@ -506,7 +563,7 @@ service.s: service.c.s
 
 # target to generate assembly for a file
 service.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/service.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/service.c.s
 .PHONY : service.c.s
 
 service_args.o: service_args.c.o
@@ -515,7 +572,7 @@ service_args.o: service_args.c.o
 
 # target to build an object file
 service_args.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/service_args.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/service_args.c.o
 .PHONY : service_args.c.o
 
 service_args.i: service_args.c.i
@@ -524,7 +581,7 @@ service_args.i: service_args.c.i
 
 # target to preprocess a source file
 service_args.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/service_args.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/service_args.c.i
 .PHONY : service_args.c.i
 
 service_args.s: service_args.c.s
@@ -533,7 +590,7 @@ service_args.s: service_args.c.s
 
 # target to generate assembly for a file
 service_args.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/service_args.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/service_args.c.s
 .PHONY : service_args.c.s
 
 socket.o: socket.c.o
@@ -542,7 +599,7 @@ socket.o: socket.c.o
 
 # target to build an object file
 socket.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/socket.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/socket.c.o
 .PHONY : socket.c.o
 
 socket.i: socket.c.i
@@ -551,7 +608,7 @@ socket.i: socket.c.i
 
 # target to preprocess a source file
 socket.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/socket.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/socket.c.i
 .PHONY : socket.c.i
 
 socket.s: socket.c.s
@@ -560,7 +617,7 @@ socket.s: socket.c.s
 
 # target to generate assembly for a file
 socket.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/socket.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/socket.c.s
 .PHONY : socket.c.s
 
 socket_pump.o: socket_pump.c.o
@@ -569,7 +626,7 @@ socket_pump.o: socket_pump.c.o
 
 # target to build an object file
 socket_pump.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/socket_pump.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/socket_pump.c.o
 .PHONY : socket_pump.c.o
 
 socket_pump.i: socket_pump.c.i
@@ -578,7 +635,7 @@ socket_pump.i: socket_pump.c.i
 
 # target to preprocess a source file
 socket_pump.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/socket_pump.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/socket_pump.c.i
 .PHONY : socket_pump.c.i
 
 socket_pump.s: socket_pump.c.s
@@ -587,7 +644,7 @@ socket_pump.s: socket_pump.c.s
 
 # target to generate assembly for a file
 socket_pump.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/socket_pump.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/socket_pump.c.s
 .PHONY : socket_pump.c.s
 
 stack.o: stack.c.o
@@ -596,7 +653,7 @@ stack.o: stack.c.o
 
 # target to build an object file
 stack.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/stack.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/stack.c.o
 .PHONY : stack.c.o
 
 stack.i: stack.c.i
@@ -605,7 +662,7 @@ stack.i: stack.c.i
 
 # target to preprocess a source file
 stack.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/stack.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/stack.c.i
 .PHONY : stack.c.i
 
 stack.s: stack.c.s
@@ -614,7 +671,7 @@ stack.s: stack.c.s
 
 # target to generate assembly for a file
 stack.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/stack.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/stack.c.s
 .PHONY : stack.c.s
 
 timer_pump.o: timer_pump.c.o
@@ -623,7 +680,7 @@ timer_pump.o: timer_pump.c.o
 
 # target to build an object file
 timer_pump.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/timer_pump.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/timer_pump.c.o
 .PHONY : timer_pump.c.o
 
 timer_pump.i: timer_pump.c.i
@@ -632,7 +689,7 @@ timer_pump.i: timer_pump.c.i
 
 # target to preprocess a source file
 timer_pump.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/timer_pump.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/timer_pump.c.i
 .PHONY : timer_pump.c.i
 
 timer_pump.s: timer_pump.c.s
@@ -641,7 +698,7 @@ timer_pump.s: timer_pump.c.s
 
 # target to generate assembly for a file
 timer_pump.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/timer_pump.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/timer_pump.c.s
 .PHONY : timer_pump.c.s
 
 variant.o: variant.c.o
@@ -650,7 +707,7 @@ variant.o: variant.c.o
 
 # target to build an object file
 variant.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/variant.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/variant.c.o
 .PHONY : variant.c.o
 
 variant.i: variant.c.i
@@ -659,7 +716,7 @@ variant.i: variant.c.i
 
 # target to preprocess a source file
 variant.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/variant.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/variant.c.i
 .PHONY : variant.c.i
 
 variant.s: variant.c.s
@@ -668,7 +725,7 @@ variant.s: variant.c.s
 
 # target to generate assembly for a file
 variant.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/variant.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/variant.c.s
 .PHONY : variant.c.s
 
 vdev.o: vdev.c.o
@@ -677,7 +734,7 @@ vdev.o: vdev.c.o
 
 # target to build an object file
 vdev.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vdev.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vdev.c.o
 .PHONY : vdev.c.o
 
 vdev.i: vdev.c.i
@@ -686,7 +743,7 @@ vdev.i: vdev.c.i
 
 # target to preprocess a source file
 vdev.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vdev.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vdev.c.i
 .PHONY : vdev.c.i
 
 vdev.s: vdev.c.s
@@ -695,7 +752,7 @@ vdev.s: vdev.c.s
 
 # target to generate assembly for a file
 vdev.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vdev.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vdev.c.s
 .PHONY : vdev.c.s
 
 vector.o: vector.c.o
@@ -704,7 +761,7 @@ vector.o: vector.c.o
 
 # target to build an object file
 vector.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vector.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vector.c.o
 .PHONY : vector.c.o
 
 vector.i: vector.c.i
@@ -713,7 +770,7 @@ vector.i: vector.c.i
 
 # target to preprocess a source file
 vector.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vector.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vector.c.i
 .PHONY : vector.c.i
 
 vector.s: vector.c.s
@@ -722,7 +779,7 @@ vector.s: vector.c.s
 
 # target to generate assembly for a file
 vector.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vector.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vector.c.s
 .PHONY : vector.c.s
 
 vector_utils.o: vector_utils.c.o
@@ -731,7 +788,7 @@ vector_utils.o: vector_utils.c.o
 
 # target to build an object file
 vector_utils.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vector_utils.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vector_utils.c.o
 .PHONY : vector_utils.c.o
 
 vector_utils.i: vector_utils.c.i
@@ -740,7 +797,7 @@ vector_utils.i: vector_utils.c.i
 
 # target to preprocess a source file
 vector_utils.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vector_utils.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vector_utils.c.i
 .PHONY : vector_utils.c.i
 
 vector_utils.s: vector_utils.c.s
@@ -749,7 +806,7 @@ vector_utils.s: vector_utils.c.s
 
 # target to generate assembly for a file
 vector_utils.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vector_utils.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vector_utils.c.s
 .PHONY : vector_utils.c.s
 
 vty.o: vty.c.o
@@ -758,7 +815,7 @@ vty.o: vty.c.o
 
 # target to build an object file
 vty.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vty.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vty.c.o
 .PHONY : vty.c.o
 
 vty.i: vty.c.i
@@ -767,7 +824,7 @@ vty.i: vty.c.i
 
 # target to preprocess a source file
 vty.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vty.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vty.c.i
 .PHONY : vty.c.i
 
 vty.s: vty.c.s
@@ -776,7 +833,7 @@ vty.s: vty.c.s
 
 # target to generate assembly for a file
 vty.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/vty.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/vty.c.s
 .PHONY : vty.c.s
 
 zway_json.o: zway_json.c.o
@@ -785,7 +842,7 @@ zway_json.o: zway_json.c.o
 
 # target to build an object file
 zway_json.c.o:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/zway_json.c.o
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/zway_json.c.o
 .PHONY : zway_json.c.o
 
 zway_json.i: zway_json.c.i
@@ -794,7 +851,7 @@ zway_json.i: zway_json.c.i
 
 # target to preprocess a source file
 zway_json.c.i:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/zway_json.c.i
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/zway_json.c.i
 .PHONY : zway_json.c.i
 
 zway_json.s: zway_json.c.s
@@ -803,7 +860,7 @@ zway_json.s: zway_json.c.s
 
 # target to generate assembly for a file
 zway_json.c.s:
-	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/zway_json.c.s
+	cd /home/alex/Project/zwave-automation-engine && $(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/zway_json.c.s
 .PHONY : zway_json.c.s
 
 # Help Target
@@ -814,10 +871,13 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... libZaeUtil"
+	@echo "... ZaeUtil"
 	@echo "... test"
 	@echo "... package"
 	@echo "... package_source"
+	@echo "... allocator.o"
+	@echo "... allocator.i"
+	@echo "... allocator.s"
 	@echo "... base64.o"
 	@echo "... base64.i"
 	@echo "... base64.s"
@@ -833,6 +893,9 @@ help:
 	@echo "... curl_util.o"
 	@echo "... curl_util.i"
 	@echo "... curl_util.s"
+	@echo "... event.o"
+	@echo "... event.i"
+	@echo "... event.s"
 	@echo "... event_dispatcher.o"
 	@echo "... event_dispatcher.i"
 	@echo "... event_dispatcher.s"

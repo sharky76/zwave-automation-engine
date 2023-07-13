@@ -27,7 +27,7 @@ blink_camera_entry_t*    blink_camera_add(int instance, const char* name)
     memset(name_buf, 0, sizeof(name_buf));
     snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 0x72);
     resolver_add_entry(VDEV, name_buf, DT_BLINK_CAMERA, entry->instance, 0x72);
-    LOG_ADVANCED(DT_BLINK_CAMERA, "Added button %s", entry->name);
+    LOG_ADVANCED(DT_BLINK_CAMERA, "Added camera %s", entry->name);
 
     return entry;
 }
@@ -48,7 +48,7 @@ bool    blink_camera_del(int instance)
             memset(name_buf, 0, sizeof(name_buf));
             snprintf(name_buf, 31, "%s.%d.%d", entry->name, entry->instance, 0x72);
             resolver_remove_entry(name_buf);
-            LOG_ADVANCED(DT_BLINK_CAMERA, "Removed button %s", entry->name);
+            LOG_ADVANCED(DT_BLINK_CAMERA, "Removed camera %s", entry->name);
             break;
         }
     }

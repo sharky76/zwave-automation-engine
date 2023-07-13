@@ -38,6 +38,5 @@ typedef enum
     EventLogNewEvent
 } e_events;
 
-void event_pool_init();
 event_entry_t* event_create();
 void event_send(event_entry_t* event);

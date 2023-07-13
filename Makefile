@@ -23,6 +23,9 @@ SUFFIXES =
 .SUFFIXES: .hpux_make_needs_suffix_list
 
 
+# Produce verbose output by default.
+VERBOSE = 1
+
 # Suppress display of executed commands.
 $(VERBOSE).SILENT:
 
@@ -521,17 +524,17 @@ ContinuousUpdate/fast:
 .PHONY : ContinuousUpdate/fast
 
 #=============================================================================
-# Target rules for targets named libZaeUtil
+# Target rules for targets named ZaeUtil
 
 # Build rule for target.
-libZaeUtil: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 libZaeUtil
-.PHONY : libZaeUtil
+ZaeUtil: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ZaeUtil
+.PHONY : ZaeUtil
 
 # fast build rule for target.
-libZaeUtil/fast:
-	$(MAKE) -f libZaeUtil/CMakeFiles/libZaeUtil.dir/build.make libZaeUtil/CMakeFiles/libZaeUtil.dir/build
-.PHONY : libZaeUtil/fast
+ZaeUtil/fast:
+	$(MAKE) -f libZaeUtil/CMakeFiles/ZaeUtil.dir/build.make libZaeUtil/CMakeFiles/ZaeUtil.dir/build
+.PHONY : ZaeUtil/fast
 
 #=============================================================================
 # Target rules for targets named Cron
@@ -1943,7 +1946,7 @@ help:
 	@echo "... ExperimentalSubmit"
 	@echo "... ContinuousStart"
 	@echo "... ContinuousUpdate"
-	@echo "... libZaeUtil"
+	@echo "... ZaeUtil"
 	@echo "... Cron"
 	@echo "... DateTime"
 	@echo "... IFTTT"

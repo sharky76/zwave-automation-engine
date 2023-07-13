@@ -155,16 +155,25 @@ void event_pump_purge_handlers(event_pump_t *pump, int event_id)
     event_pump_data_t *data = (event_pump_data_t *)pump->priv;
 
     variant_t *event_handler_variant = variant_hash_get(data->event_handlers, event_id);
+    variant_t* values_to_remove[100] = {0};
+    int remove_index = 0;
+
+
     if (NULL != event_handler_variant)
     {
         variant_stack_t *event_handlers = VARIANT_GET_PTR(variant_stack_t, event_handler_variant);
         stack_for_each(event_handlers, event_handler_context)
         {
             event_handler_cb_t *event_handler_cb = VARIANT_GET_PTR(event_handler_cb_t, event_handler_context);
-            if (event_handler_cb->remove_pending_flag)
+            if (event_handler_cb->remove_pending_flag && remove_index < 100)
             {
-                stack_remove(event_handlers, event_handler_context);
+                values_to_remove[remove_index++] = event_handler_context;
             }
+        }
+
+        for(int i = 0; i < remove_index; i++)
+        {
+            stack_remove(event_handlers, values_to_remove[i]);
         }
     }
 }
@@ -191,7 +200,10 @@ void event_pump_poll(event_pump_t *pump, struct timespec *ts)
                     stack_for_each(event_handlers, event_handler_variant)
                     {
                         event_handler_cb_t *event_handler_cb = VARIANT_GET_PTR(event_handler_cb_t, event_handler_variant);
-                        event_handler_cb->on_event(pump, e->event_id, e->event_data, event_handler_cb->context);
+                        if(!event_handler_cb->remove_pending_flag)
+                        {
+                            event_handler_cb->on_event(pump, e->event_id, e->event_data, event_handler_cb->context);
+                        }
                     }
 
                     if(NULL != e->event_free)
