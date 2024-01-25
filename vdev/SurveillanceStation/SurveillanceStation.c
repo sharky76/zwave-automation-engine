@@ -9,6 +9,25 @@
 #include <event.h>
 #include <event_log.h>
 
+/*
+virtual-device SurveillanceStation
+ username admin password JUA+AKW76
+ base-url http://192.168.1.77:5000
+!
+
+sensor descriptor node-id 262
+ instance 3
+  name Family Room Camera
+  command-class 48 role MotionSensor
+ !
+ instance 4
+  name Living Room Camera
+  command-class 48 role MotionSensor
+ !
+!
+
+*/
+
 char* SS_user;
 char* SS_pass;
 char* SS_base_url;

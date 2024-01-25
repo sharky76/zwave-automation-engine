@@ -24,8 +24,8 @@ typedef struct timer_pump_data_t
 {
     //hash_table_t* registered_timer_table;
     timer_event_data_t timer_table[MAX_TIMERS];
-    int next_timer_slot;
-    int max_timer_id;
+    unsigned int next_timer_slot;
+    unsigned int max_timer_id;
     pthread_mutex_t lock;
 } timer_pump_data_t;
 
