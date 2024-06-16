@@ -453,7 +453,7 @@ ZAEPlatform.prototype = {
 			}.bind(data), false);
 		},
 		createBinarySensorAccessory : function(commandClass, serviceType) {
-			if(serviceType != 'Disabled' && commandClass.dh.supported)
+			if(serviceType != 'Disabled' &&  commandClass.dh.parameters[0] != undefined)
 			{
 				var service = new Service[serviceType](this.name);
 				service.subtype = "node"+this.nodeId+"instance"+commandClass.instance;
